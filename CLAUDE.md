@@ -53,9 +53,9 @@ Cargo.toml  one-crate Rust workspace (backend).
   spinning torus and a self-playing 3D **maze** Pac-Man (connected maze, arcade
   ghost AI incl. Blinky Cruise-Elroy, power pills → frightened, eaten ghosts
   respawn via a BFS-home field, 3 lives, short fading motion trails).
-- **Repo:** private `eetu/voxl`, pushed **code only** — the `.github/workflows/*`
-  are in a local unpushed commit; push them after `gh auth refresh -s workflow`
-  (the token used lacked the `workflow` scope).
+- **Repo:** private `eetu/voxl`, fully pushed (code + workflows). Origin is SSH,
+  so the `workflow`-scope restriction didn't apply (it only gates HTTPS token /
+  OAuth pushes — for those you'd `gh auth refresh -h github.com -s workflow`).
 - **Next:**
   1. `../raspi` deploy wiring — `all.py` service dict, `tasks/voxl.py` quadlet,
      Traefik route + `_SUBDOMAIN_NAMES`, `network_restrict`; + Bitwarden item + DNS.
