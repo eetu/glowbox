@@ -818,6 +818,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"blowbox-frontend@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "blowbox-frontend@workspace:."
+  dependencies:
+    "@anarkisti/eslint-config": "npm:^1.0.0"
+    "@sveltejs/adapter-static": "npm:^3.0.10"
+    "@sveltejs/kit": "npm:^2.57.0"
+    "@sveltejs/vite-plugin-svelte": "npm:^7.0.0"
+    "@types/node": "npm:^25"
+    eslint: "npm:^10.4.0"
+    prettier: "npm:^3.8.3"
+    prettier-plugin-svelte: "npm:^4.0.1"
+    svelte: "npm:^5.56.1"
+    svelte-check: "npm:^4.4.6"
+    typescript: "npm:^6.0.2"
+    vite: "npm:^8.0.16"
+  languageName: unknown
+  linkType: soft
+
 "brace-expansion@npm:^5.0.5":
   version: 5.0.7
   resolution: "brace-expansion@npm:5.0.7"
@@ -2322,25 +2341,6 @@ __metadata:
   checksum: 10/3da262088d8d5ea2ce03b9a29310d44d581141e8661937d06c50017b85f864e5559075247eafef478241a84c0cea4ac41959e3237bcc1f3d6499c371368b147c
   languageName: node
   linkType: hard
-
-"voxl-frontend@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "voxl-frontend@workspace:."
-  dependencies:
-    "@anarkisti/eslint-config": "npm:^1.0.0"
-    "@sveltejs/adapter-static": "npm:^3.0.10"
-    "@sveltejs/kit": "npm:^2.57.0"
-    "@sveltejs/vite-plugin-svelte": "npm:^7.0.0"
-    "@types/node": "npm:^25"
-    eslint: "npm:^10.4.0"
-    prettier: "npm:^3.8.3"
-    prettier-plugin-svelte: "npm:^4.0.1"
-    svelte: "npm:^5.56.1"
-    svelte-check: "npm:^4.4.6"
-    typescript: "npm:^6.0.2"
-    vite: "npm:^8.0.16"
-  languageName: unknown
-  linkType: soft
 
 "which@npm:^2.0.1":
   version: 2.0.2

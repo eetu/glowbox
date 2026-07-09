@@ -1,14 +1,14 @@
 [package]
-name = "voxl-backend"
+name = "blowbox-backend"
 version.workspace = true
 edition.workspace = true
 
 [[bin]]
-name = "voxl-backend"
+name = "blowbox-backend"
 path = "src/main.rs"
 
 [lib]
-name = "voxl_backend"
+name = "blowbox_backend"
 path = "src/lib.rs"
 
 [dependencies]

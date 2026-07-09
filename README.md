@@ -1,4 +1,4 @@
-# voxl
+# blowbox
 
 A generic **3D LED-grid display** — an nx×ny×nz lattice of glowing "LEDs" you
 draw on like a tiny 3D canvas, rendered in WebGL and orbitable. Plus a demo

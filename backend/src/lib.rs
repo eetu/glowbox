@@ -64,7 +64,7 @@ pub async fn run_server() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
             EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| EnvFilter::new("info,voxl_backend=debug")),
+                .unwrap_or_else(|_| EnvFilter::new("info,blowbox_backend=debug")),
         )
         .init();
 
@@ -92,7 +92,7 @@ pub async fn run_server() -> anyhow::Result<()> {
     ));
 
     let listener = tokio::net::TcpListener::bind(&bind).await?;
-    tracing::info!(%bind, "voxl listening");
+    tracing::info!(%bind, "blowbox listening");
     axum::serve(listener, app).await?;
     Ok(())
 }

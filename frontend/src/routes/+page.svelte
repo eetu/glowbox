@@ -23,7 +23,7 @@
 
 <div class="app">
 	<header>
-		<div class="brand">voxl</div>
+		<div class="brand">blowbox</div>
 		<select bind:value={name} aria-label="example">
 			{#each Object.keys(examples) as n (n)}
 				<option value={n}>{n}</option>

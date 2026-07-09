@@ -1,4 +1,4 @@
-# voxl — repo overview
+# blowbox — repo overview
 
 A generic **3D LED-grid display** component + demo playground. Sibling in eetu's
 homebrew family (Rust axum + Svelte SPA, halo-design). The reusable library lives
@@ -11,7 +11,7 @@ developed fast, standalone.
 
 ```text
 backend/    Rust axum — serves the built SPA + an unauth /status. No DB/auth
-            (voxl is a pure client-side app; LAN-only behind the Pi edge).
+            (blowbox is a pure client-side app; LAN-only behind the Pi edge).
 frontend/   Svelte SPA (SvelteKit adapter-static → dist/): the led-grid library,
             the example programs, and a demo gallery to switch between them.
 Cargo.toml  one-crate Rust workspace (backend).
@@ -32,7 +32,7 @@ Cargo.toml  one-crate Rust workspace (backend).
   depth sort, see-through — the real LED-cube look).
 - **Pure client-side.** No `/api`. The backend just serves `dist/` + `/status`,
   and hashes the SPA's inline bootstrap script at boot for the CSP (rust-axum
-  embed model). `VOXL_BIND` (default `0.0.0.0:3016`), `STATIC_DIR` (`./dist`).
+  embed model). `BLOWBOX_BIND` (default `0.0.0.0:3016`), `STATIC_DIR` (`./dist`).
 - **halo-design tokens** in `frontend/src/lib/styles/halo.css`; consume `--halo-*`.
 
 ## Working on this repo
@@ -43,7 +43,7 @@ Cargo.toml  one-crate Rust workspace (backend).
 - Backend `:3016` — `cargo run` serves `./dist` (run `yarn build` in frontend
   first). One cargo workspace; `cargo clippy --workspace -- -D warnings`.
 - Deploy: multi-stage Dockerfile (vendored-yarn SPA build → musl cross-compile →
-  scratch, `ghcr.io/eetu/voxl`). `../raspi` deploy wiring is **not done yet** — see
+  scratch, `ghcr.io/eetu/blowbox`). `../raspi` deploy wiring is **not done yet** — see
   Status.
 
 ## Status / next (handoff)
@@ -53,11 +53,11 @@ Cargo.toml  one-crate Rust workspace (backend).
   spinning torus and a self-playing 3D **maze** Pac-Man (connected maze, arcade
   ghost AI incl. Blinky Cruise-Elroy, power pills → frightened, eaten ghosts
   respawn via a BFS-home field, 3 lives, short fading motion trails).
-- **Repo:** private `eetu/voxl`, fully pushed (code + workflows). Origin is SSH,
+- **Repo:** private `eetu/blowbox`, fully pushed (code + workflows). Origin is SSH,
   so the `workflow`-scope restriction didn't apply (it only gates HTTPS token /
   OAuth pushes — for those you'd `gh auth refresh -h github.com -s workflow`).
 - **Next:**
-  1. `../raspi` deploy wiring — `all.py` service dict, `tasks/voxl.py` quadlet,
+  1. `../raspi` deploy wiring — `all.py` service dict, `tasks/blowbox.py` quadlet,
      Traefik route + `_SUBDOMAIN_NAMES`, `network_restrict`; + Bitwarden item + DNS.
   2. Reintroduce the library as a **"cube" viz in `../scene` (tracker)** once
      stable (it was prototyped there then moved here — a `VizMode` + a driver).

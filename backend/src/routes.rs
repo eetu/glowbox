@@ -24,7 +24,7 @@ pub fn router(cfg: Arc<Config>) -> Router {
 
 async fn status() -> Json<Value> {
     Json(json!({
-        "service": "voxl",
+        "service": "blowbox",
         "version": env!("CARGO_PKG_VERSION"),
     }))
 }

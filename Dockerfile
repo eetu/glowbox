@@ -5,8 +5,8 @@ FROM --platform=$BUILDPLATFORM tonistiigi/xx AS xx
 
 # --- Stage 1: Build frontend (native, output is platform-independent) ---
 FROM --platform=$BUILDPLATFORM node:26-alpine AS frontend-build
-ARG VOXL_IMAGE_TAG
-ENV VITE_VOXL_IMAGE_TAG=$VOXL_IMAGE_TAG
+ARG BLOWBOX_IMAGE_TAG
+ENV VITE_BLOWBOX_IMAGE_TAG=$BLOWBOX_IMAGE_TAG
 WORKDIR /app
 COPY frontend/package.json frontend/yarn.lock frontend/.yarnrc.yml ./
 COPY frontend/.yarn/releases ./.yarn/releases
@@ -31,7 +31,7 @@ COPY backend/Cargo.toml backend/Cargo.toml
 RUN mkdir -p backend/src \
     && printf 'fn main() {}\n' > backend/src/main.rs \
     && : > backend/src/lib.rs \
-    && xx-cargo build --release -p voxl-backend
+    && xx-cargo build --release -p blowbox-backend
 
 # --- Stage 3: Build the backend ---
 FROM workspace-deps AS backend-build
@@ -39,23 +39,23 @@ ARG TARGETPLATFORM
 COPY backend/src ./backend/src
 # touch so cargo notices the stub→real source swap.
 RUN touch backend/src/main.rs backend/src/lib.rs \
-    && xx-cargo build --release -p voxl-backend
+    && xx-cargo build --release -p blowbox-backend
 
 # --- Stage 4: Runtime (scratch) ---
 FROM scratch AS runner
 WORKDIR /app
-LABEL org.opencontainers.image.description="voxl — a 3D LED-grid display (spinning torus, 3D Pac-Man)"
-LABEL org.opencontainers.image.source="https://github.com/eetu/voxl"
+LABEL org.opencontainers.image.description="blowbox — a 3D LED-grid display (spinning torus, 3D Pac-Man)"
+LABEL org.opencontainers.image.source="https://github.com/eetu/blowbox"
 
 COPY --from=backend-build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=backend-build /app/target/*/release/voxl-backend ./voxl-backend
+COPY --from=backend-build /app/target/*/release/blowbox-backend ./blowbox-backend
 COPY --from=frontend-build /app/dist ./dist
 
 ENV STATIC_DIR=./dist
-ENV VOXL_BIND=0.0.0.0:3016
+ENV BLOWBOX_BIND=0.0.0.0:3016
 
 USER 1000
 
 EXPOSE 3016
 
-CMD ["./voxl-backend"]
+CMD ["./blowbox-backend"]

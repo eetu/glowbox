@@ -1,6 +1,6 @@
 {
-	"name": "voxl",
-	"short_name": "voxl",
+	"name": "blowbox",
+	"short_name": "blowbox",
 	"description": "markdown demo scripts — viewed, timed, and patched at the table.",
 	"display": "standalone",
 	"start_url": "/",

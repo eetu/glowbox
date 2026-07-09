@@ -1,4 +1,4 @@
-# voxl/frontend
+# blowbox/frontend
 
 Svelte SPA (SvelteKit + adapter-static → `dist/`, pure client — `ssr=false`,
 `prerender=false`). Yarn is **vendored** (`.yarn/releases/*.cjs`, invoked via

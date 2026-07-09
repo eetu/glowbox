@@ -1,9 +1,9 @@
-# voxl/backend
+# blowbox/backend
 
-Tiny axum binary: serve the embedded SPA + an unauth `/status`. voxl is a pure
+Tiny axum binary: serve the embedded SPA + an unauth `/status`. blowbox is a pure
 client-side app, so there's **no database, no auth, no `/api`**.
 
-- `config.rs` — `VOXL_BIND` (default `0.0.0.0:3016`), `STATIC_DIR` (`./dist`).
+- `config.rs` — `BLOWBOX_BIND` (default `0.0.0.0:3016`), `STATIC_DIR` (`./dist`).
 - `routes.rs` — `/status` (liveness) + a `fallback` `serve_spa` handler that
   returns a real asset under `static_dir` if the path maps to one (with `..`
   traversal rejected), else `index.html` (200) so the client router owns the

@@ -86,7 +86,7 @@ jobs:
           tags: ${{ steps.meta_backend.outputs.tags }}
           labels: ${{ steps.meta_backend.outputs.labels }}
           build-args: |
-            VOXL_IMAGE_TAG=${{ fromJSON(steps.meta_backend.outputs.json).labels['org.opencontainers.image.created'] }}
+            BLOWBOX_IMAGE_TAG=${{ fromJSON(steps.meta_backend.outputs.json).labels['org.opencontainers.image.created'] }}
           platforms: linux/arm64
           # Skip provenance + SBOM attestations: each one becomes its own GHCR
           # "version", inflating the package version count for no benefit on a
@@ -98,7 +98,7 @@ jobs:
         if: steps.gate.outputs.backend == 'true'
         uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5
         with:
-          package-name: voxl
+          package-name: blowbox
           package-type: container
           delete-only-untagged-versions: true
           min-versions-to-keep: 5
