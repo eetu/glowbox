@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -e
+
+ROOT=$(git rev-parse --show-toplevel)
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [[ -z "$STAGED" ]]; then
+  exit 0
+fi
+
+if echo "$STAGED" | grep -q "^frontend/"; then
+  echo "→ frontend lint + format check..."
+  # Yarn is vendored (invoked via node — no corepack).
+  (cd "$ROOT/frontend" && node .yarn/releases/yarn-*.cjs lint)
+  (cd "$ROOT/frontend" && node .yarn/releases/yarn-*.cjs format)
+fi
+
+# Any Rust touch runs workspace-wide clippy. Cheap with the dep cache warm.
+if echo "$STAGED" | grep -qE "^backend/|^Cargo\.(toml|lock)$"; then
+  echo "→ cargo clippy --workspace..."
+  (cd "$ROOT" && cargo clippy --workspace --all-targets -- -D warnings)
+fi
