@@ -1,0 +1,66 @@
+name: Release
+
+# Publish @glowbox/* to the public npm registry when a v* tag is pushed.
+#
+# Tokenless: authenticates via npm trusted publishing (OIDC) and attaches a provenance
+# statement — there is NO NPM_TOKEN secret. Each @glowbox/* package needs a trusted
+# publisher configured on npm (repo eetu/glowbox, workflow .github/workflows/release.yaml)
+# before its first OIDC publish; a brand-new package/scope is bootstrapped either with an
+# org-level trusted publisher or one seed publish via a granular token.
+#
+# Monorepo wrinkle: the packages depend on each other via `workspace:^`, which plain
+# `npm publish` won't rewrite. So `yarn pack` builds each tarball (resolving `workspace:^`
+# to a real range + running the package's prepack), then `npm publish <tarball>` does the
+# OIDC auth + provenance.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write # mint the OIDC token npm exchanges for a short-lived publish credential
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0 # full history (+ origin/main ref) so the tag-on-main check works
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .node-version
+      - name: Verify tag is on main
+        run: git merge-base --is-ancestor "${{ github.sha }}" origin/main
+      - name: Verify tag matches @glowbox/core version
+        run: test "v$(node -p "require('./packages/core/package.json').version")" = "${{ github.ref_name }}"
+      - name: Validate, build & publish
+        run: |
+          yarn() { node .yarn/releases/yarn-*.cjs "$@"; }
+          yarn install --immutable
+          # Gate the publish on the full suite (same checks as CI) — a tag must never ship
+          # unvalidated code, and npm publishes are effectively irreversible. Browser (vitest)
+          # and e2e (Playwright) tests need chromium.
+          ./node_modules/.bin/playwright install --with-deps chromium
+          yarn lint
+          yarn format
+          # Build before typecheck: cross-package typecheck resolves @glowbox/* through each
+          # package's published `dist` types, so core/nixie must be built first.
+          yarn build # topological: core → nixie → wrappers → extras (+ demo)
+          yarn typecheck
+          yarn test
+          yarn size
+          # npm dist-tag: prereleases (1.0.0-rc.1) → `rc`, finals → `latest`.
+          VERSION=$(node -p "require('./packages/core/package.json').version")
+          if [[ "$VERSION" == *-* ]]; then TAG=rc; else TAG=latest; fi
+          # Core first so dependents resolve. `npm view` guard makes reruns idempotent
+          # (npm has no --tolerate-republish; republishing a version is a hard 403).
+          for pkg in core nixie svelte react vue extras; do
+            name="@glowbox/$pkg"
+            if npm view "$name@$VERSION" version >/dev/null 2>&1; then
+              echo "$name@$VERSION already published — skipping"
+              continue
+            fi
+            yarn workspace "$name" pack --out "/tmp/glowbox-$pkg.tgz"
+            npm publish "/tmp/glowbox-$pkg.tgz" --provenance --access public --tag "$TAG"
+          done

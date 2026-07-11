@@ -1,18 +1,40 @@
-target/
 node_modules/
-.pnp.cjs
-.pnp.loader.mjs
+
+# Build output
+dist/
+build/
+.svelte-kit/
+*.tsbuildinfo
+
+# Test / tooling
+coverage/
+test-results/
+playwright-report/
+.playwright/
+
+# Yarn (berry, node-modules linker — commit yarn.lock + .yarnrc.yml + releases only)
+.pnp.*
 .yarn/cache/
 .yarn/install-state.gz
 .yarn/build-state.yml
 .yarn/unplugged/
+
+# Env
 .env
-.env.local
-*.log
+.env.*
+!.env.example
+
+# OS / editor
 .DS_Store
-dist/
-.svelte-kit/
-data/
-*.db
-*.db-shm
-*.db-wal
+Thumbs.db
+*.log
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Vitest browser-mode failure screenshots
+__screenshots__/
+
+# vitest browser test screenshot artifacts
+.vitest-attachments/

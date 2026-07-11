@@ -7,40 +7,30 @@ on:
     branches: [main]
 
 jobs:
-  frontend:
-    name: "Frontend (Svelte)"
+  checks:
+    name: 'Lint / typecheck / test / build'
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
-          node-version-file: frontend/.node-version
-      # Yarn is vendored (.yarn/releases/*.cjs) and invoked via node — no
-      # corepack (node 25+ dropped the bundle), so this is node-version-agnostic
-      # and stays in step with the Dockerfile's node 26 build stage.
-      - name: Frontend checks
+          node-version-file: .node-version
+      # Yarn is vendored (.yarn/releases/*.cjs) and invoked via node — no corepack
+      # (node 25+ dropped the bundle), so this stays node-version-agnostic.
+      - name: Checks
         run: |
           yarn() { node .yarn/releases/yarn-*.cjs "$@"; }
           yarn install --immutable
+          # WebGL browser tests (vitest) + the demo e2e (Playwright) both need chromium.
+          # (bare `yarn <bin>` isn't a thing in Yarn 4; call the hoisted bin directly.)
+          ./node_modules/.bin/playwright install --with-deps chromium
           yarn lint
           yarn format
-          yarn typecheck
+          # Build before typecheck: cross-package typecheck resolves @glowbox/* through each
+          # package's published `dist` types (no source path-mapping), so core/nixie must be
+          # built first — the build is topological (core → nixie → wrappers → extras).
           yarn build
-
-  backend:
-    name: "Backend (Rust workspace)"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
-        with:
-          workspaces: "."
-      - run: cargo clippy --workspace --all-targets -- -D warnings
-      - run: cargo test --workspace
-      - run: cargo build --workspace --release
+          yarn typecheck
+          yarn test
+          # Bundle-size budgets (size-limit) — fails the build if a package bloats.
+          yarn size
