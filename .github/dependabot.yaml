@@ -1,72 +1,58 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/frontend"
+  # Single npm config at the workspace root — dependabot discovers the workspace
+  # package.jsons (packages/*, examples/*) from here.
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     cooldown:
       default-days: 7
       semver-major-days: 14
       semver-minor-days: 7
       semver-patch-days: 5
     ignore:
-      - dependency-name: "eslint"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
     groups:
       svelte:
         patterns:
-          - "svelte"
-          - "@sveltejs/*"
-          - "svelte-*"
+          - 'svelte'
+          - '@sveltejs/*'
+          - 'svelte-*'
+      react:
+        patterns:
+          - 'react'
+          - 'react-dom'
+          - '@types/react'
+          - '@types/react-dom'
+          - 'vitest-browser-react'
+      vue:
+        patterns:
+          - 'vue'
+          - '@vue/*'
       vite:
         patterns:
-          - "vite"
-          - "@vitejs/*"
+          - 'vite'
+          - 'vite-plugin-*'
+          - '@vitejs/*'
+      test:
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
+          - 'vitest-browser-*'
+          - 'playwright'
+          - '@playwright/*'
       minor-and-patch:
         update-types:
-          - "minor"
-          - "patch"
+          - 'minor'
+          - 'patch'
 
-  - package-ecosystem: "cargo"
-    directory: "/"
+  # github-actions only honours `default-days` — the semver-* keys silently
+  # break parsing for this ecosystem, so they're omitted.
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
-    cooldown:
-      default-days: 7
-      semver-major-days: 14
-      semver-minor-days: 7
-      semver-patch-days: 5
-    groups:
-      axum:
-        patterns:
-          - "axum"
-          - "axum-*"
-          - "tower"
-          - "tower-*"
-          - "hyper"
-          - "hyper-*"
-      tokio:
-        patterns:
-          - "tokio"
-          - "tokio-*"
-          - "futures*"
-      minor-and-patch:
-        update-types:
-          - "minor"
-          - "patch"
-
-  # docker + github-actions only honour `default-days` — the semver-* keys
-  # silently break parsing for these ecosystems, so they're omitted.
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
+      interval: 'weekly'
     cooldown:
       default-days: 7

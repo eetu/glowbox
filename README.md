@@ -1,39 +1,103 @@
-# blowbox
+# glowbox
+
+**▶ [Live demo](https://eetu.github.io/glowbox/)** — the interactive playground, in your browser.
 
 A generic **3D LED-grid display** — an nx×ny×nz lattice of glowing "LEDs" you
-draw on like a tiny 3D canvas, rendered in WebGL and orbitable. Plus a demo
-gallery of example programs (a spinning torus, a self-playing 3D Pac-Man).
+draw on like a tiny 3D canvas, rendered in WebGL and orbitable (auto-spin +
+drag). Ships as a **framework-agnostic core** plus thin framework wrappers you
+install into any SPA.
 
-Part of eetu's homebrew family: a Rust (axum) binary embeds a Svelte SPA and
-ships as one small arm64 container.
+![The glowbox demo playground rendering a colourful strange-attractor particle swarm on the WebGL LED grid, with the live control panel](media/hero.png)
 
-## The library
+**Live demos:** <https://eetu.github.io/glowbox/> — a spinning torus, a strange
+attractor, a voxelized X-wing model, a wave field, a GIF billboard, a text
+ticker, rain, a wormhole fly-through, and a self-playing 3D Pac-Man, plus a
+nixie-tube clock on the `/nixie` route.
 
-`frontend/src/lib/led-grid` — framework-agnostic core + a Svelte wrapper. The
-display owns rendering, orbit, resize and the animation loop; you just draw
-voxels each frame:
+## Packages
 
-```ts
-import { createLedDisplay } from "$lib/led-grid"; // or the <LedGrid> Svelte wrapper
-const d = createLedDisplay(canvas, { size: [8, 8, 8] });
-d.onFrame((d, dt) => {
-  d.clear();
-  d.sphere([4, 4, 4], 3, [0, 0.6, 1]);
-  d.plot(2, 5, 1, [1, 0.8, 0]);
-});
+| package                              | install                    | what it is                                                     |
+| ------------------------------------ | -------------------------- | -------------------------------------------------------------- |
+| [`@glowbox/core`](packages/core)     | `yarn add @glowbox/core`   | plain-TS WebGL display + voxel API (zero deps)                 |
+| [`@glowbox/nixie`](packages/nixie)   | `yarn add @glowbox/nixie`  | nixie-tube display core: glowing vector numerals (2D canvas)   |
+| [`@glowbox/svelte`](packages/svelte) | `yarn add @glowbox/svelte` | Svelte 5 components: `<LedGrid>` + `<NixieTube>`               |
+| [`@glowbox/react`](packages/react)   | `yarn add @glowbox/react`  | React components: `<LedGrid>` + `<NixieTube>` (`^18 \|\| ^19`) |
+| [`@glowbox/vue`](packages/vue)       | `yarn add @glowbox/vue`    | Vue 3 components: `<LedGrid>` + `<NixieTube>`                  |
+| [`@glowbox/extras`](packages/extras) | `yarn add @glowbox/extras` | content helpers: GIF / image player + text                     |
+
+Two rendering cores — the 3D LED grid (`@glowbox/core`) and the nixie tube
+(`@glowbox/nixie`) — and each framework package (`svelte`/`react`/`vue`) ships a thin
+component for **both** (`<LedGrid>` + `<NixieTube>`), with room for more cores later.
+`@glowbox/extras` layers content (GIF/image animation, text) on the core's draw API.
+
+![The @glowbox/nixie demo: a row of glowing nixie tubes wired into a clock, with tube-style and colour controls](media/nixie.png)
+
+## Quickstart
+
+```svelte
+<script lang="ts">
+	import { LedGrid } from '@glowbox/svelte';
+	import type { LedDisplay } from '@glowbox/core';
+
+	const draw = (d: LedDisplay) => {
+		d.clear();
+		d.sphere([4, 4, 4], 3, '#00aaff'); // Color: CSS string or [r,g,b] 0..1 (>1 blooms)
+	};
+</script>
+
+<LedGrid
+	size={[8, 8, 8]}
+	{draw}
+	led={{ glow: 3, offColor: '#0a0a12' }}
+	camera={{ autoOrbit: true, projection: 'perspective' }}
+	color={{ background: '#000', gain: 1.1 }}
+	interaction={{ zoom: true }}
+/>
 ```
 
-Colours are `[r, g, b]` in 0..1 (values >1 bloom). API: `plot / add / get /
-clear / fill / line / box / sphere`, plus the raw `leds` buffer for power users.
+The same component ships for [React](packages/react) and [Vue](packages/vue) with an
+identical prop contract. Colours, glow, LED size, `stagger` (brick lattice), camera,
+projection, zoom, pause and more are all customizable via grouped options (`led`
+`color` `camera` `interaction` `quality`) that update live — see
+[`@glowbox/core`](packages/core) for the full list and defaults, or use the core
+directly on a canvas. LEDs render as real emitters (bright cores + glow halos,
+tone-mapped) so they read on any background. The display resizes in place and recovers
+from WebGL context loss on its own.
 
-The library ships **no programs** — content lives with the consumer (see
-`frontend/src/lib/examples`). It's designed to be dropped into other apps
-(e.g. as a visualizer in the `scene` tracker).
+## This repo
 
-## Develop
+A Yarn-workspaces monorepo. Yarn is **vendored** (`.yarn/releases/*.cjs`,
+invoked via `node` — no corepack).
+
+```text
+packages/core            @glowbox/core   — the framework-agnostic library
+packages/svelte          @glowbox/svelte — the Svelte wrapper
+packages/react           @glowbox/react  — the React wrapper
+packages/vue             @glowbox/vue    — the Vue 3 wrapper
+packages/extras          @glowbox/extras — content helpers (GIF/image/text)
+packages/nixie           @glowbox/nixie  — nixie-tube rendering core (2D canvas)
+examples/svelte-gallery  the demo SPA (voxel gallery + a /nixie clock) → GitHub Pages
+```
 
 ```sh
-cd frontend && node .yarn/releases/yarn-*.cjs install && node .yarn/releases/yarn-*.cjs dev
+node .yarn/releases/yarn-*.cjs install   # or: yarn install (if yarn is on PATH)
+yarn dev        # run the demo gallery (Vite, :5173) against the library source
+yarn build      # build all packages (core → svelte/react/vue/extras/nixie) + the demo
+yarn test       # vitest (node + headless-chromium browser) + Playwright e2e
+yarn validate   # lint + format + typecheck + test
+yarn size       # bundle-size budgets (size-limit; minified + brotli) on the shipped bundles
 ```
 
-Backend (serves the built SPA + `/status`): `cargo run` (run `yarn build` first).
+The demo resolves `@glowbox/*` to package **source** (via `kit.alias`), so dev
+and typecheck need no prior build; the packages are validated independently by
+their own `build`/`test`.
+
+## Publishing
+
+All six packages publish to the public npm registry under the `@glowbox` scope. Tag
+a release (`vX.Y.Z`) and the `release` workflow runs `npm publish --access=public` for
+each (core first, then the wrappers + extras + nixie). Requires the `NPM_TOKEN` repo secret.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

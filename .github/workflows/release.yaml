@@ -1,0 +1,41 @@
+name: Release
+
+# Publish @glowbox/* to the public npm registry when a v* tag is pushed.
+# Requires the NPM_TOKEN repo secret (an npm automation token for the @glowbox scope).
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .node-version
+      - name: Validate, build & publish
+        env:
+          # yarn npm publish reads this and rewrites `workspace:^` deps to real versions.
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          yarn() { node .yarn/releases/yarn-*.cjs "$@"; }
+          yarn install --immutable
+          # Gate the publish on the full suite (same checks as CI) — a tag must never ship
+          # unvalidated code, and npm publishes are effectively irreversible. Browser (vitest)
+          # and e2e (Playwright) tests need chromium.
+          ./node_modules/.bin/playwright install --with-deps chromium
+          yarn lint
+          yarn format
+          yarn typecheck
+          yarn test
+          yarn build # topological: core → nixie → wrappers → extras (+ demo)
+          yarn size
+          # Publish core first so its version is on the registry before dependents'
+          # workspace:^ deps are rewritten. --tolerate-republish makes reruns safe.
+          for pkg in core svelte react vue extras nixie; do
+            yarn workspace @glowbox/$pkg npm publish --access public --tolerate-republish
+          done
