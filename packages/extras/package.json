@@ -1,0 +1,71 @@
+{
+	"name": "@glowbox/extras",
+	"version": "1.0.0-rc.3",
+	"description": "Content helpers for @glowbox/led-grid — GIF/image animation player + text, painted onto the LED grid.",
+	"keywords": [
+		"glowbox",
+		"led",
+		"gif",
+		"image",
+		"voxel",
+		"3d",
+		"animation"
+	],
+	"license": "MIT",
+	"type": "module",
+	"sideEffects": false,
+	"files": [
+		"dist"
+	],
+	"types": "./dist/index.d.ts",
+	"module": "./dist/index.js",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/eetu/glowbox.git",
+		"directory": "packages/extras"
+	},
+	"homepage": "https://eetu.github.io/glowbox/",
+	"scripts": {
+		"build": "vite build",
+		"prepack": "vite build",
+		"test": "vitest run",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
+		"typecheck": "tsc --noEmit",
+		"size": "size-limit"
+	},
+	"size-limit": [
+		{
+			"name": "esm (incl. bundled gifuct-js; core external)",
+			"path": "dist/index.js",
+			"ignore": [
+				"@glowbox/led-grid"
+			],
+			"limit": "6 kB"
+		}
+	],
+	"dependencies": {
+		"@glowbox/led-grid": "workspace:^"
+	},
+	"devDependencies": {
+		"@anarkisti/eslint-config": "^1",
+		"@vitest/browser": "^4.1",
+		"@vitest/browser-playwright": "^4.1",
+		"eslint": "^10",
+		"gifuct-js": "^2",
+		"playwright": "^1.61",
+		"typescript": "^6",
+		"vite": "^8.1",
+		"vite-plugin-dts": "^5",
+		"vitest": "^4.1"
+	}
+}

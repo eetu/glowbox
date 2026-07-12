@@ -1,0 +1,17 @@
+{
+	"extends": "./.svelte-kit/tsconfig.json",
+	"compilerOptions": {
+		"allowJs": true,
+		"checkJs": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"sourceMap": true,
+		"strict": true,
+		"moduleResolution": "bundler"
+	}
+	// $lib and the @glowbox/* aliases (kit.alias) are injected into
+	// .svelte-kit/tsconfig.json by SvelteKit — don't redefine `paths` here or
+	// they'd be clobbered.
+}
