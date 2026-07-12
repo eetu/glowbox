@@ -23,7 +23,7 @@
 		"@size-limit/preset-small-lib": "^11",
 		"prettier": "^3.8.3",
 		"prettier-plugin-svelte": "^4.0.1",
-		"size-limit": "^11",
+		"size-limit": "^12",
 		"svelte": "^5.56",
 		"typescript": "^6.0.2"
 	}

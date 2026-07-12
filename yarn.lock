@@ -2910,7 +2910,7 @@ __metadata:
     "@size-limit/preset-small-lib": "npm:^11"
     prettier: "npm:^3.8.3"
     prettier-plugin-svelte: "npm:^4.0.1"
-    size-limit: "npm:^11"
+    size-limit: "npm:^12"
     svelte: "npm:^5.56"
     typescript: "npm:^6.0.2"
   languageName: unknown
@@ -3927,7 +3927,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"size-limit@npm:11.2.0, size-limit@npm:^11":
+"size-limit@npm:11.2.0":
   version: 11.2.0
   resolution: "size-limit@npm:11.2.0"
   dependencies:
@@ -3941,6 +3941,26 @@ __metadata:
   bin:
     size-limit: bin.js
   checksum: 10/76c81693783a51621bca7a359777f8028f21ee1b77be8008768757d3f40bd8b6d173206b9c003d47e73b326090af9c05022d74004651f4a8e0895b3001c242e2
+  languageName: node
+  linkType: hard
+
+"size-limit@npm:^12":
+  version: 12.1.0
+  resolution: "size-limit@npm:12.1.0"
+  dependencies:
+    bytes-iec: "npm:^3.1.1"
+    lilconfig: "npm:^3.1.3"
+    nanospinner: "npm:^1.2.2"
+    picocolors: "npm:^1.1.1"
+    tinyglobby: "npm:^0.2.16"
+  peerDependencies:
+    jiti: ^2.0.0
+  peerDependenciesMeta:
+    jiti:
+      optional: true
+  bin:
+    size-limit: bin.js
+  checksum: 10/57a2454517850e9188cced7d1e9063ca7576510e162a371bef06b29a5492ca943fcca6a8351f00c2b80356ea9379927a793d4500bc85e61254bf59909b1d22a6
   languageName: node
   linkType: hard
 
@@ -4122,7 +4142,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tinyglobby@npm:^0.2.11, tinyglobby@npm:^0.2.12, tinyglobby@npm:^0.2.15, tinyglobby@npm:^0.2.17":
+"tinyglobby@npm:^0.2.11, tinyglobby@npm:^0.2.12, tinyglobby@npm:^0.2.15, tinyglobby@npm:^0.2.16, tinyglobby@npm:^0.2.17":
   version: 0.2.17
   resolution: "tinyglobby@npm:0.2.17"
   dependencies:
