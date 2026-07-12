@@ -1,0 +1,38 @@
+{
+	"name": "@glowbox/svelte-gallery",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
+		"test": "playwright test",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
+		"typecheck": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+	},
+	"dependencies": {
+		"@glowbox/extras": "workspace:^",
+		"@glowbox/led-grid": "workspace:^",
+		"@glowbox/nixie": "workspace:^",
+		"@glowbox/svelte": "workspace:^",
+		"@lucide/svelte": "^1.24",
+		"three": "^0.185.1"
+	},
+	"devDependencies": {
+		"@anarkisti/eslint-config": "^1",
+		"@playwright/test": "^1.61",
+		"@sveltejs/adapter-static": "^3.0.10",
+		"@sveltejs/kit": "^2.69",
+		"@sveltejs/vite-plugin-svelte": "^7",
+		"@types/node": "^25",
+		"@types/three": "^0.185.1",
+		"eslint": "^10",
+		"svelte": "^5.56",
+		"svelte-check": "^4.7",
+		"typescript": "^6",
+		"vite": "^8.1"
+	}
+}

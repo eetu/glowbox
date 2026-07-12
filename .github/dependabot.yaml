@@ -1,0 +1,58 @@
+version: 2
+updates:
+  # Single npm config at the workspace root — dependabot discovers the workspace
+  # package.jsons (packages/*, examples/*) from here.
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 5
+    ignore:
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
+    groups:
+      svelte:
+        patterns:
+          - 'svelte'
+          - '@sveltejs/*'
+          - 'svelte-*'
+      react:
+        patterns:
+          - 'react'
+          - 'react-dom'
+          - '@types/react'
+          - '@types/react-dom'
+          - 'vitest-browser-react'
+      vue:
+        patterns:
+          - 'vue'
+          - '@vue/*'
+      vite:
+        patterns:
+          - 'vite'
+          - 'vite-plugin-*'
+          - '@vitejs/*'
+      test:
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
+          - 'vitest-browser-*'
+          - 'playwright'
+          - '@playwright/*'
+      minor-and-patch:
+        update-types:
+          - 'minor'
+          - 'patch'
+
+  # github-actions only honours `default-days` — the semver-* keys silently
+  # break parsing for this ecosystem, so they're omitted.
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    cooldown:
+      default-days: 7

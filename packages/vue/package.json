@@ -1,0 +1,80 @@
+{
+	"name": "@glowbox/vue",
+	"version": "1.0.0",
+	"description": "glowbox components for Vue 3 — <LedGrid> (3D WebGL LED grid) + <NixieTube> (nixie-tube display).",
+	"keywords": [
+		"vue",
+		"led",
+		"led-cube",
+		"webgl",
+		"voxel",
+		"3d",
+		"nixie",
+		"component"
+	],
+	"license": "MIT",
+	"type": "module",
+	"sideEffects": false,
+	"files": [
+		"dist"
+	],
+	"types": "./dist/index.d.ts",
+	"module": "./dist/index.js",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/eetu/glowbox.git",
+		"directory": "packages/vue"
+	},
+	"homepage": "https://eetu.github.io/glowbox/",
+	"scripts": {
+		"build": "vite build",
+		"prepack": "vite build",
+		"test": "vitest run",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
+		"typecheck": "tsc --noEmit",
+		"size": "size-limit"
+	},
+	"size-limit": [
+		{
+			"name": "esm (own code; vue + core external)",
+			"path": "dist/index.js",
+			"ignore": [
+				"vue",
+				"@glowbox/led-grid",
+				"@glowbox/nixie"
+			],
+			"limit": "1.5 kB"
+		}
+	],
+	"peerDependencies": {
+		"vue": "^3"
+	},
+	"dependencies": {
+		"@glowbox/led-grid": "workspace:^",
+		"@glowbox/nixie": "workspace:^"
+	},
+	"devDependencies": {
+		"@anarkisti/eslint-config": "^1",
+		"@vitest/browser": "^4.1",
+		"@vitest/browser-playwright": "^4.1",
+		"@vue/compiler-dom": "^3.5",
+		"@vue/test-utils": "^2.4",
+		"eslint": "^10",
+		"playwright": "^1.61",
+		"typescript": "^6",
+		"vite": "^8.1",
+		"vite-plugin-dts": "^5",
+		"vitest": "^4.1",
+		"vue": "^3.5"
+	}
+}

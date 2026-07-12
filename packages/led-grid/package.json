@@ -1,0 +1,63 @@
+{
+	"name": "@glowbox/led-grid",
+	"version": "1.0.0",
+	"description": "Framework-agnostic 3D LED-grid display — a tiny WebGL voxel canvas you draw on.",
+	"keywords": [
+		"led",
+		"led-cube",
+		"webgl",
+		"voxel",
+		"3d",
+		"visualization"
+	],
+	"license": "MIT",
+	"type": "module",
+	"sideEffects": false,
+	"files": [
+		"dist"
+	],
+	"types": "./dist/index.d.ts",
+	"module": "./dist/index.js",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/eetu/glowbox.git",
+		"directory": "packages/led-grid"
+	},
+	"homepage": "https://eetu.github.io/glowbox/",
+	"scripts": {
+		"build": "vite build",
+		"prepack": "vite build",
+		"test": "vitest run",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
+		"typecheck": "tsc --noEmit",
+		"size": "size-limit"
+	},
+	"size-limit": [
+		{
+			"name": "esm (bundled + minified + brotli)",
+			"path": "dist/index.js",
+			"limit": "10 kB"
+		}
+	],
+	"devDependencies": {
+		"@anarkisti/eslint-config": "^1",
+		"@vitest/browser": "^4.1",
+		"@vitest/browser-playwright": "^4.1",
+		"eslint": "^10",
+		"playwright": "^1.61",
+		"typescript": "^6",
+		"vite": "^8.1",
+		"vite-plugin-dts": "^5",
+		"vitest": "^4.1"
+	}
+}
