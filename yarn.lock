@@ -720,7 +720,7 @@ __metadata:
     vite: "npm:^8.1"
     vite-plugin-dts: "npm:^5"
     vitest: "npm:^4.1"
-    vitest-browser-react: "npm:^1"
+    vitest-browser-react: "npm:^2"
   peerDependencies:
     react: ^18 || ^19
   languageName: unknown
@@ -4408,22 +4408,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vitest-browser-react@npm:^1":
-  version: 1.0.1
-  resolution: "vitest-browser-react@npm:1.0.1"
+"vitest-browser-react@npm:^2":
+  version: 2.2.0
+  resolution: "vitest-browser-react@npm:2.2.0"
   peerDependencies:
     "@types/react": ^18.0.0 || ^19.0.0
     "@types/react-dom": ^18.0.0 || ^19.0.0
-    "@vitest/browser": ^2.1.0 || ^3.0.0 || ^4.0.0-0
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
-    vitest: ^2.1.0 || ^3.0.0 || ^4.0.0-0
+    vitest: ^4.0.0
   peerDependenciesMeta:
     "@types/react":
       optional: true
     "@types/react-dom":
       optional: true
-  checksum: 10/13e6a7d5a59af38ce265ea70e7eeccca72884887894d085e586f40fec577030f5f6ce5563dce7682771b1427e2f98c3112b40bbad376a044253c1e72f60b3ec0
+  checksum: 10/44d1e9cabec5bb51f2a422abbb080db1a47c7efbcab4461fa24049cc2e8caf5cbe0204e99fe224b2141931ba23a753e35caf412db4875129c1768e9a1e6a81a0
   languageName: node
   linkType: hard
 
