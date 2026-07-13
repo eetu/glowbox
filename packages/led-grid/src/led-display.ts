@@ -22,7 +22,7 @@ import {
 import { type Color, createVoxelGrid, type VoxelGrid } from './voxel-grid';
 
 export type { LedShape, LedStyle, Projection, RgbLayout } from './renderer';
-export type { Color, RGB, Vec3, VoxelGrid } from './voxel-grid';
+export type { Axis, Color, RGB, Vec3, VoxelGrid } from './voxel-grid';
 
 /** LED appearance. */
 export interface LedOptions {
@@ -143,8 +143,9 @@ export interface LedDisplay extends VoxelGrid {
 	readonly stats: DisplayStats;
 	/** Run `cb(display, dt)` every animation frame (auto-pauses when hidden, and
 	 *  does not fire while `paused` — drive updates yourself with `render()` then).
-	 *  Single subscriber: a later call replaces the current callback (compose in your
-	 *  own cb to layer programs). Returns a stop() that clears the callback. */
+	 *  Callbacks stack: each `onFrame` adds a subscriber (called in subscription
+	 *  order — layer programs by subscribing several; the same function only
+	 *  subscribes once). Returns a stop() that removes `cb`. */
 	onFrame(cb: (d: LedDisplay, dt: number) => void): () => void;
 	/** Draw the current LED buffer once (also called each frame by the loop). */
 	render(): void;
@@ -222,7 +223,11 @@ export function createLedDisplay(
 	let distance = cam.distance ?? 3.6;
 	let fov = cam.fov ?? 0.9;
 	let projection: Projection = cam.projection ?? 'perspective';
-	let autoOrbit = cam.autoOrbit ?? true;
+	// prefers-reduced-motion flips the *default* only — an explicit autoOrbit (either
+	// way) is the author's call. Read once at creation, not tracked live.
+	const reducedMotion =
+		typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+	let autoOrbit = cam.autoOrbit ?? !reducedMotion;
 	let orbitSpeed = cam.orbitSpeed ?? 0.45;
 	let pitchLimits: [number, number] = cam.pitchLimits ?? [-1.4, 1.4];
 	let gain = col.gain ?? 1;
@@ -253,7 +258,14 @@ export function createLedDisplay(
 	};
 	const down = (e: PointerEvent) => {
 		pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-		canvas.setPointerCapture?.(e.pointerId);
+		// Capture is an enhancement (keeps the drag when the pointer leaves the canvas);
+		// it throws for synthetic/inactive pointer ids, and the drag still tracks
+		// through the events themselves without it.
+		try {
+			canvas.setPointerCapture?.(e.pointerId);
+		} catch {
+			/* uncapturable pointer — fine */
+		}
 		if (pointers.size === 2) pinchDist = twoPointerDist();
 	};
 	const move = (e: PointerEvent) => {
@@ -319,7 +331,7 @@ export function createLedDisplay(
 				leds = nextLeds;
 				grid = createVoxelGrid(mx, my, mz, leds);
 				[nx, ny, nz] = size;
-				frameCb?.(display, 0); // repaint content at the new size before showing
+				for (const cb of frameCbs) cb(display, 0); // repaint content at the new size
 			}
 		}
 		const dpr = Math.min(
@@ -372,7 +384,7 @@ export function createLedDisplay(
 	const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : 0);
 	const ema = (prev: number, sample: number) =>
 		prev === 0 ? sample : prev + (sample - prev) * 0.1;
-	let frameCb: ((d: LedDisplay, dt: number) => void) | null = null;
+	const frameCbs = new Set<(d: LedDisplay, dt: number) => void>();
 	let raf = 0;
 	let lastFrame = 0; // timestamp of the last *executed* frame (0 = none yet)
 	const loop = (now: number) => {
@@ -392,7 +404,7 @@ export function createLedDisplay(
 		lastFrame = now;
 		if (autoOrbit && pointers.size === 0) yaw += dt * orbitSpeed;
 		const t0 = nowMs();
-		frameCb?.(display, dt);
+		for (const cb of frameCbs) cb(display, dt);
 		const t1 = nowMs();
 		render();
 		const t2 = nowMs();
@@ -516,12 +528,16 @@ export function createLedDisplay(
 		line: (a, b, c) => grid.line(a, b, c),
 		box: (min, max, c, filled) => grid.box(min, max, c, filled),
 		sphere: (center, radius, c, filled) => grid.sphere(center, radius, c, filled),
+		torus: (center, major, minor, c, filled, axis) =>
+			grid.torus(center, major, minor, c, filled, axis),
+		cylinder: (base, radius, height, c, filled, axis) =>
+			grid.cylinder(base, radius, height, c, filled, axis),
 		stats,
 		onFrame(cb) {
-			frameCb = cb;
+			frameCbs.add(cb);
 			requestRender();
 			return () => {
-				if (frameCb === cb) frameCb = null;
+				frameCbs.delete(cb);
 			};
 		},
 		render,

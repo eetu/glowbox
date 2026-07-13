@@ -12,6 +12,9 @@ import { type Color, parseColor, type RGB, type Vec3 } from './color';
 
 export type { Color, RGB, Vec3 } from './color';
 
+/** Grid axis a shape is oriented along. */
+export type Axis = 'x' | 'y' | 'z';
+
 /** The set of *lit* cells since the last clear, so the renderer (and clear) can
  *  work in O(lit) instead of O(volume). `all` = treat every cell as lit (after a
  *  fill, or markAll for raw-buffer writers). `list[0..count]` holds cell indices.
@@ -45,6 +48,28 @@ export interface VoxelGrid {
 	box(min: Vec3, max: Vec3, color: Color, filled?: boolean): void;
 	/** `filled` fills the ball, else a ~1-voxel-thick shell. */
 	sphere(center: Vec3, radius: number, color: Color, filled?: boolean): void;
+	/** Ring of tube-radius `minor` around a circle of radius `major`, lying in the
+	 *  plane perpendicular to `axis` (default `'y'`). `filled` fills the solid ring,
+	 *  else a ~1-voxel-thick surface shell. */
+	torus(
+		center: Vec3,
+		major: number,
+		minor: number,
+		color: Color,
+		filled?: boolean,
+		axis?: Axis
+	): void;
+	/** Upright can along `axis` (default `'y'`): `base` is the centre of the bottom
+	 *  disc, `height` counts cells along the axis. `filled` fills the solid can, else
+	 *  the ~1-voxel wall plus both end caps. */
+	cylinder(
+		base: Vec3,
+		radius: number,
+		height: number,
+		color: Color,
+		filled?: boolean,
+		axis?: Axis
+	): void;
 }
 
 /** A grid plus its internal culling handle — what `createVoxelGrid` actually
@@ -243,6 +268,87 @@ export function createVoxelGrid(
 				}
 	}
 
+	function torus(
+		center: Vec3,
+		major: number,
+		minor: number,
+		color: Color,
+		filled = false,
+		axis: Axis = 'y'
+	) {
+		const c = parseColor(color);
+		// Bounding box: major+minor in the ring plane, minor along the axis — clamped to
+		// the grid so a huge/off-grid torus can't spin over billions of no-op voxels.
+		const rp = major + minor;
+		const ex = axis === 'x' ? minor : rp;
+		const ey = axis === 'y' ? minor : rp;
+		const ez = axis === 'z' ? minor : rp;
+		const x0 = Math.max(0, Math.floor(center[0] - ex)),
+			x1 = Math.min(nx - 1, Math.ceil(center[0] + ex));
+		const y0 = Math.max(0, Math.floor(center[1] - ey)),
+			y1 = Math.min(ny - 1, Math.ceil(center[1] + ey));
+		const z0 = Math.max(0, Math.floor(center[2] - ez)),
+			z1 = Math.min(nz - 1, Math.ceil(center[2] + ez));
+		for (let z = z0; z <= z1; z++)
+			for (let y = y0; y <= y1; y++)
+				for (let x = x0; x <= x1; x++) {
+					const dx = x - center[0],
+						dy = y - center[1],
+						dz = z - center[2];
+					const axial = axis === 'x' ? dx : axis === 'y' ? dy : dz;
+					const planar =
+						axis === 'x'
+							? Math.hypot(dy, dz)
+							: axis === 'y'
+								? Math.hypot(dx, dz)
+								: Math.hypot(dx, dy);
+					// Distance to the major ring circle → a torus is a sphere test around it.
+					const dist = Math.hypot(planar - major, axial);
+					if (filled ? dist <= minor : Math.abs(dist - minor) <= 0.5) put(x, y, z, c);
+				}
+	}
+	function cylinder(
+		base: Vec3,
+		radius: number,
+		height: number,
+		color: Color,
+		filled = false,
+		axis: Axis = 'y'
+	) {
+		const c = parseColor(color);
+		const ai = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
+		const a0 = Math.round(base[ai]);
+		const a1 = a0 + Math.max(1, Math.round(height)) - 1; // height cells, inclusive
+		// Clamped bounding box: radius in the plane axes, [a0..a1] along the axis.
+		const lo = [base[0] - radius, base[1] - radius, base[2] - radius];
+		const hi = [base[0] + radius, base[1] + radius, base[2] + radius];
+		lo[ai] = a0;
+		hi[ai] = a1;
+		const x0 = Math.max(0, Math.floor(lo[0])),
+			x1 = Math.min(nx - 1, Math.ceil(hi[0]));
+		const y0 = Math.max(0, Math.floor(lo[1])),
+			y1 = Math.min(ny - 1, Math.ceil(hi[1]));
+		const z0 = Math.max(0, Math.floor(lo[2])),
+			z1 = Math.min(nz - 1, Math.ceil(hi[2]));
+		for (let z = z0; z <= z1; z++)
+			for (let y = y0; y <= y1; y++)
+				for (let x = x0; x <= x1; x++) {
+					const dx = x - base[0],
+						dy = y - base[1],
+						dz = z - base[2];
+					const planar =
+						axis === 'x'
+							? Math.hypot(dy, dz)
+							: axis === 'y'
+								? Math.hypot(dx, dz)
+								: Math.hypot(dx, dy);
+					if (planar > radius + (filled ? 0 : 0.5)) continue;
+					const a = axis === 'x' ? x : axis === 'y' ? y : z;
+					const onCap = a === a0 || a === a1;
+					if (filled || Math.abs(planar - radius) <= 0.5 || onCap) put(x, y, z, c);
+				}
+	}
+
 	return {
 		nx,
 		ny,
@@ -259,6 +365,8 @@ export function createVoxelGrid(
 		fill: (color) => clear(color),
 		line,
 		box,
-		sphere
+		sphere,
+		torus,
+		cylinder
 	};
 }

@@ -100,4 +100,54 @@ describe('voxel-grid', () => {
 		g.plot(1, 1, 1, [1, 0, 0]);
 		expect(buf[g.index(1, 1, 1)]).toBe(1);
 	});
+
+	test('torus shell is a hollow tube; filled is a solid ring; the hole stays dark', () => {
+		const shell = createVoxelGrid(17, 17, 17);
+		shell.torus([8, 8, 8], 4, 1, [1, 1, 1]);
+		expect(shell.get(13, 8, 8)).toEqual([1, 1, 1]); // outer wall (ring dist 1)
+		expect(shell.get(11, 8, 8)).toEqual([1, 1, 1]); // inner wall (ring dist 1)
+		expect(shell.get(12, 9, 8)).toEqual([1, 1, 1]); // top of the tube
+		expect(shell.get(12, 8, 8)).toEqual([0, 0, 0]); // tube centreline: hollow
+		expect(shell.get(8, 8, 8)).toEqual([0, 0, 0]); // the doughnut hole
+
+		const solid = createVoxelGrid(17, 17, 17);
+		solid.torus([8, 8, 8], 4, 1, [1, 1, 1], true);
+		expect(solid.get(12, 8, 8)).toEqual([1, 1, 1]); // tube centreline: filled
+		expect(solid.get(8, 8, 8)).toEqual([0, 0, 0]); // hole stays dark even filled
+	});
+
+	test('torus axis re-orients the ring plane', () => {
+		const g = createVoxelGrid(17, 17, 17);
+		g.torus([8, 8, 8], 4, 1, [1, 1, 1], true, 'x');
+		expect(g.get(8, 12, 8)).toEqual([1, 1, 1]); // ring now lives in the y–z plane
+
+		const def = createVoxelGrid(17, 17, 17);
+		def.torus([8, 8, 8], 4, 1, [1, 1, 1], true); // default axis 'y' (x–z ring)
+		expect(def.get(8, 12, 8)).toEqual([0, 0, 0]);
+		expect(def.get(12, 8, 8)).toEqual([1, 1, 1]);
+	});
+
+	test('cylinder shell is wall + end caps; filled is a solid can', () => {
+		const shell = createVoxelGrid(17, 17, 17);
+		shell.cylinder([8, 3, 8], 3, 6, [1, 1, 1]); // layers y = 3..8
+		expect(shell.get(11, 5, 8)).toEqual([1, 1, 1]); // wall
+		expect(shell.get(8, 3, 8)).toEqual([1, 1, 1]); // bottom cap centre
+		expect(shell.get(8, 8, 8)).toEqual([1, 1, 1]); // top cap centre
+		expect(shell.get(8, 5, 8)).toEqual([0, 0, 0]); // interior: hollow
+		expect(shell.get(8, 9, 8)).toEqual([0, 0, 0]); // above the top cap
+
+		const solid = createVoxelGrid(17, 17, 17);
+		solid.cylinder([8, 3, 8], 3, 6, [1, 1, 1], true);
+		expect(solid.get(8, 5, 8)).toEqual([1, 1, 1]); // interior: filled
+	});
+
+	test('cylinder axis re-orients; off-grid / oversized shapes clamp without throwing', () => {
+		const g = createVoxelGrid(17, 17, 17);
+		g.cylinder([8, 8, 3], 3, 6, [1, 1, 1], false, 'z'); // layers z = 3..8
+		expect(g.get(11, 8, 5)).toEqual([1, 1, 1]); // wall in the x–y plane
+
+		const edge = createVoxelGrid(17, 17, 17);
+		expect(() => edge.cylinder([16, 15, 16], 10, 10, [1, 1, 1])).not.toThrow();
+		expect(() => edge.torus([-5, 8, 40], 30, 6, [1, 1, 1])).not.toThrow();
+	});
 });

@@ -1,10 +1,11 @@
 # @glowbox/extras
 
 Content helpers for **[@glowbox/led-grid](../led-grid)** — the opt-in content layer the core
-deliberately ships without. Headlined by a **GIF / image animation player**, plus a
-**text** helper. Each helper works with any wrapper: the players return a
-`(d, dt) => void` draw callback; `text()` draws once. They operate on the plain
-`VoxelGrid` / `LedDisplay`, so they also run headlessly.
+deliberately ships without. Headlined by a **GIF / image animation player**, a **text**
+helper with a bundled **5×7 bitmap LED font**, and a **text scroller** (marquee). Each
+helper works with any wrapper: the players and the scroller return a `(d, dt) => void`
+draw callback; `text()` draws once. They operate on the plain `VoxelGrid` /
+`LedDisplay`, so they also run headlessly.
 
 ```sh
 yarn add @glowbox/extras   # @glowbox/led-grid comes along
@@ -52,17 +53,44 @@ and composited (honouring frame disposal) into full RGBA snapshots.
 
 ## Text
 
-`text(d, str, opts)` rasterizes `str` with the system sans-serif and threshold-samples
-it onto a grid plane. Options: `plane`, `depth`, `threshold`, `color` (a `Color`), and
-`fontSize` (grid cells; default ~80% of the plane height). No font asset.
+`text(d, str, opts)` draws a string onto a grid plane. Two font paths:
+
+- **`font: 'bitmap'`** _(default)_ — the bundled **5×7 dot-matrix LED font** (printable
+  ASCII; unknown chars render a hollow box). Deterministic on every OS, DOM-free (runs
+  headlessly in node), **multi-line** via `\n` (lines centred, 1-row gap), integer
+  `scale` (default 1 → a 6×8-cell advance per character).
+- **`font: 'system'`** — rasterize with the platform's bold sans-serif (browser-only,
+  single line). `fontSize` (grid cells; default ~80% of the plane height) and
+  `threshold` apply to this path.
+
+Common options: `plane`, `depth`, `color` (a `Color`).
+`measureText(str, scale?)` returns the bitmap ink box `{ width, height }` in cells.
+
+## Scroller
+
+`makeTextScroller(text, opts)` → a draw callback that scrolls a message across a plane,
+wrapping seamlessly (message + `gap` blank columns tile end to end). `text` may be a
+string **or a getter** (`() => string`) so a live UI can retype without recreating.
+
+| option                      | default        | notes                                                            |
+| --------------------------- | -------------- | ---------------------------------------------------------------- |
+| `font`                      | `'bitmap'`     | `'bitmap'` (bundled 5×7) · `'system'` (rasterized, browser-only) |
+| `color`                     | white          | a `Color`, or `(column, elapsed, width) => Color` for gradients  |
+| `speed`                     | `10`           | cells per second                                                 |
+| `gap`                       | glyph height   | blank columns between repeats                                    |
+| `scale`                     | `1`            | bitmap pixel scale                                               |
+| `fontFamily`                | sans-serif     | system font family — string or getter                            |
+| `fontSize`                  | ~85% of height | system font size in cells                                        |
+| `plane` / `depth` / `clear` | —              | as in `PlayerOptions`                                            |
 
 ## Building blocks
 
 `sampleImageToGrid(src, nx, ny, fit)` (pure, no DOM) does the image → grid mapping.
 `decodeGif(url)` / `framesFromBuffer(arrayBuffer)` decode a GIF to `GifFrame`s and
 `frameAt(frames, tMs)` picks the frame for a playback time; `decodeImage(url)` decodes a
-still image. `paintImage(grid, src, opts)` plots a decoded image onto a plane. Reuse any of
-them for custom effects.
+still image. `paintImage(grid, src, opts)` plots a decoded image onto a plane.
+`FONT_5X7` / `glyph5x7(ch)` expose the bitmap font's metrics and per-character row
+bitmasks. Reuse any of them for custom effects.
 
 Wrappers: **[@glowbox/svelte](../svelte)** · **[@glowbox/react](../react)** ·
 **[@glowbox/vue](../vue)**. Live demos: <https://eetu.github.io/glowbox/>.

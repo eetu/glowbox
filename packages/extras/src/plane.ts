@@ -20,14 +20,16 @@ export interface PaintOptions {
 	gain?: number;
 }
 
-interface Axes {
+export interface Axes {
 	dimU: number;
 	dimV: number;
 	dimW: number;
 	at(u: number, v: number, w: number): [number, number, number];
 }
 
-function planeAxes(g: Pick<VoxelGrid, 'nx' | 'ny' | 'nz'>, plane: Plane): Axes {
+/** Resolve a plane's (u, v) dims + the mapping back to grid coords — the shared
+ *  plumbing under paintImage / text / the scroller. */
+export function planeAxes(g: Pick<VoxelGrid, 'nx' | 'ny' | 'nz'>, plane: Plane): Axes {
 	switch (plane) {
 		case 'xz':
 			return { dimU: g.nx, dimV: g.nz, dimW: g.ny, at: (u, v, w) => [u, w, v] };

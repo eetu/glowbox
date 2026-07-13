@@ -33,9 +33,10 @@ Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
   music viz) is the client's — see `examples/svelte-gallery/src/lib/examples`.
 - **Canvas-like voxel API** (led-grid): `plot`/`add`/`get`/`clear`/`fill`/`line`/`box`/
   `sphere` over an nx×ny×nz grid; colours `[r,g,b]` 0..1 (>1 blooms) or CSS strings.
-  The display owns WebGL render, orbit (auto + drag + pinch/wheel zoom), resize,
-  context-loss recovery and the `onFrame(cb)` loop (**single subscriber**); programs
-  only write voxels each frame. `createVoxelGrid` is the pure headless version.
+  The display owns WebGL render, orbit (auto + drag + pinch/wheel zoom; auto-orbit
+  defaults off under `prefers-reduced-motion`), resize, context-loss recovery and the
+  `onFrame(cb)` loop (callbacks **stack**; each stop() removes its own); programs only
+  write voxels each frame. `createVoxelGrid` is the pure headless version.
 - **LEDs are additive glowing point-sprites on black** (order-independent, see-through;
   `hologram` HDR-bloom style + a `comic` cel style). See `packages/led-grid/src/renderer.ts`.
 - **Cores stay import-safe in node/SSR**: nothing browser-only (`Path2D`, canvas,
@@ -55,11 +56,18 @@ Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
 
 ## Testing (house convention: `spa-frontend → Testing`)
 
-- **vitest, two projects per package, split by filename.** Node `*.test.ts` for pure
-  logic and import-safety; **browser** (real headless chromium via
-  `@vitest/browser-playwright`) for anything needing WebGL/canvas/DOM — routed by
-  `*.browser.test.ts` (`*.svelte.test.ts` in the svelte package). Browser tests assert
-  lit pixels via `gl.readPixels`/2D readback.
+- **vitest projects per package, split by filename.** Node `*.test.ts` for pure logic
+  and import-safety (the bitmap font/scroller are node-testable by design); **browser**
+  (real headless chromium via `@vitest/browser-playwright`; the core also runs
+  **webkit** — the risk browser for the HDR half-float extensions) for anything needing
+  WebGL/canvas/DOM — routed by `*.browser.test.ts` (`*.svelte.test.ts` in the svelte
+  package). Browser tests assert lit pixels via `gl.readPixels`/2D readback.
+- **Golden screenshots** (`*.golden.test.ts`, led-grid): four looks rendered on a
+  SwiftShader-pinned chromium so ONE committed baseline (`src/__tests__/golden/`)
+  serves macOS dev and Linux CI. Regenerate intentionally-changed visuals with
+  `yarn workspace @glowbox/led-grid test --project golden -u`.
+- **`scripts/bench-led-grid.mjs`** — manual perf numbers against the built package
+  (the README's perf table cites its output + environment).
 - **Playwright e2e = the full built app**: `examples/svelte-gallery/e2e` boots the
   built gallery, switches examples, checks the canvas paints.
 - **`node scripts/publish-smoke.mjs` = the published artifacts**: packs all six →
@@ -91,14 +99,14 @@ prerelease versions (`-rc.N`) go to the `rc` dist-tag.
 
 ## Status / next
 
-- **1.0.0 shipped 2026-07-13** (all six packages live); **1.0.1** prepared right after:
-  nixie SSR-import crash fix + decoupling, touch-action/aria defaults, 'use client',
-  publish smoke + all-six release guard, demo SEO + Pages-404 fix.
-- **Direction:** see `docs/ROADMAP.md` — 1.1 "text & confidence" (bitmap LED font,
-  onFrame multi-subscriber, reduced-motion default, WebKit + golden-screenshot tests),
-  1.2 "clocks & music" (nixie row, audio-reactive extras, transparent canvas), then the
-  bets: `@glowbox/bridge` (WLED/DDP hardware streaming), more display cores
-  (seven-segment → flip-dot → split-flap), trigger-based WebGL2 renderer (the only 2.0).
+- **1.0.0 + 1.0.1 shipped 2026-07-13** (all six packages live on npm); **1.1.0** ("text
+  & confidence": bitmap LED font + scroller, torus/cylinder, onFrame stacking,
+  reduced-motion default, WebKit + golden + interaction/StrictMode/nixie-e2e tests,
+  bench numbers) developed on the `1.1.0` branch.
+- **Direction:** see `docs/ROADMAP.md` — next up 1.2 "clocks & music" (nixie row,
+  audio-reactive extras, transparent canvas, gif player controls), then the bets:
+  `@glowbox/bridge` (WLED/DDP hardware streaming), more display cores (seven-segment →
+  flip-dot → split-flap), trigger-based WebGL2 renderer (the only 2.0).
 
 ## Out of scope
 

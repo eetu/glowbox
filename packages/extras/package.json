@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/extras",
-	"version": "1.0.1",
+	"version": "1.1.0",
 	"description": "Content helpers for @glowbox/led-grid — GIF/image animation player + text, painted onto the LED grid.",
 	"keywords": [
 		"glowbox",

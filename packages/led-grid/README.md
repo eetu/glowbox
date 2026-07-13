@@ -67,10 +67,20 @@ the dotty LED-grid look.
 with how many LEDs are _on_, not with the grid volume — a thin shape in a huge grid
 stays cheap. (Setting `offColor` to a non-black lattice necessarily draws every node,
 so leave it black for big sparse grids.) The `display.stats` object exposes live
-`fps` / `frameMs` / `drawMs` / `renderMs` for profiling. As a rough guide, 32³ (~33k
-cells) is comfortable on integrated GPUs and 64³ is fine when sparsely lit — but since
-cost tracks lit voxels, a dense fill (or a non-black `offColor`) is what to watch, not the
-dimensions.
+`fps` / `frameMs` / `drawMs` / `renderMs` for profiling. Measured with
+`scripts/bench-led-grid.mjs` (640×480, hologram, auto-orbit; Apple M1, Chromium 149,
+ANGLE Metal) — everything below holds a vsync-locked 60 fps:
+
+| grid · program    | lit voxels | draw ms | render ms |
+| ----------------- | ---------- | ------- | --------- |
+| 32³ · torus shell | 1,560      | 1.5     | 0.1       |
+| 32³ · full fill   | 32,768     | 0.2     | 1.2       |
+| 64³ · torus shell | 6,280      | 4.8     | 0.2       |
+| 64³ · full fill   | 262,144    | 0.8     | 4.5       |
+
+(`drawMs` is your callback — here the torus SDF scan dominates at 64³; `renderMs` is
+the GL submit, tracking lit count.) Re-run the script on your own hardware for real
+numbers; software rasterizers (SwiftShader) are far slower than any real GPU.
 
 ## Voxel API
 
@@ -78,16 +88,18 @@ Canvas-like drawing on the grid. `plot` / `add` / `get` take scalar `x, y, z`;
 `line` / `box` / `sphere` take `Vec3` tuples `[x, y, z]`. Every `color` is a `Color`
 (see above).
 
-| method                                   | does                                                                          |
-| ---------------------------------------- | ----------------------------------------------------------------------------- |
-| `plot(x, y, z, color)`                   | set one voxel (**overwrite**)                                                 |
-| `add(x, y, z, color)`                    | **additive** blend into a voxel (accumulate — for overlapping glows)          |
-| `get(x, y, z): RGB`                      | read a voxel's `[r, g, b]`                                                    |
-| `clear(color?)`                          | reset the whole grid (default black)                                          |
-| `fill(color)`                            | set every voxel (alias of `clear(color)`)                                     |
-| `line(a, b, color)`                      | voxel line between points `a` and `b`                                         |
-| `box(min, max, color, filled?)`          | axis-aligned box between two **corners** `min`/`max` — filled, else wireframe |
-| `sphere(center, radius, color, filled?)` | `filled` ball, else a ~1-voxel shell                                          |
+| method                                                  | does                                                                          |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `plot(x, y, z, color)`                                  | set one voxel (**overwrite**)                                                 |
+| `add(x, y, z, color)`                                   | **additive** blend into a voxel (accumulate — for overlapping glows)          |
+| `get(x, y, z): RGB`                                     | read a voxel's `[r, g, b]`                                                    |
+| `clear(color?)`                                         | reset the whole grid (default black)                                          |
+| `fill(color)`                                           | set every voxel (alias of `clear(color)`)                                     |
+| `line(a, b, color)`                                     | voxel line between points `a` and `b`                                         |
+| `box(min, max, color, filled?)`                         | axis-aligned box between two **corners** `min`/`max` — filled, else wireframe |
+| `sphere(center, radius, color, filled?)`                | `filled` ball, else a ~1-voxel shell                                          |
+| `torus(center, major, minor, color, filled?, axis?)`    | ring around the `axis` (default `'y'`) — solid, else a tube shell             |
+| `cylinder(base, radius, height, color, filled?, axis?)` | upright can from its base disc — solid, else wall + end caps                  |
 
 Plus `index(x, y, z)` / `inBounds(x, y, z)` and the raw `leds` `Float32Array` (write it
 directly, then call `markAll()`). Draw headlessly with `createVoxelGrid(nx, ny, nz)` —
@@ -104,7 +116,7 @@ is the min (left-bottom-back) corner, and the grid is centered in the view. If y
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `led`         | `style` `'hologram'\|'comic'` · `shape` `'round'\|'square'` · `stagger` (false; brick lattice — offset every other row half a cell, also cuts moiré) · `rgb` (false; render each LED as R/G/B sub-emitters) · `rgbLayout` (`auto`\|`triad`\|`quad`\|`stripe`; sub-die packing) · `vivid` (false; comic: flat full-value pop-art vs cel-shade) · `outline` (0.25; comic ink border, 0 = off) · `outlineColor` (dark) · `size` (0.6) · `glow` (2.2) · `offColor` (black = no lattice; set faint to hint the grid) · `offSize` (0.35) |
 | `color`       | `background` (`[.01,.01,.02]`) · `gain` (1) · `tint` (`[1,1,1]`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `camera`      | `yaw`/`pitch` (.6/.4) · `distance` (3.6) · `fov` (.9) · `projection` `'perspective'\|'orthographic'` · `autoOrbit` (true) · `orbitSpeed` (.45) · `pitchLimits` (±1.4)                                                                                                                                                                                                                                                                                                                                                              |
+| `camera`      | `yaw`/`pitch` (.6/.4) · `distance` (3.6) · `fov` (.9) · `projection` `'perspective'\|'orthographic'` · `autoOrbit` (true — but defaults **off** under `prefers-reduced-motion`; set it explicitly to override) · `orbitSpeed` (.45) · `pitchLimits` (±1.4)                                                                                                                                                                                                                                                                         |
 | `interaction` | `drag` (true) · `dragSpeed` (.01) · `zoom` (false) · `zoomLimits` (`[1.5,10]`)                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `quality`     | `pixelRatio` (2) · `antialias` (true) · `paused` (false) · `fps` (uncapped; cap the loop — see below)                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
@@ -115,9 +127,9 @@ canvas also gets `touch-action: none`, so touch-orbit doesn't fight page scroll.
 ## Display methods
 
 `onFrame(cb) → stop()` (cb receives `(display, dt)` — **`dt` is seconds** since the last
-frame, clamped to ≤ 0.05 so a stall / tab-switch won't jerk your animation; single
-subscriber — a later `onFrame` replaces the current callback, so compose layered programs
-inside one cb), `render()`,
+frame, clamped to ≤ 0.05 so a stall / tab-switch won't jerk your animation; callbacks
+**stack** in subscription order, so layer programs by subscribing several — each
+`stop()` removes only its own), `render()`,
 `setGain(g)`, `setPaused(b)` (freeze → render
 on demand), `setOptions(patch)` (live-update anything but `size`), `setCamera({yaw,
 pitch,distance})`, `resize(size?)`, `snapshot(): string` (PNG data URL — for previews /

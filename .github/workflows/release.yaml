@@ -50,7 +50,7 @@ jobs:
           # Gate the publish on the full suite (same checks as CI) — a tag must never ship
           # unvalidated code, and npm publishes are effectively irreversible. Browser (vitest)
           # and e2e (Playwright) tests need chromium.
-          ./node_modules/.bin/playwright install --with-deps chromium
+          ./node_modules/.bin/playwright install --with-deps chromium webkit
           yarn lint
           yarn format
           # Build before typecheck: cross-package typecheck resolves @glowbox/* through each

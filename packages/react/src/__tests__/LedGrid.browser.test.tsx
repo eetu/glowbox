@@ -1,5 +1,5 @@
 import type { LedDisplay } from '@glowbox/led-grid';
-import { createRef } from 'react';
+import { createRef, StrictMode } from 'react';
 import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-react';
 
@@ -44,4 +44,30 @@ test('forwards a ref to the imperative display handle', async () => {
 	await nextFrame();
 	expect(ref.current).not.toBeNull();
 	expect(ref.current?.snapshot().startsWith('data:image/png')).toBe(true);
+});
+
+test('StrictMode double-mount recreates on the same canvas and still paints', async () => {
+	// Dev StrictMode runs mount → cleanup → mount: the display is disposed and
+	// re-created on the SAME canvas. dispose() deliberately leaves the WebGL context
+	// alive (no loseContext) so the second mount can render — lock that in.
+	const ref = createRef<LedDisplay | null>();
+	const { container } = render(
+		<StrictMode>
+			<LedGrid
+				ref={ref}
+				size={[5, 5, 5]}
+				camera={{ autoOrbit: false }}
+				color={{ background: '#000' }}
+				draw={(d: LedDisplay) => {
+					d.clear();
+					d.sphere([2, 2, 2], 2, '#00aaff', true);
+				}}
+			/>
+		</StrictMode>
+	);
+	await nextFrame();
+	await nextFrame();
+	expect(ref.current).not.toBeNull();
+	const canvas = container.querySelector('canvas')!;
+	expect(litPixels(canvas)).toBeGreaterThan(0);
 });
