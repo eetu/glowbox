@@ -4,6 +4,46 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [1.1.0] — 2026-07-13
+
+"Text & confidence": the library gets its own typography, and the safety net any
+future renderer work needs.
+
+### Added
+
+- **`@glowbox/extras`: a bundled 5×7 bitmap LED font** — hand-authored dot-matrix
+  glyphs for printable ASCII (unknown chars render a hollow box). `text()` now defaults
+  to it: deterministic on every OS, DOM-free (runs headlessly in node), **multi-line**
+  via `\n`, integer `scale`. The system-font path remains as `font: 'system'`.
+  `measureText(str, scale?)` returns the ink box; `FONT_5X7` / `glyph5x7(ch)` expose
+  the raw font.
+- **`@glowbox/extras`: `makeTextScroller(text, opts)`** — a seamless marquee draw
+  callback (bitmap or system font; string or live getter; per-column colour function
+  for gradients). The gallery's scroller now runs on it — with the bitmap font as its
+  default look.
+- **`@glowbox/led-grid`: `torus` + `cylinder`** voxel primitives (filled or ~1-voxel
+  shell, orientable via an `axis` parameter), matching `sphere`/`box` conventions.
+- **`onFrame` stacks subscribers**: each call adds a callback (run in subscription
+  order); the returned `stop()` removes only its own. Previously a second subscription
+  silently replaced the first.
+- **Testing**: the core's browser suite now also runs on **WebKit** (the risk browser
+  for the WebGL1 half-float HDR extensions); **golden screenshot tests** (hologram /
+  comic / rgb / lattice) pinned to SwiftShader so one committed baseline serves every
+  platform; pointer-interaction tests (drag / wheel / pinch / clamps); a React
+  **StrictMode double-mount** test; `/nixie` route e2e covering the 2D clock **and**
+  the three.js 3D scene.
+- **`scripts/bench-led-grid.mjs`** — a manual benchmark against the built package;
+  measured numbers (Apple M1: 60 fps through 64³ dense) now back the README's
+  perf guidance.
+
+### Changed
+
+- **`autoOrbit` honours `prefers-reduced-motion`**: the default flips to off when the
+  user asks for reduced motion; an explicit `autoOrbit` (either way) still wins.
+- **`text()` renders the bitmap font by default** (was: system bold sans-serif — pass
+  `font: 'system'` for the old look).
+- led-grid's pointer capture no longer throws on synthetic/inactive pointer ids.
+
 ## [1.0.1] — 2026-07-13
 
 ### Fixed
@@ -117,6 +157,7 @@ generic `@glowbox/core`.)
   page/glass colour (`color` + `background` retint glow and glass together). Compose a
   row of tubes into a clock or counter.
 
+[1.1.0]: https://github.com/eetu/glowbox/releases/tag/v1.1.0
 [1.0.1]: https://github.com/eetu/glowbox/releases/tag/v1.0.1
 [1.0.0]: https://github.com/eetu/glowbox/releases/tag/v1.0.0
 [1.0.0-rc.3]: https://github.com/eetu/glowbox/releases/tag/v1.0.0-rc.3

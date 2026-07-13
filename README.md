@@ -24,7 +24,7 @@ nixie-tube clock — flat 2D tubes or a 3D wire-cathode-in-glass scene — on th
 | [`@glowbox/svelte`](packages/svelte)     | `yarn add @glowbox/svelte`   | Svelte 5 components: `<LedGrid>` + `<NixieTube>`               |
 | [`@glowbox/react`](packages/react)       | `yarn add @glowbox/react`    | React components: `<LedGrid>` + `<NixieTube>` (`^18 \|\| ^19`) |
 | [`@glowbox/vue`](packages/vue)           | `yarn add @glowbox/vue`      | Vue 3 components: `<LedGrid>` + `<NixieTube>`                  |
-| [`@glowbox/extras`](packages/extras)     | `yarn add @glowbox/extras`   | content helpers: GIF / image player + text                     |
+| [`@glowbox/extras`](packages/extras)     | `yarn add @glowbox/extras`   | content: GIF/image players, 5×7 LED font text + scroller       |
 
 Two rendering cores — the 3D LED grid (`@glowbox/led-grid`) and the nixie tube
 (`@glowbox/nixie`) — and each framework package (`svelte`/`react`/`vue`) ships a thin

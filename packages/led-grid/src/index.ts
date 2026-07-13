@@ -2,6 +2,7 @@
 //   import { createLedDisplay } from "@glowbox/led-grid";
 // Framework wrappers are separate packages (e.g. "@glowbox/svelte").
 export type {
+	Axis,
 	CameraOptions,
 	ColorOptions,
 	DisplayStats,

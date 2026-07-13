@@ -165,8 +165,9 @@
 
 	// Text-scroller-specific controls (shown only for that example).
 	let scrollText = $state('GLOWBOX · ');
-	let scrollFont = $state("'Space Grotesk', sans-serif");
+	let scrollFont = $state('bitmap');
 	const FONTS = [
+		{ value: 'bitmap', label: '5×7 bitmap (built-in)' },
 		{ value: "'Space Grotesk', sans-serif", label: 'Space Grotesk' },
 		{ value: "'Inter', sans-serif", label: 'Inter' },
 		{ value: "ui-monospace, 'Courier New', monospace", label: 'Mono' },

@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/vue",
-	"version": "1.0.1",
+	"version": "1.1.0",
 	"description": "glowbox components for Vue 3 — <LedGrid> (3D WebGL LED grid) + <NixieTube> (nixie-tube display).",
 	"keywords": [
 		"vue",

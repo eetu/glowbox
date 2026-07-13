@@ -21,9 +21,10 @@ jobs:
         run: |
           yarn() { node .yarn/releases/yarn-*.cjs "$@"; }
           yarn install --immutable
-          # WebGL browser tests (vitest) + the demo e2e (Playwright) both need chromium.
+          # WebGL browser tests (vitest) + the demo e2e (Playwright) need chromium;
+          # the core's browser project also runs webkit (HDR-extension variance).
           # (bare `yarn <bin>` isn't a thing in Yarn 4; call the hoisted bin directly.)
-          ./node_modules/.bin/playwright install --with-deps chromium
+          ./node_modules/.bin/playwright install --with-deps chromium webkit
           yarn lint
           yarn format
           # Build before typecheck: cross-package typecheck resolves @glowbox/* through each

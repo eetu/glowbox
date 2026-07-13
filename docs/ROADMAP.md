@@ -4,27 +4,15 @@ Direction after the 1.0.x correctness patches, distilled from the 2026-07-13
 post-release review. Horizons are themes, not promises; each item should ship with its
 demo. Versions are lockstep across all six packages.
 
-## 1.1 — "text & confidence"
+## 1.1 — "text & confidence" — SHIPPED
 
-Make the library trustworthy to change, and give it its own typography.
-
-- **Bundled 5×7 bitmap LED font in `@glowbox/extras`** + multi-line + a scroll helper
-  (absorb the gallery's private `scroller.ts` sampling). Replaces the system
-  `bold sans-serif`, which looks off on an LED grid and renders differently per OS —
-  a bundled font makes `text()` deterministic, node-testable and screenshot-stable.
-- **`onFrame` multi-subscriber** (Set of callbacks; returned `stop()` unchanged) — kills
-  the silent-replacement footgun without breaking anyone.
-- **`prefers-reduced-motion` → `autoOrbit` defaults off** unless explicitly set
-  (behaviour change, hence minor not patch).
-- **Voxel API: `torus` + `cylinder` only** — the demo already hand-rolls a torus, so the
-  API is consumer-validated. No further shape completionism until a real program needs it.
-- **Testing, right-sized**: WebKit on the core browser project (the WebGL1 half-float HDR
-  path is where drivers diverge — Safari is the risk browser); `/nixie` route e2e
-  (2D/3D toggle — all the three.js integration is currently uncovered); pointer
-  drag/pinch tests; a React StrictMode double-mount test; **3–4 golden screenshots**
-  (hologram / comic / rgb / lattice, generous diff ratio, Linux-CI-only) as the safety
-  net any future renderer work requires; one manual benchmark session → real numbers
-  into the led-grid README's perf guidance.
+Everything landed in 1.1.0 (see `CHANGELOG.md`): the bundled 5×7 bitmap font +
+multi-line + `makeTextScroller` (gallery scroller absorbed), `onFrame`
+multi-subscriber, the `prefers-reduced-motion` auto-orbit default, `torus` +
+`cylinder`, WebKit on the core browser tests, SwiftShader-pinned golden screenshots
+(one baseline for all platforms — better than the planned Linux-only gating),
+pointer/StrictMode tests, `/nixie` e2e, and `scripts/bench-led-grid.mjs` with measured
+numbers in the led-grid README.
 
 ## 1.2 — "clocks & music"
 
