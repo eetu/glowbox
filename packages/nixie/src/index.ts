@@ -9,6 +9,7 @@
 // the honeycomb anode grille; `glyphPath(symbol)` / `GLYPH_VIEWBOX` are the raw centreline +
 // its coordinate space; and `{ bare: true }` renders a tube's glowing contents on a
 // transparent canvas (no 2D glass) for compositing.
+export { type Color, parseColor, type RGB } from './color';
 export {
 	createNixieTube,
 	GLYPH_VIEWBOX,

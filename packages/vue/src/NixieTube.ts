@@ -43,7 +43,9 @@ export const NixieTube = defineComponent({
 		// defaults (mesh/ghost = true) apply when the prop is omitted.
 		mesh: { type: Boolean, default: undefined },
 		ghost: { type: Boolean, default: undefined },
-		pixelRatio: { type: Number, default: undefined }
+		pixelRatio: { type: Number, default: undefined },
+		/** Accessible name (`aria-label`); defaults to the lit symbol itself. */
+		label: { type: String, default: undefined }
 	},
 	setup(props, { expose }) {
 		const canvas = ref<HTMLCanvasElement | null>(null);
@@ -56,7 +58,8 @@ export const NixieTube = defineComponent({
 			background: props.background,
 			mesh: props.mesh,
 			ghost: props.ghost,
-			pixelRatio: props.pixelRatio
+			pixelRatio: props.pixelRatio,
+			label: props.label
 		});
 
 		onMounted(() => {
@@ -80,7 +83,8 @@ export const NixieTube = defineComponent({
 				props.background,
 				props.mesh,
 				props.ghost,
-				props.pixelRatio
+				props.pixelRatio,
+				props.label
 			],
 			() => tube?.setOptions(options()),
 			{ deep: true }

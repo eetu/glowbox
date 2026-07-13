@@ -40,6 +40,7 @@ yarn add @glowbox/svelte
 | `camera`      | `CameraOptions`                     | `yaw` `pitch` `distance` `fov` `projection` `autoOrbit` `orbitSpeed` `pitchLimits`     |
 | `interaction` | `InteractionOptions`                | `drag` `dragSpeed` `zoom` `zoomLimits`                                                 |
 | `quality`     | `QualityOptions`                    | `pixelRatio` `antialias` `paused` `fps` (frame-rate cap)                               |
+| `label`       | `string`                            | accessible name for the canvas (`aria-label`; default `'LED grid'`)                    |
 | `oncreate`    | `(d: LedDisplay \| null)=>void`     | imperative handle — called with the display on create, `null` on teardown              |
 
 The grouped props mirror `@glowbox/led-grid`'s options 1:1 and update **live** — even `size`
@@ -70,6 +71,7 @@ the full voxel API, and colour semantics.
 | `mesh`       | `boolean`                         | draw the honeycomb anode mesh (default `true`)             |
 | `ghost`      | `boolean`                         | show the unlit cathode stack (default `true`)              |
 | `pixelRatio` | `number`                          | cap on `devicePixelRatio`                                  |
+| `label`      | `string`                          | accessible name (`aria-label`); defaults to the lit symbol |
 | `oncreate`   | `(tube: NixieTube \| null)=>void` | imperative handle — the tube on create, `null` on teardown |
 
 Props update **live** (`value` → `setValue`, the rest → `setOptions`). A clock is just a

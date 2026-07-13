@@ -56,8 +56,9 @@ component for **both** (`<LedGrid>` + `<NixieTube>`), with room for more cores l
 />
 ```
 
-The same component ships for [React](packages/react) and [Vue](packages/vue) with an
-identical prop contract. Colours, glow, LED size, `stagger` (brick lattice), camera,
+The same component ships for [React](packages/react) and [Vue](packages/vue) with the
+same props (instance access follows each framework's idiom: an `oncreate` callback in
+Svelte, a forwarded `ref` in React, an `expose()`d handle in Vue). Colours, glow, LED size, `stagger` (brick lattice), camera,
 projection, zoom, pause and more are all customizable via grouped options (`led`
 `color` `camera` `interaction` `quality`) that update live — see
 [`@glowbox/led-grid`](packages/led-grid) for the full list and defaults, or use the core

@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/svelte",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "glowbox components for Svelte 5 — <LedGrid> (3D WebGL LED grid) + <NixieTube> (nixie-tube display).",
 	"keywords": [
 		"svelte",
@@ -42,8 +42,16 @@
 		"test": "vitest run",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
-		"typecheck": "svelte-check --tsconfig ./tsconfig.json"
+		"typecheck": "svelte-check --tsconfig ./tsconfig.json",
+		"size": "size-limit"
 	},
+	"size-limit": [
+		{
+			"name": "shipped files (no bundle — components ship as .svelte source)",
+			"path": "dist/**/*.{js,svelte}",
+			"limit": "4 kB"
+		}
+	],
 	"peerDependencies": {
 		"svelte": "^5"
 	},
@@ -53,6 +61,7 @@
 	},
 	"devDependencies": {
 		"@anarkisti/eslint-config": "^1",
+		"@size-limit/file": "^11",
 		"@sveltejs/package": "^2.5",
 		"@sveltejs/vite-plugin-svelte": "^7",
 		"@vitest/browser": "^4.1",

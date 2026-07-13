@@ -31,6 +31,6 @@ only squash (x/y) and re-weight the wire at render time, so each numeral is edit
 
 ## Notes
 
-- **`1`** is intentionally a bare stroke (short top flag + vertical stem, no foot).
+- **`1`** is intentionally a bare stroke (a single vertical stem — no top flag, no foot).
 - **`2`** has a kink where the top bowl's curve meets the straight diagonal (the bezier
   end tangent at ~`32 54` doesn't line up with the line to `13 91`) — worth smoothing.

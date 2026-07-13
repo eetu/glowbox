@@ -108,10 +108,16 @@ is the min (left-bottom-back) corner, and the grid is centered in the view. If y
 | `interaction` | `drag` (true) · `dragSpeed` (.01) · `zoom` (false) · `zoomLimits` (`[1.5,10]`)                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `quality`     | `pixelRatio` (2) · `antialias` (true) · `paused` (false) · `fps` (uncapped; cap the loop — see below)                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
+Plus a top-level **`label`** — the canvas's accessible name (the display sets
+`role="img"` + `aria-label`; default `'LED grid'`). While `drag` or `zoom` is enabled the
+canvas also gets `touch-action: none`, so touch-orbit doesn't fight page scroll.
+
 ## Display methods
 
 `onFrame(cb) → stop()` (cb receives `(display, dt)` — **`dt` is seconds** since the last
-frame, clamped to ≤ 0.05 so a stall / tab-switch won't jerk your animation), `render()`,
+frame, clamped to ≤ 0.05 so a stall / tab-switch won't jerk your animation; single
+subscriber — a later `onFrame` replaces the current callback, so compose layered programs
+inside one cb), `render()`,
 `setGain(g)`, `setPaused(b)` (freeze → render
 on demand), `setOptions(patch)` (live-update anything but `size`), `setCamera({yaw,
 pitch,distance})`, `resize(size?)`, `snapshot(): string` (PNG data URL — for previews /

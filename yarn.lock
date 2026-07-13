@@ -688,7 +688,6 @@ __metadata:
   resolution: "@glowbox/nixie@workspace:packages/nixie"
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
-    "@glowbox/led-grid": "workspace:^"
     "@vitest/browser": "npm:^4.1"
     "@vitest/browser-playwright": "npm:^4.1"
     eslint: "npm:^10"
@@ -758,6 +757,7 @@ __metadata:
     "@anarkisti/eslint-config": "npm:^1"
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/nixie": "workspace:^"
+    "@size-limit/file": "npm:^11"
     "@sveltejs/package": "npm:^2.5"
     "@sveltejs/vite-plugin-svelte": "npm:^7"
     "@vitest/browser": "npm:^4.1"
@@ -1117,7 +1117,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@size-limit/file@npm:11.2.0":
+"@size-limit/file@npm:11.2.0, @size-limit/file@npm:^11":
   version: 11.2.0
   resolution: "@size-limit/file@npm:11.2.0"
   peerDependencies:

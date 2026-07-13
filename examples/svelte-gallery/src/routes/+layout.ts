@@ -1,6 +1,7 @@
-// Pure SPA: render entirely on the client. There is no server runtime in prod
-// (static files, e.g. on GitHub Pages), so SSR and prerender are both off
-// — every route is delivered via the adapter-static fallback (index.html) and
-// hydrated client-side.
+// Pure SPA: render entirely on the client (no server runtime in prod — static files
+// on GitHub Pages). SSR stays off, but every (static) route is prerendered as an empty
+// shell page so it exists as a real file — Pages has no rewrites, so without a per-route
+// HTML a hard refresh on /nixie would 404. Unknown paths fall back to 404.html (see
+// svelte.config.js), which boots the SPA router.
 export const ssr = false;
-export const prerender = false;
+export const prerender = true;

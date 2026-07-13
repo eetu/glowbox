@@ -199,6 +199,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>glowbox — LED-grid playground</title>
+</svelte:head>
+
 <svelte:window onkeydown={onKeydown} />
 
 <div class="app">

@@ -98,31 +98,33 @@ function ortho(o: M4, halfH: number, aspect: number, near: number, far: number):
 	o[15] = 1;
 	return o;
 }
+// orbit() rebuilds the view matrix every rendered frame, so its intermediates are
+// module-level scratch (never aliased with the caller's `o`) — per-call allocation here
+// would be steady per-frame GC churn.
+const orbitRy = m4();
+const orbitRx = m4();
+const orbitRot = m4();
+const orbitView = m4();
 function orbit(o: M4, yaw: number, pitch: number, dist: number): M4 {
 	// view = translate(0,0,-dist) · Rx(pitch) · Ry(yaw)
 	const cy = Math.cos(yaw),
 		sy = Math.sin(yaw);
 	const cx = Math.cos(pitch),
 		sx = Math.sin(pitch);
-	const ry = m4();
-	ident(ry);
+	const ry = ident(orbitRy);
 	ry[0] = cy;
 	ry[2] = -sy;
 	ry[8] = sy;
 	ry[10] = cy;
-	const rx = m4();
-	ident(rx);
+	const rx = ident(orbitRx);
 	rx[5] = cx;
 	rx[6] = sx;
 	rx[9] = -sx;
 	rx[10] = cx;
-	const rot = m4();
-	mul(rot, rx, ry);
+	const rot = mul(orbitRot, rx, ry);
 	ident(o);
 	o[14] = -dist;
-	const view = m4();
-	mul(view, o, rot);
-	o.set(view);
+	o.set(mul(orbitView, o, rot));
 	return o;
 }
 

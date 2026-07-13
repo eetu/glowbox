@@ -47,7 +47,9 @@ export const LedGrid = defineComponent({
 		color: { type: Object as PropType<ColorOptions>, default: undefined },
 		camera: { type: Object as PropType<CameraOptions>, default: undefined },
 		interaction: { type: Object as PropType<InteractionOptions>, default: undefined },
-		quality: { type: Object as PropType<QualityOptions>, default: undefined }
+		quality: { type: Object as PropType<QualityOptions>, default: undefined },
+		/** Accessible name for the canvas (`aria-label`; default 'LED grid'). */
+		label: { type: String, default: undefined }
 	},
 	setup(props, { expose }) {
 		const canvas = ref<HTMLCanvasElement | null>(null);
@@ -68,7 +70,8 @@ export const LedGrid = defineComponent({
 				color: props.color,
 				camera: props.camera,
 				interaction: props.interaction,
-				quality: props.quality
+				quality: props.quality,
+				label: props.label
 			});
 			if (!display) {
 				console.warn('LedGrid: WebGL unavailable');
@@ -114,6 +117,10 @@ export const LedGrid = defineComponent({
 			{
 				deep: true
 			}
+		);
+		watch(
+			() => props.label,
+			() => display?.setOptions({ label: props.label })
 		);
 
 		// (Re)bind the per-frame draw callback.

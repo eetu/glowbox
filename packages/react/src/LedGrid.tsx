@@ -30,6 +30,8 @@ export interface LedGridProps {
 	camera?: CameraOptions;
 	interaction?: InteractionOptions;
 	quality?: QualityOptions;
+	/** Accessible name for the canvas (`aria-label`; default 'LED grid'). */
+	label?: string;
 	className?: string;
 	style?: CSSProperties;
 }
@@ -51,7 +53,7 @@ const baseStyle: CSSProperties = {
 // React 18 peer too.
 // eslint-disable-next-line @eslint-react/no-forward-ref
 export const LedGrid = forwardRef<LedDisplay | null, LedGridProps>(function LedGrid(props, ref) {
-	const { size, draw, led, color, camera, interaction, quality, className, style } = props;
+	const { size, draw, led, color, camera, interaction, quality, label, className, style } = props;
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const [display, setDisplay] = useState<LedDisplay | null>(null);
 
@@ -71,7 +73,8 @@ export const LedGrid = forwardRef<LedDisplay | null, LedGridProps>(function LedG
 			color: p.color,
 			camera: p.camera,
 			interaction: p.interaction,
-			quality: p.quality
+			quality: p.quality,
+			label: p.label
 		});
 		if (!d) {
 			console.warn('LedGrid: WebGL unavailable');
@@ -111,6 +114,9 @@ export const LedGrid = forwardRef<LedDisplay | null, LedGridProps>(function LedG
 	useEffect(() => {
 		display?.setOptions({ quality });
 	}, [display, quality]);
+	useEffect(() => {
+		display?.setOptions({ label });
+	}, [display, label]);
 
 	// (Re)bind the per-frame draw callback.
 	useEffect(() => {

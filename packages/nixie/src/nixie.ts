@@ -9,7 +9,7 @@
 // continuous bent wire, not a filled glyph. Each digit also carries a small fixed
 // NUDGE: in a real tube the cathodes sit at slightly different positions/depths, so the
 // glowing number shifts a hair off dead-centre and jitters as the value changes.
-import { type Color, parseColor } from '@glowbox/led-grid';
+import { type Color, parseColor } from './color';
 
 const TAU = Math.PI * 2;
 const VB_W = 60;
@@ -41,9 +41,6 @@ for (const [file, svg] of Object.entries(rawSvgs)) {
 	if (ch === ':') colonD = d;
 	else GLYPHS[ch] = d;
 }
-// Colon separator: two circles, stroked as glowing wire rings like the numerals.
-const COLON = new Path2D(colonD);
-
 // Stack order, front → back (the physical cathode order of an IN-14-style tube). Depth
 // index gives each numeral a slightly different position/scale, so the glowing digit
 // sits a hair off dead-centre and set back among the wire stack.
@@ -72,9 +69,12 @@ const STYLES: Record<NixieStyle, { sx: number; sy: number; lw: number }> = {
 const WIRE: number[] = [0.52, 0.52, 0.56];
 
 const glyphCache = new Map<string, Path2D>();
+// Path2D is a browser-only global, so paths are built lazily on first draw — never at
+// module scope, which must stay import-safe under node/SSR (a module-scope Path2D for
+// the colon crashed exactly that way in 1.0.0). The colon renders like the numerals:
+// two circles, stroked as glowing wire rings.
 const pathFor = (ch: string): Path2D | null => {
-	if (ch === ':') return COLON;
-	const d = GLYPHS[ch];
+	const d = ch === ':' ? colonD : GLYPHS[ch];
 	if (!d) return null;
 	let p = glyphCache.get(ch);
 	if (!p) {
@@ -104,6 +104,9 @@ export interface NixieOptions {
 	ghost?: boolean;
 	/** Cap on devicePixelRatio (default 2). */
 	pixelRatio?: number;
+	/** Accessible name for the canvas (`aria-label`). Defaults to the lit symbol itself;
+	 *  a blank, unlabelled tube is hidden from assistive tech (`aria-hidden`). */
+	label?: string;
 	/** Composite mode for a 3D scene or your own glass container: render just the glowing
 	 *  numeral (plus the cathode stack / anode mesh, per `ghost` / `mesh`) on a fully
 	 *  transparent canvas — no 2D glass module (drop shadow, glass vignette, rim, margin).
@@ -212,6 +215,7 @@ export function createNixieTube(
 	let ghost = opts.ghost ?? true;
 	let pixelRatio = opts.pixelRatio ?? 2;
 	let bare = opts.bare ?? false;
+	let label = opts.label ?? '';
 	let w = 0;
 	let h = 0;
 	let dpr = 1;
@@ -458,6 +462,22 @@ export function createNixieTube(
 		draw();
 	}
 
+	// The canvas is an image to assistive tech: name it with `label`, else with the lit
+	// symbol itself (so a clock built from tubes reads out its digits). A blank,
+	// unlabelled tube is decoration — hide it rather than announce a nameless image.
+	function applyAria() {
+		canvas.setAttribute('role', 'img');
+		const name = label || value;
+		if (name) {
+			canvas.setAttribute('aria-label', name);
+			canvas.removeAttribute('aria-hidden');
+		} else {
+			canvas.setAttribute('aria-hidden', 'true');
+			canvas.removeAttribute('aria-label');
+		}
+	}
+	applyAria();
+
 	const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => resize()) : null;
 	ro?.observe(canvas);
 	resize();
@@ -465,6 +485,7 @@ export function createNixieTube(
 	return {
 		setValue(v) {
 			value = norm(v);
+			applyAria();
 			draw();
 		},
 		setOptions(patch) {
@@ -476,6 +497,8 @@ export function createNixieTube(
 			if (patch.ghost != null) ghost = patch.ghost;
 			if (patch.bare != null) bare = patch.bare;
 			if (patch.value !== undefined) value = norm(patch.value);
+			if (patch.label !== undefined) label = patch.label;
+			applyAria();
 			if (patch.pixelRatio != null) {
 				pixelRatio = patch.pixelRatio;
 				resize();

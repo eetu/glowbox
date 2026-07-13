@@ -122,6 +122,9 @@ export interface LedDisplayOptions {
 	camera?: CameraOptions;
 	interaction?: InteractionOptions;
 	quality?: QualityOptions;
+	/** Accessible name for the canvas — a WebGL canvas is a black box to assistive
+	 *  tech, so the display sets `role="img"` + `aria-label` (default 'LED grid'). */
+	label?: string;
 }
 
 /** Everything except `size` — live-updatable. */
@@ -140,7 +143,8 @@ export interface LedDisplay extends VoxelGrid {
 	readonly stats: DisplayStats;
 	/** Run `cb(display, dt)` every animation frame (auto-pauses when hidden, and
 	 *  does not fire while `paused` — drive updates yourself with `render()` then).
-	 *  Returns a stop() that clears the callback. */
+	 *  Single subscriber: a later call replaces the current callback (compose in your
+	 *  own cb to layer programs). Returns a stop() that clears the callback. */
 	onFrame(cb: (d: LedDisplay, dt: number) => void): () => void;
 	/** Draw the current LED buffer once (also called each frame by the loop). */
 	render(): void;
@@ -232,6 +236,14 @@ export function createLedDisplay(
 	let paused = q.paused ?? false;
 	let fpsCap = q.fps ?? 0; // 0 = uncapped (render every animation frame)
 
+	let label = opts.label || 'LED grid';
+	// A WebGL canvas is a black box to assistive tech — name it.
+	const applyAria = () => {
+		canvas.setAttribute('role', 'img');
+		canvas.setAttribute('aria-label', label);
+	};
+	applyAria();
+
 	// --- pointer interaction (drag = orbit, two-finger = pinch-zoom) ---
 	const pointers = new Map<number, { x: number; y: number }>();
 	let pinchDist = 0;
@@ -279,6 +291,15 @@ export function createLedDisplay(
 	canvas.addEventListener('pointerup', upCancel);
 	canvas.addEventListener('pointercancel', upCancel);
 	canvas.addEventListener('wheel', wheel, { passive: false });
+
+	// While a touch gesture is claimed (drag orbit / pinch zoom), the browser must not
+	// also scroll or pinch the page — without this, touch-orbit fights page scroll on
+	// mobile. Tracks the live interaction options; the author's value returns on dispose.
+	const prevTouchAction = canvas.style.touchAction;
+	const applyTouchAction = () => {
+		canvas.style.touchAction = drag || zoom ? 'none' : prevTouchAction;
+	};
+	applyTouchAction();
 
 	// --- resize (drawing buffer, and optionally the grid dims) ---
 	function resize(size?: [number, number, number]) {
@@ -451,6 +472,11 @@ export function createLedDisplay(
 			if (i.dragSpeed != null) dragSpeed = i.dragSpeed;
 			if (i.zoom != null) zoom = i.zoom;
 			if (i.zoomLimits) zoomLimits = i.zoomLimits;
+			applyTouchAction();
+		}
+		if (patch.label !== undefined) {
+			label = patch.label || 'LED grid';
+			applyAria();
 		}
 		if (patch.quality?.pixelRatio != null) {
 			pixelRatio = patch.quality.pixelRatio;
@@ -519,6 +545,7 @@ export function createLedDisplay(
 		dispose() {
 			stop();
 			ro.disconnect();
+			canvas.style.touchAction = prevTouchAction;
 			canvas.removeEventListener('pointerdown', down);
 			canvas.removeEventListener('pointermove', move);
 			canvas.removeEventListener('pointerup', upCancel);

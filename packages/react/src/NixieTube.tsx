@@ -28,6 +28,8 @@ export interface NixieTubeProps {
 	mesh?: boolean;
 	ghost?: boolean;
 	pixelRatio?: number;
+	/** Accessible name (`aria-label`); defaults to the lit symbol itself. */
+	label?: string;
 	className?: string;
 	style?: CSSProperties;
 }
@@ -52,6 +54,7 @@ export const NixieTube = forwardRef<NixieTubeHandle | null, NixieTubeProps>(
 			mesh,
 			ghost,
 			pixelRatio,
+			label,
 			className,
 			style
 		} = props;
@@ -75,7 +78,8 @@ export const NixieTube = forwardRef<NixieTubeHandle | null, NixieTubeProps>(
 				background: p.background,
 				mesh: p.mesh,
 				ghost: p.ghost,
-				pixelRatio: p.pixelRatio
+				pixelRatio: p.pixelRatio,
+				label: p.label
 			});
 			if (!t) {
 				console.warn('NixieTube: 2D canvas unavailable');
@@ -97,8 +101,17 @@ export const NixieTube = forwardRef<NixieTubeHandle | null, NixieTubeProps>(
 
 		// Live-update appearance when any option changes.
 		useEffect(() => {
-			tube?.setOptions({ style: tubeStyle, color, glow, background, mesh, ghost, pixelRatio });
-		}, [tube, tubeStyle, color, glow, background, mesh, ghost, pixelRatio]);
+			tube?.setOptions({
+				style: tubeStyle,
+				color,
+				glow,
+				background,
+				mesh,
+				ghost,
+				pixelRatio,
+				label
+			});
+		}, [tube, tubeStyle, color, glow, background, mesh, ghost, pixelRatio, label]);
 
 		return <canvas ref={canvasRef} className={className} style={{ ...baseStyle, ...style }} />;
 	}

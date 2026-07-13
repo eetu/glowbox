@@ -14,12 +14,14 @@ const config = {
 		runes: ({ filename }) => (filename.split(/[/\\]/).includes('node_modules') ? undefined : true)
 	},
 	kit: {
-		// Pure SPA: no server runtime. adapter-static emits the fallback index.html
-		// for every path so client routing + hard refresh both work on GitHub Pages.
+		// Pure SPA: no server runtime. The known routes prerender to static shell pages
+		// (see +layout.ts) so / and /nixie load with a real 200; the fallback must be
+		// 404.html because GitHub Pages has no rewrites — an unknown path (or a hard
+		// refresh on a client-only URL) serves 404.html, which boots the SPA router.
 		adapter: adapter({
 			pages: 'dist',
 			assets: 'dist',
-			fallback: 'index.html',
+			fallback: '404.html',
 			precompress: false,
 			strict: true
 		}),

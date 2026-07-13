@@ -5,8 +5,7 @@ A **nixie-tube display component** — a sibling rendering core to
 real nixie works: a stack of bent-wire cathodes inside a glass tube, only one lit. Each
 digit is a thin geometric **filament** (a single-stroke vector wire) that glows
 warm-orange with a hot core, in front of the full stack of unlit dull-metal cathode
-wires nested behind the honeycomb anode mesh. Zero runtime deps (it borrows only core's
-tree-shaken colour helper).
+wires nested behind the honeycomb anode mesh. Zero runtime deps.
 
 ```sh
 yarn add @glowbox/nixie
@@ -40,6 +39,7 @@ A single symbol per tube: a char `0`–`9`, `:`, `-`, or `null` / `''` for all-c
 | `ghost`      | `true`      | draw the other, unlit cathodes faintly behind — the stacked depth |
 | `pixelRatio` | `2`         | cap on devicePixelRatio                                           |
 | `bare`       | `false`     | contents only, transparent canvas (no glass) — for 3D/compositing |
+| `label`      | lit symbol  | accessible name (`aria-label`); a blank unlabelled tube is hidden |
 
 All update live via `setOptions(patch)`.
 

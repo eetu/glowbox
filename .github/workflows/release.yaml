@@ -32,8 +32,17 @@ jobs:
           node-version-file: .node-version
       - name: Verify tag is on main
         run: git merge-base --is-ancestor "${{ github.sha }}" origin/main
-      - name: Verify tag matches @glowbox/led-grid version
-        run: test "v$(node -p "require('./packages/led-grid/package.json').version")" = "${{ github.ref_name }}"
+      - name: Verify tag matches every @glowbox/* version
+        # All six publish in lockstep — a stale version field in ANY package must block
+        # the whole release, not publish silently under the wrong tag.
+        run: |
+          for pkg in led-grid nixie svelte react vue extras; do
+            v="v$(node -p "require('./packages/$pkg/package.json').version")"
+            if [ "$v" != "${{ github.ref_name }}" ]; then
+              echo "@glowbox/$pkg is $v but the tag is ${{ github.ref_name }}"
+              exit 1
+            fi
+          done
       - name: Validate, build & publish
         run: |
           yarn() { node .yarn/releases/yarn-*.cjs "$@"; }
@@ -50,6 +59,9 @@ jobs:
           yarn typecheck
           yarn test
           yarn size
+          # Publish-integrity smoke — the packages exactly as npm consumers get them
+          # (pack → install → node import → tsc on shipped types → browser mount).
+          node scripts/publish-smoke.mjs
           # npm dist-tag: prereleases (1.0.0-rc.1) → `rc`, finals → `latest`.
           VERSION=$(node -p "require('./packages/led-grid/package.json').version")
           if [[ "$VERSION" == *-* ]]; then TAG=rc; else TAG=latest; fi

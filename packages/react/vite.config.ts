@@ -22,7 +22,10 @@ export default defineConfig({
 			fileName: 'index'
 		},
 		rollupOptions: {
-			external: ['react', 'react-dom', 'react/jsx-runtime', '@glowbox/led-grid', '@glowbox/nixie']
+			external: ['react', 'react-dom', 'react/jsx-runtime', '@glowbox/led-grid', '@glowbox/nixie'],
+			// React Server Components (Next.js App Router) treat library modules as server
+			// code unless marked: these components are client-only (canvas + effects).
+			output: { banner: "'use client';" }
 		}
 	},
 	test: {

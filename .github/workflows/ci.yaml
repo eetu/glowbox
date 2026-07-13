@@ -34,3 +34,7 @@ jobs:
           yarn test
           # Bundle-size budgets (size-limit) — fails the build if a package bloats.
           yarn size
+          # Publish-integrity smoke: pack all six → npm-install the tarballs into a
+          # throwaway consumer → bare-node import + tsc against shipped .d.ts + browser
+          # mount from dist. The only coverage of what npm users actually receive.
+          node scripts/publish-smoke.mjs

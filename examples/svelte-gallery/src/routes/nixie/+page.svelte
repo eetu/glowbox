@@ -48,6 +48,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>glowbox — nixie clock</title>
+</svelte:head>
+
 <svelte:window onkeydown={onKeydown} />
 
 <div class="app">
@@ -124,12 +128,16 @@
 					]}
 				/>
 			</div>
+			<!-- The 3D scene builds its own tube geometry and sizes itself to the stage;
+			     width/height drive the 2D canvas slots only. -->
 			<Slider
 				bind:value={tubeW}
 				label="width"
 				min={40}
 				max={140}
 				step={2}
+				disabled={mode === '3d'}
+				hint={mode === '3d' ? '2D mode only' : undefined}
 				format={(v) => `${v}px`}
 			/>
 			<Slider
@@ -138,6 +146,8 @@
 				min={80}
 				max={280}
 				step={2}
+				disabled={mode === '3d'}
+				hint={mode === '3d' ? '2D mode only' : undefined}
 				format={(v) => `${v}px`}
 			/>
 		</section>

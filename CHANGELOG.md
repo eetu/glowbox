@@ -4,6 +4,42 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [1.0.1] — 2026-07-13
+
+### Fixed
+
+- **`@glowbox/nixie` crashed Node/SSR at import** (`ReferenceError: Path2D is not
+defined`): the colon glyph built its `Path2D` at module scope. Any SSR framework
+  importing a wrapper (SvelteKit with SSR on, Next.js, Nuxt) crashed at import time even
+  if the component never rendered. Glyph paths are now built lazily on first draw.
+- **`@glowbox/nixie` is now genuinely zero-dep** — the colour parser is vendored (same
+  `Color` contract), dropping the `@glowbox/led-grid` runtime dependency that made every
+  nixie install pull the whole WebGL package.
+- **led-grid**: the canvas gets `touch-action: none` while `drag`/`zoom` are enabled, so
+  touch-orbit no longer fights page scroll on mobile; the per-frame orbit matrix rebuild
+  no longer allocates.
+- **extras**: `makeImagePlayer` no longer re-samples a static image every frame (the
+  sample is cached per source until the target dims/fit change; repeated GIF frames
+  benefit too).
+- **demo**: hard refresh / deep links on `/nixie` no longer 404 on GitHub Pages (routes
+  prerender as shell pages; the SPA fallback is `404.html`); the page ships a real
+  `<title>` + description + social cards; the nixie 3D mode's inert width/height
+  sliders are disabled with a hint.
+
+### Added
+
+- **`label`** option/prop across the family: `createLedDisplay` sets `role="img"` +
+  `aria-label` on its canvas (default `'LED grid'`); `createNixieTube` names the canvas
+  after the lit symbol (a blank, unlabelled tube is `aria-hidden`). All six wrapper
+  components take a live-updatable `label` prop.
+- **React**: the dist carries `'use client'`, so the components import cleanly under
+  Next.js App Router / React Server Components.
+- **CI/release**: a publish-integrity smoke test (`scripts/publish-smoke.mjs` — pack all
+  six → npm-install the tarballs → bare-node import + `tsc` against shipped types +
+  browser mount from dist) runs in CI and gates every release; the release workflow
+  verifies the tag against **all six** package versions (previously only led-grid);
+  `@glowbox/svelte` gains its missing size-limit budget.
+
 ## [1.0.0] — 2026-07-13
 
 First stable release of the glowbox family — two glowing display rendering cores, thin
@@ -34,7 +70,7 @@ framework wrappers, and a content-helpers package. The feature-complete surface 
   bent-wire cathodes (three.js `TubeGeometry` from `nixieCathodes`) glowing inside
   refractive glass tubes on a stand — the scene owns only the glass + bloom.
 
-## [1.0.0-rc.2] — 2026-07-13
+## 1.0.0-rc.2 — 2026-07-13
 
 First public release candidate — a framework-agnostic 3D LED-grid display with
 wrappers for the three major frameworks and a content-helpers package. (The LED-grid
@@ -81,6 +117,6 @@ generic `@glowbox/core`.)
   page/glass colour (`color` + `background` retint glow and glass together). Compose a
   row of tubes into a clock or counter.
 
+[1.0.1]: https://github.com/eetu/glowbox/releases/tag/v1.0.1
 [1.0.0]: https://github.com/eetu/glowbox/releases/tag/v1.0.0
 [1.0.0-rc.3]: https://github.com/eetu/glowbox/releases/tag/v1.0.0-rc.3
-[1.0.0-rc.2]: https://github.com/eetu/glowbox/releases/tag/v1.0.0-rc.2

@@ -4,6 +4,27 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 
+		<!-- Static title/description/social cards: the app renders client-side only, so
+		     this — not any component markup — is what crawlers and link unfurlers see.
+		     (Routes override the title at runtime via <svelte:head>.) -->
+		<title>glowbox — 3D LED-grid & nixie-tube displays</title>
+		<meta
+			name="description"
+			content="Glowing display components you can install: a 3D WebGL LED grid you draw on like a tiny 3D canvas, and nixie-tube numerals — framework-agnostic cores with Svelte, React and Vue wrappers. Interactive demos: torus, strange attractor, 3D Pac-Man, a nixie clock and more."
+		/>
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content="glowbox — 3D LED-grid & nixie-tube displays" />
+		<meta
+			property="og:description"
+			content="A glowing 3D LED grid + nixie tubes as installable components, with live WebGL demos."
+		/>
+		<meta property="og:url" content="https://eetu.github.io/glowbox/" />
+		<meta
+			property="og:image"
+			content="https://raw.githubusercontent.com/eetu/glowbox/main/media/hero.png"
+		/>
+		<meta name="twitter:card" content="summary_large_image" />
+
 		<!-- Icons + install metadata. Touch devices (iOS home-screen) need a PNG
 		     apple-touch-icon; the manifest covers Android/PWA install. -->
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />

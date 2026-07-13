@@ -2,7 +2,7 @@
 // two axes the image's (u, v) map to, at a fixed depth on the third.
 import type { VoxelGrid } from '@glowbox/led-grid';
 
-import { type Fit, type ImageSource, sampleImageToGrid } from './sample';
+import { type Fit, type GridSample, type ImageSource, sampleImageToGrid } from './sample';
 
 /** Which grid plane the image lands on. `xy` (default) faces the default camera. */
 export type Plane = 'xy' | 'xz' | 'yz';
@@ -38,6 +38,20 @@ function planeAxes(g: Pick<VoxelGrid, 'nx' | 'ny' | 'nz'>, plane: Plane): Axes {
 	}
 }
 
+// A player repaints the SAME decoded source every frame (a still image always; a GIF
+// whenever a frame comes round again), but the sampling only changes when the target
+// dims or fit change (a grid resize). Cache the latest sample per source — weakly, so
+// decoded frames stay collectable — treating `ImageSource` data as immutable.
+const sampleCache = new WeakMap<ImageSource, { key: string; sample: GridSample }>();
+function sampledFor(src: ImageSource, dimU: number, dimV: number, fit: Fit): GridSample {
+	const key = `${dimU}x${dimV}:${fit}`;
+	const hit = sampleCache.get(src);
+	if (hit && hit.key === key) return hit.sample;
+	const sample = sampleImageToGrid(src, dimU, dimV, fit);
+	sampleCache.set(src, { key, sample });
+	return sample;
+}
+
 /** Sample `src` to the plane's dims and plot it onto `g` (does not clear). */
 export function paintImage(g: VoxelGrid, src: ImageSource, opts: PaintOptions = {}): void {
 	const plane = opts.plane ?? 'xy';
@@ -45,7 +59,7 @@ export function paintImage(g: VoxelGrid, src: ImageSource, opts: PaintOptions = 
 	const gain = opts.gain ?? 1;
 	const { dimU, dimV, dimW, at } = planeAxes(g, plane);
 	const depth = opts.depth ?? dimW >> 1;
-	const { rgb, alpha } = sampleImageToGrid(src, dimU, dimV, opts.fit ?? 'contain');
+	const { rgb, alpha } = sampledFor(src, dimU, dimV, opts.fit ?? 'contain');
 	for (let v = 0; v < dimV; v++)
 		for (let u = 0; u < dimU; u++) {
 			const i = v * dimU + u;

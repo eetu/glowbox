@@ -44,6 +44,7 @@ const draw = (d: LedDisplay, dt: number) => {
 | `camera`      | `CameraOptions`                     | `yaw` `pitch` `distance` `fov` `projection` `autoOrbit` `orbitSpeed` `pitchLimits`     |
 | `interaction` | `InteractionOptions`                | `drag` `dragSpeed` `zoom` `zoomLimits`                                                 |
 | `quality`     | `QualityOptions`                    | `pixelRatio` `antialias` `paused` `fps` (frame-rate cap)                               |
+| `label`       | `string`                            | accessible name for the canvas (`aria-label`; default `'LED grid'`)                    |
 
 The component `expose()`s the imperative `LedDisplay` handle as `display` on the component
 ref (`snapshot()`, `stats`, `setCamera`, …):
@@ -85,6 +86,7 @@ import { NixieTube } from '@glowbox/vue';
 | `mesh`       | `boolean`                       | draw the honeycomb anode mesh (default `true`)             |
 | `ghost`      | `boolean`                       | show the unlit cathode stack (default `true`)              |
 | `pixelRatio` | `number`                        | cap on `devicePixelRatio`                                  |
+| `label`      | `string`                        | accessible name (`aria-label`); defaults to the lit symbol |
 
 Props update **live**; the tube handle is `expose()`d as `tube` (`setValue`, `setOptions`,
 `resize`, `snapshot`). See **@glowbox/nixie** for defaults + the size-adaptive rendering.

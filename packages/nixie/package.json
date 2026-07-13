@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/nixie",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Nixie-tube display component — a glowing vector-numeral rendering core in the glowbox family.",
 	"keywords": [
 		"nixie",
@@ -44,17 +44,11 @@
 	},
 	"size-limit": [
 		{
-			"name": "esm (own code; core external)",
+			"name": "esm",
 			"path": "dist/index.js",
-			"ignore": [
-				"@glowbox/led-grid"
-			],
-			"limit": "3.5 kB"
+			"limit": "4 kB"
 		}
 	],
-	"dependencies": {
-		"@glowbox/led-grid": "workspace:^"
-	},
 	"devDependencies": {
 		"@anarkisti/eslint-config": "^1",
 		"@vitest/browser": "^4.1",

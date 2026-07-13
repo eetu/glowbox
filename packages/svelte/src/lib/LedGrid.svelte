@@ -23,6 +23,7 @@
 		camera,
 		interaction,
 		quality,
+		label,
 		oncreate
 	}: {
 		size: [number, number, number];
@@ -32,6 +33,8 @@
 		camera?: CameraOptions;
 		interaction?: InteractionOptions;
 		quality?: QualityOptions;
+		/** Accessible name for the canvas (`aria-label`; default 'LED grid'). */
+		label?: string;
 		/** Called with the display when (re)created, and with null on teardown —
 		 *  an escape hatch for imperative access (snapshot(), stats, setCamera…). */
 		oncreate?: (display: LedDisplay | null) => void;
@@ -50,7 +53,7 @@
 		const el = canvas;
 		if (!el) return;
 		const d = untrack(() =>
-			createLedDisplay(el, { size, led, color, camera, interaction, quality })
+			createLedDisplay(el, { size, led, color, camera, interaction, quality, label })
 		);
 		if (!d) {
 			console.warn('LedGrid: WebGL unavailable');
@@ -88,6 +91,9 @@
 	});
 	$effect(() => {
 		display?.setOptions({ quality });
+	});
+	$effect(() => {
+		display?.setOptions({ label });
 	});
 
 	// (Re)bind the per-frame draw callback.

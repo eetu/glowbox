@@ -20,6 +20,7 @@
 		mesh,
 		ghost,
 		pixelRatio,
+		label,
 		oncreate
 	}: {
 		/** The lit symbol: a char `0`–`9`, `:`, `-`, or null/'' for all-cathodes-dark. */
@@ -32,6 +33,8 @@
 		mesh?: boolean;
 		ghost?: boolean;
 		pixelRatio?: number;
+		/** Accessible name (`aria-label`); defaults to the lit symbol itself. */
+		label?: string;
 		/** Called with the tube when created, and null on teardown — imperative escape hatch. */
 		oncreate?: (tube: NixieTube | null) => void;
 	} = $props();
@@ -54,7 +57,8 @@
 				background,
 				mesh,
 				ghost,
-				pixelRatio
+				pixelRatio,
+				label
 			})
 		);
 		if (!t) {
@@ -77,7 +81,7 @@
 
 	// Live-update appearance when any option changes.
 	$effect(() => {
-		tube?.setOptions({ style: tubeStyle, color, glow, background, mesh, ghost, pixelRatio });
+		tube?.setOptions({ style: tubeStyle, color, glow, background, mesh, ghost, pixelRatio, label });
 	});
 </script>
 

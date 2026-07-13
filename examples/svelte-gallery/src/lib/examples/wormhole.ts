@@ -1,9 +1,8 @@
 // Example driver: a wormhole — a hollow tube down the z-axis whose wall glows with
 // flowing colour-streaks that rush toward you, the tube meandering as it recedes.
-// Reinterprets the fullscreen "Wormhole" tunnel shader from ../scene as a voxel
-// effect: instead of raymarching a screen, we light the tube's wall shell in the
-// grid, so you can orbit around the glowing tunnel. The streak + flowing-hue maths
-// are lifted from that shader's `themeWormhole` (2001 star-gate slit-scan).
+// A voxel take on the classic 2001 star-gate slit-scan tunnel: instead of raymarching
+// a fullscreen shader, we light the tube's wall shell in the grid, so you can orbit
+// around the glowing tunnel itself.
 import type { LedDisplay } from '@glowbox/led-grid';
 
 const TAU = Math.PI * 2;

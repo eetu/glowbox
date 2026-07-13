@@ -44,6 +44,7 @@ export default function App() {
 | `camera`              | `CameraOptions`                     | `yaw` `pitch` `distance` `fov` `projection` `autoOrbit` `orbitSpeed` `pitchLimits`     |
 | `interaction`         | `InteractionOptions`                | `drag` `dragSpeed` `zoom` `zoomLimits`                                                 |
 | `quality`             | `QualityOptions`                    | `pixelRatio` `antialias` `paused` `fps` (frame-rate cap)                               |
+| `label`               | `string`                            | accessible name for the canvas (`aria-label`; default `'LED grid'`)                    |
 | `className` / `style` | —                                   | forwarded to the `<canvas>`                                                            |
 
 Forward a `ref` to reach the imperative `LedDisplay` handle (`snapshot()`, `stats`,
@@ -79,6 +80,7 @@ import { NixieTube } from '@glowbox/react';
 | `mesh`                | `boolean`                       | draw the honeycomb anode mesh (default `true`)             |
 | `ghost`               | `boolean`                       | show the unlit cathode stack (default `true`)              |
 | `pixelRatio`          | `number`                        | cap on `devicePixelRatio`                                  |
+| `label`               | `string`                        | accessible name (`aria-label`); defaults to the lit symbol |
 | `className` / `style` | —                               | forwarded to the `<canvas>` (CSS)                          |
 
 Props update **live**; forward a `ref` for the imperative `NixieTube` handle (`setValue`,

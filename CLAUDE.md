@@ -1,86 +1,109 @@
 # glowbox — repo overview
 
-A generic **3D LED-grid display** shipped as an installable component library:
-a framework-agnostic WebGL core plus thin framework wrappers, developed in a
-Yarn-workspaces monorepo with runnable demo SPAs. Part of eetu's homebrew family
-(Svelte, halo-design, ts-style) — but it is a **library**, not a self-hosted
-app: no backend, no Pi deploy. Demos ship to GitHub Pages.
+Glowing retro **display components** shipped as installable npm packages: two
+framework-agnostic rendering cores (a 3D WebGL LED grid + a 2D-canvas nixie tube),
+thin Svelte/React/Vue wrappers over both, and content helpers — developed in a
+Yarn-workspaces monorepo with a runnable demo SPA. Part of eetu's homebrew family
+(Svelte, halo-design, ts-style) — but it is a **library**, not a self-hosted app:
+no backend, no Pi deploy. The demo ships to GitHub Pages; packages publish to npm.
 
 ## Layout
 
 ```text
 packages/
-  core/     @glowbox/led-grid   — plain-TS WebGL display + canvas-like voxel API. ZERO deps.
-  svelte/   @glowbox/svelte — Svelte 5 <LedGrid> wrapper (peer: svelte; dep: @glowbox/led-grid).
+  led-grid/  @glowbox/led-grid — plain-TS WebGL 3D LED display + canvas-like voxel API. Zero deps.
+  nixie/     @glowbox/nixie    — 2D-canvas nixie-tube core + stateless 3D-compositing helpers. Zero deps.
+  svelte/    @glowbox/svelte   — Svelte 5 <LedGrid> + <NixieTube> (ships .svelte source).
+  react/     @glowbox/react    — React 18/19 components (dist carries 'use client').
+  vue/       @glowbox/vue      — Vue 3 render-function components.
+  extras/    @glowbox/extras   — GIF/image players + text helper over the draw API (bundles gifuct-js).
 examples/
-  svelte-gallery/           — SvelteKit SPA demo (spinning torus + 3D Pac-Man) → GitHub Pages.
+  svelte-gallery/              — SvelteKit SPA demo (9 LED programs + /nixie clock) → GitHub Pages.
+scripts/
+  publish-smoke.mjs            — publish-integrity smoke test (see Testing).
+docs/ROADMAP.md                — post-1.0 direction (1.1/1.2 themes + strategic bets).
 ```
 
 Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
-(`.yarn/releases/*.cjs`, no corepack), and orchestration scripts that fan out
-with `yarn workspaces foreach`.
+(`.yarn/releases/*.cjs`, no corepack), root scripts fan out with `yarn workspaces foreach`.
 
 ## Conventions
 
-- **The library is display-only.** `@glowbox/led-grid` = a framework-agnostic core
-  (`createLedDisplay`, plain TS) with a pure `createVoxelGrid` factored out for
-  headless drawing/testing. It ships **no programs**; content (torus, games,
+- **The library is display-only.** It ships **no programs**; content (torus, games,
   music viz) is the client's — see `examples/svelte-gallery/src/lib/examples`.
-- **Canvas-like voxel API.** "A tiny 3D canvas" — `plot`/`add`/`get`/`clear`/
-  `fill`/`line`/`box`/`sphere` over an nx×ny×nz grid; colours `[r,g,b]` 0..1
-  (values >1 bloom under the additive glow). The display owns WebGL render,
-  orbit (auto + drag), resize and the `onFrame(cb)` loop; programs only write
-  voxels each frame.
-- **LEDs are additive glowing point-sprites on black** (order-independent, no
-  depth sort, see-through — the real LED-cube look). See `core/src/renderer.ts`.
-- **Packaging.** `@glowbox/led-grid` builds with Vite lib mode + `vite-plugin-dts`;
-  `@glowbox/svelte` with `@sveltejs/package` (ships `.svelte` source + `.d.ts`).
-  Both are public-npm scoped packages (`publishConfig.access: public`), exports
-  with `types` + (`import`/`svelte`) conditions.
-- **Monorepo dev loop.** The demo + the svelte package resolve `@glowbox/*` to
-  package **source** (SvelteKit `kit.alias`; a Vite alias in the svelte tests),
-  so dev/typecheck/test need no prior build. The `workspace:^` deps are for
-  install-linking + publish version rewrite.
+- **Canvas-like voxel API** (led-grid): `plot`/`add`/`get`/`clear`/`fill`/`line`/`box`/
+  `sphere` over an nx×ny×nz grid; colours `[r,g,b]` 0..1 (>1 blooms) or CSS strings.
+  The display owns WebGL render, orbit (auto + drag + pinch/wheel zoom), resize,
+  context-loss recovery and the `onFrame(cb)` loop (**single subscriber**); programs
+  only write voxels each frame. `createVoxelGrid` is the pure headless version.
+- **LEDs are additive glowing point-sprites on black** (order-independent, see-through;
+  `hologram` HDR-bloom style + a `comic` cel style). See `packages/led-grid/src/renderer.ts`.
+- **Cores stay import-safe in node/SSR**: nothing browser-only (`Path2D`, canvas,
+  `ResizeObserver`) may run at module scope — 1.0.0 shipped an SSR import crash this
+  way. Guarded by nixie's `ssr-import.test.ts` + the publish smoke.
+- **Cores are independent**: nixie vendors its own copy of the colour parser
+  (`packages/nixie/src/color.ts`) rather than depending on led-grid — a display core
+  must not pull in a sibling. Both set `role="img"` + `aria-label` (the `label` option).
+- **Packaging.** ESM-only, `files: ["dist"]`, exports with `types` + `import` (svelte:
+  `svelte` condition, ships `.svelte` source via `@sveltejs/package`). All six are
+  public-npm scoped (`publishConfig.access: public`), versions **lockstep**. size-limit
+  budgets in every package (svelte's measures shipped files with `esbuild: false`).
+- **Monorepo dev loop.** Demo + wrapper tests resolve `@glowbox/*` to package **source**
+  (SvelteKit `kit.alias`; Vite aliases in tests), so dev/typecheck/test need no prior
+  build. The `workspace:^` deps are for install-linking + publish version rewrite.
 - **halo-design tokens** in `examples/svelte-gallery/src/lib/styles/halo.css`.
 
 ## Testing (house convention: `spa-frontend → Testing`)
 
-- **vitest, two projects, split by filename.** Node `*.test.ts` for pure logic
-  (`core/src/__tests__/voxel-grid.test.ts`). **Browser** (real headless chromium
-  via `@vitest/browser-playwright`) for anything needing WebGL/DOM — routed by
-  `*.browser.test.ts` in core and `*.svelte.test.ts` in the svelte package
-  (`vitest-browser-svelte`). Both assert lit pixels via `gl.readPixels`.
-- **Playwright = the full built app.** One e2e in `examples/svelte-gallery/e2e`
-  (`vite build && vite preview`) — boots the gallery, switches examples, checks
-  the canvas paints. Reserved for as-shipped checks only.
+- **vitest, two projects per package, split by filename.** Node `*.test.ts` for pure
+  logic and import-safety; **browser** (real headless chromium via
+  `@vitest/browser-playwright`) for anything needing WebGL/canvas/DOM — routed by
+  `*.browser.test.ts` (`*.svelte.test.ts` in the svelte package). Browser tests assert
+  lit pixels via `gl.readPixels`/2D readback.
+- **Playwright e2e = the full built app**: `examples/svelte-gallery/e2e` boots the
+  built gallery, switches examples, checks the canvas paints.
+- **`node scripts/publish-smoke.mjs` = the published artifacts**: packs all six →
+  npm-installs the tarballs into a throwaway consumer → bare-node imports each package
+  (catches SSR crashes) → `tsc` against the shipped `.d.ts` → mounts both cores in
+  headless chromium straight from the installed dist (import map, no bundler). Runs in
+  CI and gates every release — the only coverage of what npm users actually receive.
 - CI installs chromium once (`yarn playwright install --with-deps chromium`).
 
 ## Working on this repo
 
 - `yarn dev` — demo gallery on `:5173` (Vite; HMR into library source).
-- `yarn build` — topological: `@glowbox/led-grid` → `@glowbox/svelte` → demo.
-- `yarn test` / `yarn validate` (= lint + format + typecheck + test). Yarn is
-  vendored: `node .yarn/releases/yarn-*.cjs <script>`.
-- Per-package: `yarn workspace @glowbox/led-grid <script>`, etc.
+- `yarn build` — topological: cores → wrappers/extras → demo.
+- `yarn test` / `yarn validate` (= lint + format + typecheck + test). Yarn is vendored:
+  `node .yarn/releases/yarn-*.cjs <script>`.
+- `yarn size` — bundle budgets. Per-package: `yarn workspace @glowbox/led-grid <script>`.
+- Demo routes prerender as shell pages with a `404.html` SPA fallback (GitHub Pages has
+  no rewrites); static SEO/OG tags live in `src/app.html`, per-route titles via
+  `<svelte:head>`.
 
-## Status / next (handoff)
+## Publishing
 
-- **Restructured from the old sibling-app** (Rust backend + SvelteKit SPA) into
-  this library monorepo. Backend / Dockerfile / Rust CI removed; library split
-  into `@glowbox/led-grid` + `@glowbox/svelte`; demo moved to `examples/`.
-- **CI** is node-only (`ci.yaml`); `release.yaml` publishes to npm on `v*` tags;
-  `pages.yaml` deploys the demo to GitHub Pages.
-- **Rename pending (manual):** the repo/dir/remote are still the typo `blowbox`.
-  Standardize on **glowbox**: `gh repo rename glowbox`, `git remote set-url
-origin git@github.com:eetu/glowbox.git`, and `mv ~/dev/blowbox ~/dev/glowbox`.
-- **Before first publish:** create the `@glowbox` npm scope, add repo secret
-  `NPM_TOKEN`, enable GitHub Pages (source = GitHub Actions).
-- **Next:** React/Vue wrappers over the same core; more example programs; a
-  playable (input-driven) Pac-Man.
+Tag `vX.Y.Z` on main → `release.yaml` publishes all six to npm via **trusted publishing
+(OIDC) + provenance** (no `NPM_TOKEN`). Gates: tag-on-main, tag matches **every**
+package's version, the full validate suite, and the publish smoke. Versions are
+hand-bumped in lockstep across all six `package.json`s + a CHANGELOG entry (root
+`CHANGELOG.md`, Keep-a-Changelog). Publishes are idempotent on rerun (`npm view` guard);
+prerelease versions (`-rc.N`) go to the `rc` dist-tag.
+
+## Status / next
+
+- **1.0.0 shipped 2026-07-13** (all six packages live); **1.0.1** prepared right after:
+  nixie SSR-import crash fix + decoupling, touch-action/aria defaults, 'use client',
+  publish smoke + all-six release guard, demo SEO + Pages-404 fix.
+- **Direction:** see `docs/ROADMAP.md` — 1.1 "text & confidence" (bitmap LED font,
+  onFrame multi-subscriber, reduced-motion default, WebKit + golden-screenshot tests),
+  1.2 "clocks & music" (nixie row, audio-reactive extras, transparent canvas), then the
+  bets: `@glowbox/bridge` (WLED/DDP hardware streaming), more display cores
+  (seven-segment → flip-dot → split-flap), trigger-based WebGL2 renderer (the only 2.0).
 
 ## Out of scope
 
-- No database / server API / auth. If a program needs persistence, that's the
-  consuming app's job, not the library's.
-- The examples are **attract-mode** (self-playing); no keyboard/touch input is
-  wired (the display's only pointer use is drag-to-orbit).
+- No database / server API / auth. If a program needs persistence, that's the consuming
+  app's job, not the library's.
+- The gallery examples are **attract-mode** (self-playing); no gameplay input is wired
+  (pointer use = drag-to-orbit/zoom). An input/games API in the library is explicitly
+  rejected — see ROADMAP "deliberately not doing".
