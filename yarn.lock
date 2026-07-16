@@ -757,7 +757,7 @@ __metadata:
     "@anarkisti/eslint-config": "npm:^1"
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/nixie": "workspace:^"
-    "@size-limit/file": "npm:^11"
+    "@size-limit/file": "npm:^12"
     "@sveltejs/package": "npm:^2.5"
     "@sveltejs/vite-plugin-svelte": "npm:^7"
     "@vitest/browser": "npm:^4.1"
@@ -1117,12 +1117,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@size-limit/file@npm:11.2.0, @size-limit/file@npm:^11":
+"@size-limit/file@npm:11.2.0":
   version: 11.2.0
   resolution: "@size-limit/file@npm:11.2.0"
   peerDependencies:
     size-limit: 11.2.0
   checksum: 10/0802fddafe68c29268feb683a0b9d41dabe29d39278ddf704674d62485e1ea23743e88a435517dea6553da148e559d2537f3c459f9f7c92fd838563b2e97b3cf
+  languageName: node
+  linkType: hard
+
+"@size-limit/file@npm:^12":
+  version: 12.1.0
+  resolution: "@size-limit/file@npm:12.1.0"
+  peerDependencies:
+    size-limit: 12.1.0
+  checksum: 10/66e2c937ff363ae5b91a055bebd8ddb658fa44f3184ebbe13d6eb76014d96da758d93cc4e69b1d34e5ce589dc5e0016f758ec0864e8fdfb4cdc353d5891b2a44
   languageName: node
   linkType: hard
 
