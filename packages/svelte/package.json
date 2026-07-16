@@ -61,7 +61,7 @@
 	},
 	"devDependencies": {
 		"@anarkisti/eslint-config": "^1",
-		"@size-limit/file": "^11",
+		"@size-limit/file": "^12",
 		"@sveltejs/package": "^2.5",
 		"@sveltejs/vite-plugin-svelte": "^7",
 		"@vitest/browser": "^4.1",
