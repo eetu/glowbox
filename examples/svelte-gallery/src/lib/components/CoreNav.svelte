@@ -13,7 +13,7 @@
 </script>
 
 <div class="corenav">
-	<a class="brand" href={resolve('/')}>glowbox</a>
+	<a class="brand" href={resolve('/')}>glowbox<span class="accent">.</span></a>
 	<nav class="cores" aria-label="rendering core">
 		{#each tabs as t (t.id)}
 			<a
@@ -49,12 +49,15 @@
 		flex: 0 0 auto;
 	}
 	.brand {
-		font-family: var(--halo-font-heading);
+		font-family: var(--halo-font-body);
 		font-weight: 600;
 		font-size: 18px;
-		letter-spacing: -0.02em;
-		color: var(--halo-accent);
+		letter-spacing: -0.04em;
+		color: var(--halo-text-main);
 		text-decoration: none;
+	}
+	.brand .accent {
+		color: var(--halo-accent);
 	}
 	.cores {
 		display: inline-flex;
