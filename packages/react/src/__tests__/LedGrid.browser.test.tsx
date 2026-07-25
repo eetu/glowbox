@@ -19,7 +19,7 @@ const litPixels = (canvas: HTMLCanvasElement): number => {
 };
 
 test('mounts a canvas and renders the draw callback via grouped props', async () => {
-	const { container } = render(
+	const { container } = await render(
 		<LedGrid
 			size={[5, 5, 5]}
 			camera={{ autoOrbit: false }}
@@ -40,7 +40,7 @@ test('mounts a canvas and renders the draw callback via grouped props', async ()
 
 test('forwards a ref to the imperative display handle', async () => {
 	const ref = createRef<LedDisplay | null>();
-	render(<LedGrid ref={ref} size={[4, 4, 4]} camera={{ autoOrbit: false }} />);
+	await render(<LedGrid ref={ref} size={[4, 4, 4]} camera={{ autoOrbit: false }} />);
 	await nextFrame();
 	expect(ref.current).not.toBeNull();
 	expect(ref.current?.snapshot().startsWith('data:image/png')).toBe(true);
@@ -51,7 +51,7 @@ test('StrictMode double-mount recreates on the same canvas and still paints', as
 	// re-created on the SAME canvas. dispose() deliberately leaves the WebGL context
 	// alive (no loseContext) so the second mount can render — lock that in.
 	const ref = createRef<LedDisplay | null>();
-	const { container } = render(
+	const { container } = await render(
 		<StrictMode>
 			<LedGrid
 				ref={ref}

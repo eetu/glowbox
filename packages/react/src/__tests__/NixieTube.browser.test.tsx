@@ -19,7 +19,7 @@ const litPixels = (canvas: HTMLCanvasElement): number => {
 
 test('mounts a canvas, lights the numeral, and forwards the tube handle', async () => {
 	const ref = createRef<NixieTubeHandle | null>();
-	const { container } = render(
+	const { container } = await render(
 		<NixieTube ref={ref} value={8} tubeStyle="classic" mesh={false} ghost={false} />
 	);
 	const canvas = container.querySelector('canvas')!;
