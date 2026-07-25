@@ -1,18 +1,12 @@
-# glowbox roadmap (post-1.0)
+# glowbox roadmap (post-1.1)
 
-Direction after the 1.0.x correctness patches, distilled from the 2026-07-13
-post-release review. Horizons are themes, not promises; each item should ship with its
-demo. Versions are lockstep across all six packages.
+Direction distilled from the 2026-07-13 post-release review. Horizons are themes, not
+promises; each item should ship with its demo. Versions are lockstep across all six
+packages.
 
-## 1.1 — "text & confidence" — SHIPPED
+## 1.1 — "text & confidence" — SHIPPED 2026-07-13
 
-Everything landed in 1.1.0 (see `CHANGELOG.md`): the bundled 5×7 bitmap font +
-multi-line + `makeTextScroller` (gallery scroller absorbed), `onFrame`
-multi-subscriber, the `prefers-reduced-motion` auto-orbit default, `torus` +
-`cylinder`, WebKit on the core browser tests, SwiftShader-pinned golden screenshots
-(one baseline for all platforms — better than the planned Linux-only gating),
-pointer/StrictMode tests, `/nixie` e2e, and `scripts/bench-led-grid.mjs` with measured
-numbers in the led-grid README.
+Everything planned landed in 1.1.0 — see `CHANGELOG.md` for the full list.
 
 ## 1.2 — "clocks & music"
 

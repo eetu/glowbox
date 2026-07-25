@@ -33,10 +33,9 @@ let failed = false;
 try {
 	// --- pack every workspace (prepack builds each; workspace:^ is rewritten here) ---
 	const releasesDir = join(root, '.yarn', 'releases');
-	const yarnRelease = join(
-		releasesDir,
-		readdirSync(releasesDir).find((f) => f.endsWith('.cjs'))
-	);
+	const yarnCjs = readdirSync(releasesDir).find((f) => f.endsWith('.cjs'));
+	if (!yarnCjs) throw new Error(`no vendored yarn release (*.cjs) found in ${releasesDir}`);
+	const yarnRelease = join(releasesDir, yarnCjs);
 	for (const pkg of PACKAGES) {
 		log(`pack @glowbox/${pkg}`);
 		run(
@@ -98,8 +97,8 @@ try {
 import { createNixieTube, nixieCathodes, type NixieOptions } from '@glowbox/nixie';
 import { makeGifPlayer, text } from '@glowbox/extras';
 import { LedGrid as SvelteLedGrid, NixieTube as SvelteNixieTube } from '@glowbox/svelte';
-import { LedGrid as ReactLedGrid } from '@glowbox/react';
-import { LedGrid as VueLedGrid } from '@glowbox/vue';
+import { LedGrid as ReactLedGrid, NixieTube as ReactNixieTube } from '@glowbox/react';
+import { LedGrid as VueLedGrid, NixieTube as VueNixieTube } from '@glowbox/vue';
 
 const g = createVoxelGrid(4, 4, 4);
 g.plot(1, 2, 3, [1, 0.5, 0]);
@@ -113,7 +112,9 @@ export const used = [
 	SvelteLedGrid,
 	SvelteNixieTube,
 	ReactLedGrid,
+	ReactNixieTube,
 	VueLedGrid,
+	VueNixieTube,
 	opts
 ] as const;
 export type D = LedDisplay;

@@ -127,8 +127,17 @@ export interface NixieTube {
 	dispose(): void;
 }
 
-const norm = (v: string | number | null | undefined): string =>
-	v == null ? '' : String(v).slice(0, 1);
+let warnedTruncation = false;
+const norm = (v: string | number | null | undefined): string => {
+	const s = v == null ? '' : String(v);
+	if (s.length > 1 && !warnedTruncation) {
+		warnedTruncation = true;
+		console.warn(
+			`glowbox: a nixie tube shows one symbol — "${s}" truncated to "${s[0]}". Compose a row of tubes for multi-digit values.`
+		);
+	}
+	return s.slice(0, 1);
+};
 const c255 = (v: number) => Math.max(0, Math.min(255, Math.round(v * 255)));
 
 /** The raw SVG path data (single-stroke centreline; glyph viewBox `0 0 60 100`, y-down)
@@ -489,7 +498,7 @@ export function createNixieTube(
 			draw();
 		},
 		setOptions(patch) {
-			if (patch.style) style = patch.style;
+			if (patch.style != null) style = patch.style;
 			if (patch.color != null) color = parseColor(patch.color);
 			if (patch.glow != null) glow = patch.glow;
 			if (patch.background != null) bg = parseColor(patch.background);

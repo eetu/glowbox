@@ -20,10 +20,10 @@
 		"dev": "yarn workspace @glowbox/svelte-gallery dev"
 	},
 	"devDependencies": {
-		"@size-limit/preset-small-lib": "^11",
+		"@size-limit/preset-small-lib": "^13",
 		"prettier": "^3.9.5",
 		"prettier-plugin-svelte": "^4.0.1",
-		"size-limit": "^11",
+		"size-limit": "^13",
 		"svelte": "^5.56",
 		"typescript": "^6.0.2"
 	}

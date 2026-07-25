@@ -343,8 +343,8 @@ export function createLedDisplay(
 		canvas.height = Math.max(1, Math.round(r.height * dpr));
 		if (paused) render();
 	}
-	const ro = new ResizeObserver(() => resize());
-	ro.observe(canvas);
+	const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => resize()) : null;
+	ro?.observe(canvas);
 
 	// --- WebGL context-loss recovery ---
 	// The GPU can drop the context (tab backgrounded, driver reset, too many
@@ -560,7 +560,7 @@ export function createLedDisplay(
 		},
 		dispose() {
 			stop();
-			ro.disconnect();
+			ro?.disconnect();
 			canvas.style.touchAction = prevTouchAction;
 			canvas.removeEventListener('pointerdown', down);
 			canvas.removeEventListener('pointermove', move);

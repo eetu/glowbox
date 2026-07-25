@@ -85,8 +85,8 @@ numbers; software rasterizers (SwiftShader) are far slower than any real GPU.
 ## Voxel API
 
 Canvas-like drawing on the grid. `plot` / `add` / `get` take scalar `x, y, z`;
-`line` / `box` / `sphere` take `Vec3` tuples `[x, y, z]`. Every `color` is a `Color`
-(see above).
+`line` / `box` / `sphere` / `torus` / `cylinder` take `Vec3` tuples `[x, y, z]`. Every
+`color` is a `Color` (see above).
 
 | method                                                  | does                                                                          |
 | ------------------------------------------------------- | ----------------------------------------------------------------------------- |
@@ -152,7 +152,7 @@ loss), preserving camera + options. The display also **recovers from WebGL conte
 loss** on its own (tab backgrounded, driver reset): it rebuilds the renderer on restore
 and repaints your content.
 
-Framework wrappers build on this core — see **[@glowbox/svelte](../svelte)**,
-**[@glowbox/react](../react)** and **[@glowbox/vue](../vue)**; content helpers (GIF /
-image / text) live in **[@glowbox/extras](../extras)**. Live demos:
+Framework wrappers build on this core — see **[@glowbox/svelte](https://www.npmjs.com/package/@glowbox/svelte)**,
+**[@glowbox/react](https://www.npmjs.com/package/@glowbox/react)** and **[@glowbox/vue](https://www.npmjs.com/package/@glowbox/vue)**; content helpers (GIF /
+image / text) live in **[@glowbox/extras](https://www.npmjs.com/package/@glowbox/extras)**. Live demos:
 <https://eetu.github.io/glowbox/>.

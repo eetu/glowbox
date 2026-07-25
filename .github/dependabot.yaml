@@ -26,7 +26,6 @@ updates:
           - 'react-dom'
           - '@types/react'
           - '@types/react-dom'
-          - 'vitest-browser-react'
       vue:
         patterns:
           - 'vue'
@@ -43,6 +42,12 @@ updates:
           - 'vitest-browser-*'
           - 'playwright'
           - '@playwright/*'
+      # The runner + plugins peer-depend on each other with exact versions — a solo
+      # major bump of one (76583a6 did this to @size-limit/file) breaks the peer.
+      size-limit:
+        patterns:
+          - 'size-limit'
+          - '@size-limit/*'
       minor-and-patch:
         update-types:
           - 'minor'
