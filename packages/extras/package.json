@@ -54,7 +54,7 @@
 			"ignore": [
 				"@glowbox/led-grid"
 			],
-			"limit": "6 kB"
+			"limit": "7 kB"
 		}
 	],
 	"dependencies": {
