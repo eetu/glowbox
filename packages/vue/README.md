@@ -4,6 +4,9 @@ glowbox components for **Vue 3**: `<LedGrid>` — the 3D WebGL LED-grid display 
 **[@glowbox/led-grid](https://www.npmjs.com/package/@glowbox/led-grid)**) — and `<NixieTube>` — a glowing nixie-tube numeral (over
 **[@glowbox/nixie](https://www.npmjs.com/package/@glowbox/nixie)**).
 
+**[⚡ Open in StackBlitz](https://stackblitz.com/github/eetu/glowbox/tree/main/examples/starters/vue)** —
+a running `<LedGrid>` + `<NixieTube>` playground in your browser, no install.
+
 ```sh
 yarn add @glowbox/vue
 # peer: vue ^3   (@glowbox/led-grid + @glowbox/nixie come along as dependencies)
