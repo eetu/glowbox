@@ -4,6 +4,17 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [Unreleased]
+
+### Changed
+
+- **`@glowbox/nixie`: redrawn digit filaments** for `0`, `2`, `4`, `5`, `6`, `7`, `8`
+  and `9` — rebalanced proportions on the shared centrelines: rounder bowls, a smoother
+  `2` shoulder-to-diagonal transition, a wider `4` apex, and deliberately varied digit
+  extents (a taller `0` and `8`, deeper `6`/`9` bowls) for the bent-wire-in-a-tube
+  character of real nixie filaments. All tube styles pick the new shapes up
+  automatically.
+
 ## [1.1.0] — 2026-07-13
 
 "Text & confidence": the library gets its own typography, and the safety net any
