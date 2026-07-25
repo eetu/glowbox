@@ -98,6 +98,29 @@ Props update **live**; the tube handle is `expose()`d as `tube` (`setValue`, `se
 core-only — use `createNixieTube` directly for that. See **@glowbox/nixie** for defaults +
 the size-adaptive rendering.
 
+## `<SevenSegment>`
+
+```vue
+<script setup lang="ts">
+import { SevenSegment } from '@glowbox/vue';
+</script>
+
+<template>
+	<div style="width: 76px; height: 130px">
+		<SevenSegment value="7" display-style="vfd" :age="0.4" />
+	</div>
+</template>
+```
+
+A seven-segment digit over **[@glowbox/seven-segment](https://www.npmjs.com/package/@glowbox/seven-segment)** —
+per-segment cross-fades, ageing, LED/VFD materials. `value` takes `0`–`9`, `-`, hex
+`A b C d E F`, `:` (the clock separator — give it a narrow slot), or null for dark;
+`displayStyle` (`'led'` \| `'vfd'`), `dp`, `color`, `background`, `glow`, `ghost`,
+`age` (0..1 — dimming, then flicker, then a dead segment), `transition` (per-segment
+fade ms), `pixelRatio`, `label` mirror the core options and update **live**; the handle
+is `expose()`d as `display`. See **@glowbox/seven-segment** for defaults, the ageing
+arc, and the geometry export.
+
 ---
 
 Sibling packages with the same components: **[@glowbox/svelte](https://www.npmjs.com/package/@glowbox/svelte)** and

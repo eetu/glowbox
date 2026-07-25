@@ -10,6 +10,7 @@ import dts from 'vite-plugin-dts';
 // runs in headless chromium with the core resolved from source.
 const coreSrc = resolve(import.meta.dirname, '../led-grid/src/index.ts');
 const nixieSrc = resolve(import.meta.dirname, '../nixie/src/index.ts');
+const sevenSrc = resolve(import.meta.dirname, '../seven-segment/src/index.ts');
 
 export default defineConfig({
 	plugins: [dts({ include: ['src'], exclude: ['src/**/*.test.ts'] })],
@@ -21,10 +22,16 @@ export default defineConfig({
 			formats: ['es'],
 			fileName: 'index'
 		},
-		rollupOptions: { external: ['vue', '@glowbox/led-grid', '@glowbox/nixie'] }
+		rollupOptions: {
+			external: ['vue', '@glowbox/led-grid', '@glowbox/nixie', '@glowbox/seven-segment']
+		}
 	},
 	test: {
-		alias: { '@glowbox/led-grid': coreSrc, '@glowbox/nixie': nixieSrc },
+		alias: {
+			'@glowbox/led-grid': coreSrc,
+			'@glowbox/nixie': nixieSrc,
+			'@glowbox/seven-segment': sevenSrc
+		},
 		include: ['src/**/*.browser.test.ts'],
 		browser: {
 			enabled: true,

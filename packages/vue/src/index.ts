@@ -1,11 +1,17 @@
 // @glowbox/vue — glowbox components for Vue 3:
-//   import { LedGrid, NixieTube } from "@glowbox/vue";
+//   import { LedGrid, NixieTube, SevenSegment } from "@glowbox/vue";
 export { LedGrid } from './LedGrid';
 export { NixieTube } from './NixieTube';
+export { SevenSegment } from './SevenSegment';
 
-// Re-export the core + nixie option/handle types so consumers can type against the
-// components (`LedDisplay`, `NixieOptions`, …) without adding @glowbox/led-grid or
-// @glowbox/nixie as direct dependencies. The nixie handle is aliased to avoid clashing
-// with the `NixieTube` component export above.
+// Re-export the cores' option/handle types so consumers can type against the
+// components (`LedDisplay`, `NixieOptions`, …) without adding the core packages as
+// direct dependencies. Handles are aliased to avoid clashing with the component
+// exports above.
 export type * from '@glowbox/led-grid';
 export type { NixieOptions, NixieStyle, NixieTube as NixieTubeHandle } from '@glowbox/nixie';
+export type {
+	SevenSegmentDisplay,
+	SevenSegmentOptions,
+	SevenSegmentStyle
+} from '@glowbox/seven-segment';
