@@ -105,6 +105,11 @@ export interface QualityOptions {
 	pixelRatio?: number;
 	/** MSAA — fixed at creation, ignored by setOptions (default true). */
 	antialias?: boolean;
+	/** Transparent canvas (default false) — the glow floats over whatever the page
+	 *  puts behind the canvas instead of over `color.background` (which is then
+	 *  ignored). Premultiplied compositing; parity with nixie's `bare`. Fixed at
+	 *  creation, ignored by setOptions. */
+	alpha?: boolean;
 	/** Freeze the render loop; interaction + render()/snapshot() still repaint (default false). */
 	paused?: boolean;
 	/** Cap the render loop to at most this many frames/sec (default: uncapped, i.e.
@@ -204,7 +209,8 @@ export function createLedDisplay(
 		rgb: led.rgb ?? false,
 		rgbLayout: led.rgbLayout ?? 'auto',
 		vivid: led.vivid ?? false,
-		antialias: q.antialias ?? true
+		antialias: q.antialias ?? true,
+		alpha: q.alpha ?? false
 	};
 
 	// The frame buffer is owned by the *display* (not the renderer) so it survives a

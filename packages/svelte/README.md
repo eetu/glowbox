@@ -39,7 +39,7 @@ yarn add @glowbox/svelte
 | `color`       | `ColorOptions`                      | `background` `gain` `tint`                                                                                                                   |
 | `camera`      | `CameraOptions`                     | `yaw` `pitch` `distance` `fov` `projection` `autoOrbit` `orbitSpeed` `pitchLimits` (`autoOrbit` defaults off under `prefers-reduced-motion`) |
 | `interaction` | `InteractionOptions`                | `drag` `dragSpeed` `zoom` `zoomLimits`                                                                                                       |
-| `quality`     | `QualityOptions`                    | `pixelRatio` `antialias` `paused` `fps` (frame-rate cap)                                                                                     |
+| `quality`     | `QualityOptions`                    | `pixelRatio` `antialias` `paused` `fps` (frame-rate cap) `alpha` (transparent canvas; fixed at creation)                                     |
 | `label`       | `string`                            | accessible name for the canvas (`aria-label`; default `'LED grid'`)                                                                          |
 | `oncreate`    | `(d: LedDisplay \| null)=>void`     | imperative handle — called with the display on create, `null` on teardown                                                                    |
 
