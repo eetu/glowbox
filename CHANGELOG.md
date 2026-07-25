@@ -8,11 +8,12 @@ version and are released together.
 
 ### Changed
 
-- **`@glowbox/nixie`: redrawn digit filaments** for `0`, `2`, `4`, `5`, `7` and `8` —
-  rebalanced proportions on the shared centrelines: rounder `0` and `5` bowls, a smoother
-  `2` shoulder-to-diagonal transition, a wider `4` apex, the `7` diagonal shortened to the
-  common baseline, and a larger bottom loop on the `8`. All tube styles pick the new
-  shapes up automatically.
+- **`@glowbox/nixie`: redrawn digit filaments** for `0`, `2`, `4`, `5`, `6`, `7`, `8`
+  and `9` — rebalanced proportions on the shared centrelines: rounder bowls, a smoother
+  `2` shoulder-to-diagonal transition, a wider `4` apex, and deliberately varied digit
+  extents (a taller `0` and `8`, deeper `6`/`9` bowls) for the bent-wire-in-a-tube
+  character of real nixie filaments. All tube styles pick the new shapes up
+  automatically.
 
 ## [1.1.0] — 2026-07-13
 

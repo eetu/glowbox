@@ -7,8 +7,10 @@ here and the component uses it** — no paste-back, no regeneration.
 
 ## Convention
 
-- **viewBox `0 0 60 100`, y-down.** Digits sit roughly between `y=6` and `y=94`; the
-  centre is `(30, 50)`.
+- **viewBox `0 0 60 100`, y-down.** The renderer centres this box on the glass and
+  scales it to fit — it never clips against it, so ink may touch (or slightly spill past)
+  the box edges. Most digits run `y=7` → `y=84`; the round ones deliberately overshoot
+  (`0` to `3.5–87.5`, `6`/`9` bowls to `91`, `8` to `3.5–94.5`) — see Notes.
 - Each digit is **one continuous stroke** — the bent wire — as a single `<path>`. It's a
   **centreline**, not an outline: edit the path the wire follows, not its edges. (The
   `fill`/`stroke`/`width` here are only so the file previews in a viewer; the renderer
@@ -31,6 +33,9 @@ only squash (x/y) and re-weight the wire at render time, so each numeral is edit
 
 ## Notes
 
+- **The digits are deliberately not normalized.** Real nixie filaments are bent wires
+  packed inside a glass envelope, so each numeral sits a little off the common cap/base
+  lines and off optical centre — small kinks and varied bowl depths are the character,
+  and it reads better on screen than a typographically evened-out set. Don't "fix" a
+  digit to match its neighbours' extents.
 - **`1`** is intentionally a bare stroke (a single vertical stem — no top flag, no foot).
-- **`2`** has a kink where the top bowl's curve meets the straight diagonal (the bezier
-  end tangent at ~`32 54` doesn't line up with the line to `13 91`) — worth smoothing.
