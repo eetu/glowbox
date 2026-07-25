@@ -1,11 +1,13 @@
 {
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
-		// Resolve the sibling core from source so typecheck/dev need no prior build.
-		// (The published dep is `@glowbox/led-grid` via package.json `dependencies`.)
+		// Resolve the sibling cores from source so typecheck/dev need no prior build.
+		// (The published deps are via package.json `dependencies`.)
 		"paths": {
-			"@glowbox/led-grid": ["../led-grid/src/index.ts"]
+			"@glowbox/led-grid": ["../led-grid/src/index.ts"],
+			"@glowbox/nixie": ["../nixie/src/index.ts"]
 		}
 	},
-	"include": ["src"]
+	// nixie's source uses import.meta.glob; pull in its vite/client reference too.
+	"include": ["src", "../nixie/src/vite-env.d.ts"]
 }

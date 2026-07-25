@@ -21,7 +21,7 @@ examples/
   svelte-gallery/              — SvelteKit SPA demo (9 LED programs + /nixie clock) → GitHub Pages.
 scripts/
   publish-smoke.mjs            — publish-integrity smoke test (see Testing).
-docs/ROADMAP.md                — post-1.0 direction (1.1/1.2 themes + strategic bets).
+docs/ROADMAP.md                — post-1.1 direction (1.2 themes + strategic bets).
 ```
 
 Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
@@ -92,17 +92,16 @@ Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
 
 Tag `vX.Y.Z` on main → `release.yaml` publishes all six to npm via **trusted publishing
 (OIDC) + provenance** (no `NPM_TOKEN`). Gates: tag-on-main, tag matches **every**
-package's version, the full validate suite, and the publish smoke. Versions are
-hand-bumped in lockstep across all six `package.json`s + a CHANGELOG entry (root
-`CHANGELOG.md`, Keep-a-Changelog). Publishes are idempotent on rerun (`npm view` guard);
-prerelease versions (`-rc.N`) go to the `rc` dist-tag.
+package's version, the full validate suite, and the publish smoke. Versions are bumped
+in lockstep across all six `package.json`s via `node scripts/bump-version.mjs <version>`,
+plus a CHANGELOG entry (root `CHANGELOG.md`, Keep-a-Changelog). Publishes are idempotent
+on rerun (`npm view` guard); prerelease versions (`-rc.N`) go to the `rc` dist-tag.
 
 ## Status / next
 
-- **1.0.0 + 1.0.1 shipped 2026-07-13** (all six packages live on npm); **1.1.0** ("text
-  & confidence": bitmap LED font + scroller, torus/cylinder, onFrame stacking,
-  reduced-motion default, WebKit + golden + interaction/StrictMode/nixie-e2e tests,
-  bench numbers) developed on the `1.1.0` branch.
+- **1.0.0 / 1.0.1 / 1.1.0 ("text & confidence") shipped 2026-07-13** — all six packages
+  live on npm; **1.1.1** (nixie glyph redraw + polish: SSR/observer guards, doc + CI
+  fixes) staged under CHANGELOG `[Unreleased]`.
 - **Direction:** see `docs/ROADMAP.md` — next up 1.2 "clocks & music" (nixie row,
   audio-reactive extras, transparent canvas, gif player controls), then the bets:
   `@glowbox/bridge` (WLED/DDP hardware streaming), more display cores (seven-segment →

@@ -1,8 +1,8 @@
 # @glowbox/svelte
 
 glowbox components for **Svelte 5**: `<LedGrid>` — the 3D WebGL LED-grid display
-(over **[@glowbox/led-grid](../led-grid)**) — and `<NixieTube>` — a glowing nixie-tube numeral
-(over **[@glowbox/nixie](../nixie)**).
+(over **[@glowbox/led-grid](https://www.npmjs.com/package/@glowbox/led-grid)**) — and `<NixieTube>` — a glowing nixie-tube numeral
+(over **[@glowbox/nixie](https://www.npmjs.com/package/@glowbox/nixie)**).
 
 ```sh
 yarn add @glowbox/svelte
@@ -31,21 +31,23 @@ yarn add @glowbox/svelte
 />
 ```
 
-| prop          | type                                | notes                                                                                  |
-| ------------- | ----------------------------------- | -------------------------------------------------------------------------------------- |
-| `size`        | `[number, number, number]`          | grid dims `[nx, ny, nz]` (changing it resizes in place — no remount)                   |
-| `draw`        | `(d: LedDisplay, dt: number)=>void` | called every frame (dt in seconds); write voxels here                                  |
-| `led`         | `LedOptions`                        | `style` `shape` `stagger` `rgb` `rgbLayout` `vivid` `outline` `size` `glow` `offColor` |
-| `color`       | `ColorOptions`                      | `background` `gain` `tint`                                                             |
-| `camera`      | `CameraOptions`                     | `yaw` `pitch` `distance` `fov` `projection` `autoOrbit` `orbitSpeed` `pitchLimits`     |
-| `interaction` | `InteractionOptions`                | `drag` `dragSpeed` `zoom` `zoomLimits`                                                 |
-| `quality`     | `QualityOptions`                    | `pixelRatio` `antialias` `paused` `fps` (frame-rate cap)                               |
-| `label`       | `string`                            | accessible name for the canvas (`aria-label`; default `'LED grid'`)                    |
-| `oncreate`    | `(d: LedDisplay \| null)=>void`     | imperative handle — called with the display on create, `null` on teardown              |
+| prop          | type                                | notes                                                                                                                                        |
+| ------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `size`        | `[number, number, number]`          | grid dims `[nx, ny, nz]` (changing it resizes in place — no remount)                                                                         |
+| `draw`        | `(d: LedDisplay, dt: number)=>void` | called every frame (dt in seconds); write voxels here                                                                                        |
+| `led`         | `LedOptions`                        | `style` `shape` `stagger` `rgb` `rgbLayout` `vivid` `outline` `outlineColor` `size` `offSize` `glow` `offColor`                              |
+| `color`       | `ColorOptions`                      | `background` `gain` `tint`                                                                                                                   |
+| `camera`      | `CameraOptions`                     | `yaw` `pitch` `distance` `fov` `projection` `autoOrbit` `orbitSpeed` `pitchLimits` (`autoOrbit` defaults off under `prefers-reduced-motion`) |
+| `interaction` | `InteractionOptions`                | `drag` `dragSpeed` `zoom` `zoomLimits`                                                                                                       |
+| `quality`     | `QualityOptions`                    | `pixelRatio` `antialias` `paused` `fps` (frame-rate cap)                                                                                     |
+| `label`       | `string`                            | accessible name for the canvas (`aria-label`; default `'LED grid'`)                                                                          |
+| `oncreate`    | `(d: LedDisplay \| null)=>void`     | imperative handle — called with the display on create, `null` on teardown                                                                    |
 
 The grouped props mirror `@glowbox/led-grid`'s options 1:1 and update **live** — even `size`
 resizes the grid in place (no remount / context loss). Colours accept a `Color` (`[r,g,b]`
-0..1, `>1` blooms, or any CSS string). See **@glowbox/led-grid** for every field's default,
+0..1, `>1` blooms, or any CSS string). `draw` is bound as one `onFrame` subscription —
+`onFrame` callbacks **stack**, so subscribing more via the handle layers on top of `draw`
+rather than replacing it. See **@glowbox/led-grid** for every field's default,
 the full voxel API, and colour semantics.
 
 ## `<NixieTube>`
@@ -75,11 +77,13 @@ the full voxel API, and colour semantics.
 | `oncreate`   | `(tube: NixieTube \| null)=>void` | imperative handle — the tube on create, `null` on teardown |
 
 Props update **live** (`value` → `setValue`, the rest → `setOptions`). A clock is just a
-row of `<NixieTube>`s. See **@glowbox/nixie** for defaults + the size-adaptive rendering.
+row of `<NixieTube>`s. The core's `bare` mode (transparent canvas for 3D compositing) is
+core-only — use `createNixieTube` directly for that. See **@glowbox/nixie** for defaults +
+the size-adaptive rendering.
 
 ---
 
-Sibling packages with the same components: **[@glowbox/react](../react)** and
-**[@glowbox/vue](../vue)**; content helpers in **[@glowbox/extras](../extras)**. Each
+Sibling packages with the same components: **[@glowbox/react](https://www.npmjs.com/package/@glowbox/react)** and
+**[@glowbox/vue](https://www.npmjs.com/package/@glowbox/vue)**; content helpers in **[@glowbox/extras](https://www.npmjs.com/package/@glowbox/extras)**. Each
 component fills its parent (`width/height: 100%`); give the parent a size.
 Live demos: <https://eetu.github.io/glowbox/>.

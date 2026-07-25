@@ -1,6 +1,6 @@
 # @glowbox/extras
 
-Content helpers for **[@glowbox/led-grid](../led-grid)** — the opt-in content layer the core
+Content helpers for **[@glowbox/led-grid](https://www.npmjs.com/package/@glowbox/led-grid)** — the opt-in content layer the core
 deliberately ships without. Headlined by a **GIF / image animation player**, a **text**
 helper with a bundled **5×7 bitmap LED font**, and a **text scroller** (marquee). Each
 helper works with any wrapper: the players and the scroller return a `(d, dt) => void`
@@ -12,13 +12,16 @@ yarn add @glowbox/extras   # @glowbox/led-grid comes along
 ```
 
 ```ts
-import { makeGifPlayer, makeImagePlayer, text } from '@glowbox/extras';
+import { makeGifPlayer, makeImagePlayer, makeTextScroller, text } from '@glowbox/extras';
 
 // Play a GIF on the front face of the grid:
 display.onFrame(makeGifPlayer('/loop.gif', { plane: 'xy', fit: 'contain' }));
 
 // …or a still image:
 display.onFrame(makeImagePlayer('/logo.png', { fit: 'cover' }));
+
+// …or a seamless text marquee:
+display.onFrame(makeTextScroller('HELLO WORLD', { color: '#00e5ff' }));
 
 // …or draw text in your own frame callback:
 display.onFrame((d) => {
@@ -92,5 +95,5 @@ still image. `paintImage(grid, src, opts)` plots a decoded image onto a plane.
 `FONT_5X7` / `glyph5x7(ch)` expose the bitmap font's metrics and per-character row
 bitmasks. Reuse any of them for custom effects.
 
-Wrappers: **[@glowbox/svelte](../svelte)** · **[@glowbox/react](../react)** ·
-**[@glowbox/vue](../vue)**. Live demos: <https://eetu.github.io/glowbox/>.
+Wrappers: **[@glowbox/svelte](https://www.npmjs.com/package/@glowbox/svelte)** · **[@glowbox/react](https://www.npmjs.com/package/@glowbox/react)** ·
+**[@glowbox/vue](https://www.npmjs.com/package/@glowbox/vue)**. Live demos: <https://eetu.github.io/glowbox/>.

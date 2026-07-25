@@ -2,10 +2,11 @@
 
 **▶ [Live demo](https://eetu.github.io/glowbox/)** — the interactive playground, in your browser.
 
-A generic **3D LED-grid display** — an nx×ny×nz lattice of glowing "LEDs" you
-draw on like a tiny 3D canvas, rendered in WebGL and orbitable (auto-spin +
-drag). Ships as a **framework-agnostic core** plus thin framework wrappers you
-install into any SPA.
+Glowing retro **display components**: a generic **3D LED-grid display** — an
+nx×ny×nz lattice of glowing "LEDs" you draw on like a tiny 3D canvas, rendered
+in WebGL and orbitable (auto-spin + drag + zoom) — and a **nixie-tube display**
+rendered on a 2D canvas. Both ship as **framework-agnostic cores** plus thin
+framework wrappers you install into any SPA.
 
 ![The glowbox demo playground rendering a colourful strange-attractor particle swarm on the WebGL LED grid, with the live control panel](media/hero.png)
 
@@ -60,7 +61,8 @@ The same component ships for [React](packages/react) and [Vue](packages/vue) wit
 same props (instance access follows each framework's idiom: an `oncreate` callback in
 Svelte, a forwarded `ref` in React, an `expose()`d handle in Vue). Colours, glow, LED size, `stagger` (brick lattice), camera,
 projection, zoom, pause and more are all customizable via grouped options (`led`
-`color` `camera` `interaction` `quality`) that update live — see
+`color` `camera` `interaction` `quality`) that update live, and the voxel API draws
+`line` / `box` / `sphere` / `torus` / `cylinder` primitives — see
 [`@glowbox/led-grid`](packages/led-grid) for the full list and defaults, or use the core
 directly on a canvas. LEDs render as real emitters (bright cores + glow halos,
 tone-mapped) so they read on any background. The display resizes in place and recovers
@@ -98,8 +100,9 @@ their own `build`/`test`.
 
 All six packages publish to the public npm registry under the `@glowbox` scope. Tag
 a release (`vX.Y.Z`) and the `release` workflow publishes each via **npm trusted
-publishing (OIDC)** with provenance — no `NPM_TOKEN` secret (led-grid first, then the
-wrappers + extras + nixie). Each package needs a trusted publisher configured on npm.
+publishing (OIDC)** with provenance — no `NPM_TOKEN` secret (the cores — led-grid,
+nixie — first, then the wrappers + extras). Each package needs a trusted publisher
+configured on npm.
 
 ## License
 

@@ -1,7 +1,7 @@
 # @glowbox/nixie
 
 A **nixie-tube display component** — a sibling rendering core to
-**[@glowbox/led-grid](../led-grid)**'s LED grid. It renders a single glowing numeral the way a
+**[@glowbox/led-grid](https://www.npmjs.com/package/@glowbox/led-grid)**'s LED grid. It renders a single glowing numeral the way a
 real nixie works: a stack of bent-wire cathodes inside a glass tube, only one lit. Each
 digit is a thin geometric **filament** (a single-stroke vector wire) that glows
 warm-orange with a hot core, in front of the full stack of unlit dull-metal cathode
@@ -24,7 +24,8 @@ is just a **row of tubes** (one component per canvas).
 ## Value
 
 A single symbol per tube: a char `0`–`9`, `:`, `-`, or `null` / `''` for all-cathodes-dark.
-`setValue(v)` relights it live.
+`setValue(v)` relights it live. A longer string is truncated to its first character (with
+a one-time console warning) — compose a row of tubes for multi-digit values.
 
 ## Options
 
@@ -95,5 +96,5 @@ from these (three.js owns only the glass cylinder + bloom).
 `snapshot(): string` (PNG data URL), `dispose()`.
 
 Part of the **glowbox** family of glowing retro displays — see
-**[@glowbox/led-grid](../led-grid)** (3D LED grid). Live demos:
+**[@glowbox/led-grid](https://www.npmjs.com/package/@glowbox/led-grid)** (3D LED grid). Live demos:
 <https://eetu.github.io/glowbox/>.

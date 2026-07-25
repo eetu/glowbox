@@ -73,6 +73,7 @@ function drawBitmap(
 
 // Rasterize `str` to an nx×ny RGBA buffer (white glyphs on black), centred.
 function rasterizeText(str: string, nx: number, ny: number, fontSize?: number): ImageSource {
+	if (typeof document === 'undefined') throw new Error('glowbox: 2D canvas unavailable');
 	const canvas = document.createElement('canvas');
 	canvas.width = nx;
 	canvas.height = ny;

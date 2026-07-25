@@ -1,8 +1,8 @@
 # @glowbox/react
 
 glowbox components for **React**: `<LedGrid>` — the 3D WebGL LED-grid display (over
-**[@glowbox/led-grid](../led-grid)**) — and `<NixieTube>` — a glowing nixie-tube numeral (over
-**[@glowbox/nixie](../nixie)**).
+**[@glowbox/led-grid](https://www.npmjs.com/package/@glowbox/led-grid)**) — and `<NixieTube>` — a glowing nixie-tube numeral (over
+**[@glowbox/nixie](https://www.npmjs.com/package/@glowbox/nixie)**).
 
 ```sh
 yarn add @glowbox/react
@@ -35,17 +35,17 @@ export default function App() {
 }
 ```
 
-| prop                  | type                                | notes                                                                                  |
-| --------------------- | ----------------------------------- | -------------------------------------------------------------------------------------- |
-| `size`                | `[number, number, number]`          | grid dims `[nx, ny, nz]` (changing it resizes in place — no remount)                   |
-| `draw`                | `(d: LedDisplay, dt: number)=>void` | called every frame (dt in seconds); write voxels here                                  |
-| `led`                 | `LedOptions`                        | `style` `shape` `stagger` `rgb` `rgbLayout` `vivid` `outline` `size` `glow` `offColor` |
-| `color`               | `ColorOptions`                      | `background` `gain` `tint`                                                             |
-| `camera`              | `CameraOptions`                     | `yaw` `pitch` `distance` `fov` `projection` `autoOrbit` `orbitSpeed` `pitchLimits`     |
-| `interaction`         | `InteractionOptions`                | `drag` `dragSpeed` `zoom` `zoomLimits`                                                 |
-| `quality`             | `QualityOptions`                    | `pixelRatio` `antialias` `paused` `fps` (frame-rate cap)                               |
-| `label`               | `string`                            | accessible name for the canvas (`aria-label`; default `'LED grid'`)                    |
-| `className` / `style` | —                                   | forwarded to the `<canvas>`                                                            |
+| prop                  | type                                | notes                                                                                                                                        |
+| --------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `size`                | `[number, number, number]`          | grid dims `[nx, ny, nz]` (changing it resizes in place — no remount)                                                                         |
+| `draw`                | `(d: LedDisplay, dt: number)=>void` | called every frame (dt in seconds); write voxels here                                                                                        |
+| `led`                 | `LedOptions`                        | `style` `shape` `stagger` `rgb` `rgbLayout` `vivid` `outline` `outlineColor` `size` `offSize` `glow` `offColor`                              |
+| `color`               | `ColorOptions`                      | `background` `gain` `tint`                                                                                                                   |
+| `camera`              | `CameraOptions`                     | `yaw` `pitch` `distance` `fov` `projection` `autoOrbit` `orbitSpeed` `pitchLimits` (`autoOrbit` defaults off under `prefers-reduced-motion`) |
+| `interaction`         | `InteractionOptions`                | `drag` `dragSpeed` `zoom` `zoomLimits`                                                                                                       |
+| `quality`             | `QualityOptions`                    | `pixelRatio` `antialias` `paused` `fps` (frame-rate cap)                                                                                     |
+| `label`               | `string`                            | accessible name for the canvas (`aria-label`; default `'LED grid'`)                                                                          |
+| `className` / `style` | —                                   | forwarded to the `<canvas>`                                                                                                                  |
 
 Forward a `ref` to reach the imperative `LedDisplay` handle (`snapshot()`, `stats`,
 `setCamera`, …):
@@ -57,8 +57,9 @@ const grid = useRef<LedDisplay | null>(null);
 ```
 
 The grouped props mirror `@glowbox/led-grid`'s options 1:1 and update **live** — even `size`
-resizes the grid in place. See **@glowbox/led-grid** for defaults, the voxel API, and colour
-semantics.
+resizes the grid in place. `draw` is bound as one `onFrame` subscription — `onFrame`
+callbacks **stack**, so subscribing more via the handle layers on top of `draw` rather than
+replacing it. See **@glowbox/led-grid** for defaults, the voxel API, and colour semantics.
 
 ## `<NixieTube>`
 
@@ -84,12 +85,13 @@ import { NixieTube } from '@glowbox/react';
 | `className` / `style` | —                               | forwarded to the `<canvas>` (CSS)                          |
 
 Props update **live**; forward a `ref` for the imperative `NixieTube` handle (`setValue`,
-`setOptions`, `resize`, `snapshot`). See **@glowbox/nixie** for defaults + the
-size-adaptive rendering.
+`setOptions`, `resize`, `snapshot`). The core's `bare` mode (transparent canvas for 3D
+compositing) is core-only — use `createNixieTube` directly for that. See **@glowbox/nixie**
+for defaults + the size-adaptive rendering.
 
 ---
 
-Sibling packages with the same components: **[@glowbox/svelte](../svelte)** and
-**[@glowbox/vue](../vue)**; content helpers in **[@glowbox/extras](../extras)**. Each
+Sibling packages with the same components: **[@glowbox/svelte](https://www.npmjs.com/package/@glowbox/svelte)** and
+**[@glowbox/vue](https://www.npmjs.com/package/@glowbox/vue)**; content helpers in **[@glowbox/extras](https://www.npmjs.com/package/@glowbox/extras)**. Each
 component fills its parent; give the parent a size. Live demos:
 <https://eetu.github.io/glowbox/>.

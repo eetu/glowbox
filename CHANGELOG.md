@@ -4,7 +4,7 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
-## [Unreleased]
+## [1.1.1] — 2026-07-25
 
 ### Changed
 
@@ -14,6 +14,33 @@ version and are released together.
   extents (a taller `0` and `8`, deeper `6`/`9` bowls) for the bent-wire-in-a-tube
   character of real nixie filaments. All tube styles pick the new shapes up
   automatically.
+
+### Fixed
+
+- **`@glowbox/led-grid` no longer throws where `ResizeObserver` is missing** (jsdom,
+  older engines): the observer is optional now, matching nixie — auto-resize simply
+  disables; `resize()` still works.
+- **`@glowbox/extras`: `text(g, s, { font: 'system' })` under node/SSR** now throws the
+  library's own clear error (`glowbox: 2D canvas unavailable`) instead of a raw
+  `ReferenceError: document is not defined`.
+- **`@glowbox/nixie` warns (once) when a multi-char `value` is truncated** to its first
+  symbol, instead of silently dropping the rest.
+- **npm listings**: cross-package README links now point at npmjs.com (relative links
+  404 there); all six packages carry the `glowbox` keyword; extras' description +
+  keywords now mention the 1.1.0 bitmap font and scroller.
+- **Docs**: the wrapper READMEs now list `outlineColor`/`offSize`, note the
+  `prefers-reduced-motion` `autoOrbit` default and `onFrame` stacking, and state that
+  `bare` is core-only; the root README describes both cores (and the real publish
+  order); led-grid's voxel-API intro includes `torus`/`cylinder`; nixie documents the
+  single-symbol truncation.
+- **Repo/CI** (nothing shipped): svelte typechecks against nixie source (no prior build
+  needed); the publish smoke also exercises react/vue `NixieTube` types and fails
+  clearly if the vendored yarn is missing; workflow SHA-pin comments corrected to their
+  real versions, jobs gain timeouts + least-privilege `permissions`; dependabot's react
+  group no longer swallows `vitest-browser-react` from the test group; the size-limit
+  toolchain moves to v13 in lockstep and gets its own dependabot group (a solo major
+  bump had split it across majors with an unmet peer); a lockstep
+  `scripts/bump-version.mjs` (the roadmap already claimed it existed).
 
 ## [1.1.0] — 2026-07-13
 
@@ -168,6 +195,7 @@ generic `@glowbox/core`.)
   page/glass colour (`color` + `background` retint glow and glass together). Compose a
   row of tubes into a clock or counter.
 
+[1.1.1]: https://github.com/eetu/glowbox/releases/tag/v1.1.1
 [1.1.0]: https://github.com/eetu/glowbox/releases/tag/v1.1.0
 [1.0.1]: https://github.com/eetu/glowbox/releases/tag/v1.0.1
 [1.0.0]: https://github.com/eetu/glowbox/releases/tag/v1.0.0
