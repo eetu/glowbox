@@ -35,7 +35,7 @@ const GLYPHS: Record<string, string> = {};
 let colonD = '';
 for (const [file, svg] of Object.entries(rawSvgs)) {
 	const name = file.slice(file.lastIndexOf('/') + 1, -'.svg'.length);
-	const ch = name === 'dash' ? '-' : name === 'colon' ? ':' : name;
+	const ch = name === 'dash' ? '-' : name === 'colon' ? ':' : name === 'dot' ? '.' : name;
 	const d = pathData(svg);
 	if (!d) continue;
 	if (ch === ':') colonD = d;
@@ -88,7 +88,7 @@ const pathFor = (ch: string): Path2D | null => {
 export type NixieStyle = 'classic' | 'slim' | 'tall';
 
 export interface NixieOptions {
-	/** The symbol to light: a single char `0–9`, `:`, `-`, or null/'' = all cathodes dark. */
+	/** The symbol to light: a single char `0–9`, `:`, `.`, `-`, or null/'' = all cathodes dark. */
 	value?: string | number | null;
 	/** Tube style (default 'classic'). */
 	style?: NixieStyle;
@@ -116,7 +116,7 @@ export interface NixieOptions {
 }
 
 export interface NixieTube {
-	/** Light a new symbol (single char `0–9`, `:`, `-`, or null = off). */
+	/** Light a new symbol (single char `0–9`, `:`, `.`, `-`, or null = off). */
 	setValue(v: string | number | null): void;
 	/** Live-update any option. */
 	setOptions(patch: Partial<NixieOptions>): void;
@@ -141,7 +141,7 @@ const norm = (v: string | number | null | undefined): string => {
 const c255 = (v: number) => Math.max(0, Math.min(255, Math.round(v * 255)));
 
 /** The raw SVG path data (single-stroke centreline; glyph viewBox `0 0 60 100`, y-down)
- *  for a symbol — `0`–`9`, `:`, `-`. `null` for blank/unknown. Same geometry the tube
+ *  for a symbol — `0`–`9`, `:`, `.`, `-`. `null` for blank/unknown. Same geometry the tube
  *  strokes: extrude it into 3D tube geometry on your side (nixie stays 2D — no 3D-engine
  *  dependency). Pair with `GLYPH_VIEWBOX` for the coordinate space. */
 export function glyphPath(symbol: string | number | null): string | null {
@@ -328,7 +328,9 @@ export function createNixieTube(
 		const cx = bw / 2;
 		const cy = bh / 2;
 		const st = STYLES[style];
-		const isColon = value === ':';
+		// The ':' and '.' separators are narrow ink in (usually) narrow tubes — fit them by
+		// height so their dots stay sized like the digits beside them.
+		const isColon = value === ':' || value === '.';
 		// Level of detail from the rendered numeral height (css px). The filament illusion —
 		// a *thin* wire under a heavy bloom, behind a honeycomb mesh and a stack of cathode
 		// wires — reads down to ~64px. Smaller than that, forcing it makes a sub-pixel wire
