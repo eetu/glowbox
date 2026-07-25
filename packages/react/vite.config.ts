@@ -10,6 +10,7 @@ import dts from 'vite-plugin-dts';
 // WebGL, so it runs in headless chromium with the core resolved from source.
 const coreSrc = resolve(import.meta.dirname, '../led-grid/src/index.ts');
 const nixieSrc = resolve(import.meta.dirname, '../nixie/src/index.ts');
+const sevenSrc = resolve(import.meta.dirname, '../seven-segment/src/index.ts');
 
 export default defineConfig({
 	plugins: [react(), dts({ include: ['src'], exclude: ['src/**/*.test.ts', 'src/**/*.test.tsx'] })],
@@ -22,7 +23,14 @@ export default defineConfig({
 			fileName: 'index'
 		},
 		rollupOptions: {
-			external: ['react', 'react-dom', 'react/jsx-runtime', '@glowbox/led-grid', '@glowbox/nixie'],
+			external: [
+				'react',
+				'react-dom',
+				'react/jsx-runtime',
+				'@glowbox/led-grid',
+				'@glowbox/nixie',
+				'@glowbox/seven-segment'
+			],
 			// React Server Components (Next.js App Router) treat library modules as server
 			// code unless marked: these components are client-only (canvas + effects).
 			output: { banner: "'use client';" }
@@ -30,7 +38,11 @@ export default defineConfig({
 	},
 	test: {
 		// Resolve the sibling cores from source at test time (no prior build needed).
-		alias: { '@glowbox/led-grid': coreSrc, '@glowbox/nixie': nixieSrc },
+		alias: {
+			'@glowbox/led-grid': coreSrc,
+			'@glowbox/nixie': nixieSrc,
+			'@glowbox/seven-segment': sevenSrc
+		},
 		include: ['src/**/*.browser.test.tsx'],
 		browser: {
 			enabled: true,

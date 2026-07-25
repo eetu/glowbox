@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/svelte",
-	"version": "1.2.0",
+	"version": "1.3.0",
 	"description": "glowbox components for Svelte 5 — <LedGrid> (3D WebGL LED grid) + <NixieTube> (nixie-tube display).",
 	"keywords": [
 		"glowbox",
@@ -59,7 +59,8 @@
 	},
 	"dependencies": {
 		"@glowbox/led-grid": "workspace:^",
-		"@glowbox/nixie": "workspace:^"
+		"@glowbox/nixie": "workspace:^",
+		"@glowbox/seven-segment": "workspace:^"
 	},
 	"devDependencies": {
 		"@anarkisti/eslint-config": "^1",

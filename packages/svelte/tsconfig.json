@@ -5,7 +5,8 @@
 		// (The published deps are via package.json `dependencies`.)
 		"paths": {
 			"@glowbox/led-grid": ["../led-grid/src/index.ts"],
-			"@glowbox/nixie": ["../nixie/src/index.ts"]
+			"@glowbox/nixie": ["../nixie/src/index.ts"],
+			"@glowbox/seven-segment": ["../seven-segment/src/index.ts"]
 		}
 	},
 	// nixie's source uses import.meta.glob; pull in its vite/client reference too.

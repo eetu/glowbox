@@ -1,15 +1,16 @@
 {
-	"name": "@glowbox/led-grid",
+	"name": "@glowbox/seven-segment",
 	"version": "1.3.0",
-	"description": "Framework-agnostic 3D LED-grid display — a tiny WebGL voxel canvas you draw on.",
+	"description": "Seven-segment display component — per-segment light dynamics, ageing, LED + VFD styles, in the glowbox family.",
 	"keywords": [
 		"glowbox",
-		"led",
-		"led-cube",
-		"webgl",
-		"voxel",
-		"3d",
-		"visualization"
+		"seven-segment",
+		"7-segment",
+		"vfd",
+		"retro",
+		"display",
+		"clock",
+		"glow"
 	],
 	"license": "MIT",
 	"type": "module",
@@ -31,7 +32,7 @@
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/eetu/glowbox.git",
-		"directory": "packages/led-grid"
+		"directory": "packages/seven-segment"
 	},
 	"homepage": "https://eetu.github.io/glowbox/",
 	"scripts": {
@@ -45,9 +46,9 @@
 	},
 	"size-limit": [
 		{
-			"name": "esm (bundled + minified + brotli)",
+			"name": "esm",
 			"path": "dist/index.js",
-			"limit": "10 kB"
+			"limit": "5 kB"
 		}
 	],
 	"devDependencies": {

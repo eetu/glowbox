@@ -1,8 +1,9 @@
 # glowbox — repo overview
 
-Glowing retro **display components** shipped as installable npm packages: two
-framework-agnostic rendering cores (a 3D WebGL LED grid + a 2D-canvas nixie tube),
-thin Svelte/React/Vue wrappers over both, and content helpers — developed in a
+Glowing retro **display components** shipped as installable npm packages: three
+framework-agnostic rendering cores (a 3D WebGL LED grid + 2D-canvas nixie tube and
+seven-segment displays), thin Svelte/React/Vue wrappers over all, and content
+helpers — developed in a
 Yarn-workspaces monorepo with a runnable demo SPA. Part of eetu's homebrew family
 (Svelte, halo-design, ts-style) — but it is a **library**, not a self-hosted app:
 no backend, no Pi deploy. The demo ships to GitHub Pages; packages publish to npm.
@@ -13,15 +14,16 @@ no backend, no Pi deploy. The demo ships to GitHub Pages; packages publish to np
 packages/
   led-grid/  @glowbox/led-grid — plain-TS WebGL 3D LED display + canvas-like voxel API. Zero deps.
   nixie/     @glowbox/nixie    — 2D-canvas nixie-tube core + stateless 3D-compositing helpers. Zero deps.
-  svelte/    @glowbox/svelte   — Svelte 5 <LedGrid> + <NixieTube> (ships .svelte source).
+  seven-segment/ @glowbox/seven-segment — 2D-canvas 7-seg core: per-segment fades, ageing→dead segments, LED/VFD styles. Zero deps.
+  svelte/    @glowbox/svelte   — Svelte 5 <LedGrid> + <NixieTube> + <SevenSegment> (ships .svelte source).
   react/     @glowbox/react    — React 18/19 components (dist carries 'use client').
   vue/       @glowbox/vue      — Vue 3 render-function components.
   extras/    @glowbox/extras   — GIF/image players + text helper over the draw API (bundles gifuct-js).
 examples/
-  svelte-gallery/              — SvelteKit SPA demo (9 LED programs + /nixie clock) → GitHub Pages.
+  svelte-gallery/              — SvelteKit SPA demo (LED programs + /nixie + /seven clocks) → GitHub Pages.
 scripts/
   publish-smoke.mjs            — publish-integrity smoke test (see Testing).
-docs/ROADMAP.md                — post-1.1 direction (1.2 themes + strategic bets).
+docs/ROADMAP.md                — direction (strategic bets; 1.1/1.2 themes shipped).
 ```
 
 Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
@@ -46,7 +48,7 @@ Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
   (`packages/nixie/src/color.ts`) rather than depending on led-grid — a display core
   must not pull in a sibling. Both set `role="img"` + `aria-label` (the `label` option).
 - **Packaging.** ESM-only, `files: ["dist"]`, exports with `types` + `import` (svelte:
-  `svelte` condition, ships `.svelte` source via `@sveltejs/package`). All six are
+  `svelte` condition, ships `.svelte` source via `@sveltejs/package`). All are
   public-npm scoped (`publishConfig.access: public`), versions **lockstep**. size-limit
   budgets in every package (svelte's measures shipped files with `esbuild: false`).
 - **Monorepo dev loop.** Demo + wrapper tests resolve `@glowbox/*` to package **source**
@@ -70,7 +72,7 @@ Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
   (the README's perf table cites its output + environment).
 - **Playwright e2e = the full built app**: `examples/svelte-gallery/e2e` boots the
   built gallery, switches examples, checks the canvas paints.
-- **`node scripts/publish-smoke.mjs` = the published artifacts**: packs all six →
+- **`node scripts/publish-smoke.mjs` = the published artifacts**: packs all packages →
   npm-installs the tarballs into a throwaway consumer → bare-node imports each package
   (catches SSR crashes) → `tsc` against the shipped `.d.ts` → mounts both cores in
   headless chromium straight from the installed dist (import map, no bundler). Runs in
@@ -90,23 +92,23 @@ Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
 
 ## Publishing
 
-Tag `vX.Y.Z` on main → `release.yaml` publishes all six to npm via **trusted publishing
+Tag `vX.Y.Z` on main → `release.yaml` publishes all seven to npm via **trusted publishing
 (OIDC) + provenance** (no `NPM_TOKEN`). Gates: tag-on-main, tag matches **every**
 package's version, the full validate suite, and the publish smoke. Versions are bumped
-in lockstep across all six `package.json`s via `node scripts/bump-version.mjs <version>`,
+in lockstep across all `packages/*` `package.json`s via `node scripts/bump-version.mjs <version>`,
 plus a CHANGELOG entry (root `CHANGELOG.md`, Keep-a-Changelog). Publishes are idempotent
 on rerun (`npm view` guard); prerelease versions (`-rc.N`) go to the `rc` dist-tag.
 
 ## Status / next
 
-- **1.0.0 / 1.0.1 / 1.1.0 shipped 2026-07-13; 1.1.1 (glyph redraw + polish) 2026-07-25**
-  — all six packages live on npm; **1.2.0 "clocks & music"** (`createNixieRow` + `.`
-  glyph, audio-reactive extras, player transport controls, led-grid `quality.alpha`,
-  gallery music-viz/sphere/rain-v2) developed on the `1.2.0` branch.
-- **Direction:** see `docs/ROADMAP.md` — next up 1.2 "clocks & music" (nixie row,
-  audio-reactive extras, transparent canvas, gif player controls), then the bets:
-  `@glowbox/bridge` (WLED/DDP hardware streaming), more display cores (seven-segment →
-  flip-dot → split-flap), trigger-based WebGL2 renderer (the only 2.0).
+- **1.0.x–1.2.0 shipped (1.2.0 "clocks & music" on 2026-07-25)**; **1.3.0** adds the
+  **seven-segment core** (`@glowbox/seven-segment` + `<SevenSegment>` wrappers + the
+  `/seven` demo clock) — now **seven** packages in lockstep. NOTE: a new package needs
+  its npm **trusted publisher** configured before the release tag.
+- **Direction:** see `docs/ROADMAP.md` — the strategic bets: `@glowbox/bridge`
+  (WLED/DDP hardware streaming), more display cores (flip-dot → split-flap; each must
+  clear the wow-over-trivial-alternative bar), trigger-based WebGL2 renderer (the
+  only 2.0).
 
 ## Out of scope
 

@@ -12,7 +12,8 @@ export default defineConfig({
 		// Resolve the sibling cores from source at test time (no prior build needed).
 		alias: {
 			'@glowbox/led-grid': resolve(import.meta.dirname, '../led-grid/src/index.ts'),
-			'@glowbox/nixie': resolve(import.meta.dirname, '../nixie/src/index.ts')
+			'@glowbox/nixie': resolve(import.meta.dirname, '../nixie/src/index.ts'),
+			'@glowbox/seven-segment': resolve(import.meta.dirname, '../seven-segment/src/index.ts')
 		}
 	},
 	test: {
