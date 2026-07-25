@@ -4,6 +4,46 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [1.2.0] — 2026-07-25
+
+"Clocks & music" — the two use-cases the library exists for.
+
+### Added
+
+- **`@glowbox/nixie`: `createNixieRow(container, opts)`** — the framework-free
+  multi-tube row/clock helper: one tube per character (`'12:34:56'`, `'3.14'`),
+  narrow separator slots, container-fitted sizing (`gap` / `digitAspect` /
+  `separatorScale`), one `img` to assistive tech, live `setValue`/`setOptions`,
+  in-place relighting for ticking clocks.
+- **`@glowbox/nixie`: a decimal-point glyph** — `'.'` joins `0–9`, `:`, `-` (a single
+  low dot, authentic to real tubes), height-fitted like the colon.
+- **`@glowbox/extras`: audio-reactive helpers** — `makeAudioBands(analyser, opts)`
+  distils any `AnalyserNode` into log-spaced, punchy-attack/gliding-release 0..1 bands
+  plus `level`/`peak`; `makeBarsVisualizer` and `makeRadialVisualizer` draw them on any
+  grid plane. Zero deps; node-testable.
+- **`@glowbox/extras`: player transport controls** — the GIF/image players' draw fn
+  now carries `pause()` / `play()` / `seek(s)` / `rate` (negative plays backwards) /
+  `paused` / `ready` (non-breaking); plus **`makeFramePlayer(frames, opts)`** to play
+  any procedural `{ src, delay }` sequence with the same controls.
+- **`@glowbox/led-grid`: `quality.alpha`** — transparent-canvas mode (premultiplied
+  compositing): the glow floats over whatever the page puts behind the canvas
+  (parity with nixie's `bare`); `color.background` is ignored. Fixed at creation.
+- **`@glowbox/extras`: the bitmap font learns `·`** (U+00B7) — the natural LED-ticker
+  separator no longer renders as the missing-glyph box.
+- **Demo gallery**: a **Music viz** example (simulated groove by default; a tiny
+  generative WebAudio synth — kick/hats/bassline, zero assets — through the real
+  analyser pipeline on the sound toggle); a **Sphere** example — an LED ball playing
+  shows (a cursor-tracking blinking eye, plasma, the yellow-dude smiley, a glossy
+  8-ball, a turning globe) with a show dropdown (default: auto-rotate); a
+  **transparent** toggle behind the grid; **Rain v2** (floor splashes, wind gusts,
+  leaning trails, heavy drops); and per-example **view-source links** in the panel.
+
+### Changed
+
+- The demo's `/nixie` 2D clock now runs on `createNixieRow` — one call replaces the
+  hand-built row (slot sizing, separator widths, fit-scaling all moved into the
+  library).
+
 ## [1.1.1] — 2026-07-25
 
 ### Changed
@@ -195,6 +235,7 @@ generic `@glowbox/core`.)
   page/glass colour (`color` + `background` retint glow and glass together). Compose a
   row of tubes into a clock or counter.
 
+[1.2.0]: https://github.com/eetu/glowbox/releases/tag/v1.2.0
 [1.1.1]: https://github.com/eetu/glowbox/releases/tag/v1.1.1
 [1.1.0]: https://github.com/eetu/glowbox/releases/tag/v1.1.0
 [1.0.1]: https://github.com/eetu/glowbox/releases/tag/v1.0.1

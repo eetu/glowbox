@@ -35,6 +35,10 @@ describe('font5x7', () => {
 	test('unknown characters fall back to the hollow box', () => {
 		expect(glyph5x7('€')).toEqual([31, 17, 17, 17, 17, 17, 31]);
 	});
+
+	test("the middle dot '·' has a real glyph (the LED-ticker separator)", () => {
+		expect(glyph5x7('·')).toEqual([0, 0, 0, 4, 0, 0, 0]);
+	});
 });
 
 describe('measureText', () => {

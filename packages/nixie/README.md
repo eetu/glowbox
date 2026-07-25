@@ -19,13 +19,35 @@ tube?.setValue(8);
 ```
 
 Give it a canvas + a value; it owns the 2D render, glow, and resize. A clock or counter
-is just a **row of tubes** (one component per canvas).
+is just a **row of tubes** — and the row is built in too:
+
+```ts
+import { createNixieRow } from '@glowbox/nixie';
+
+const row = createNixieRow(container, { value: '12:34:56' });
+setInterval(() => row?.setValue(new Date().toTimeString().slice(0, 8)), 250);
+```
 
 ## Value
 
-A single symbol per tube: a char `0`–`9`, `:`, `-`, or `null` / `''` for all-cathodes-dark.
-`setValue(v)` relights it live. A longer string is truncated to its first character (with
-a one-time console warning) — compose a row of tubes for multi-digit values.
+A single symbol per tube: a char `0`–`9`, `:`, `.`, `-`, or `null` / `''` for
+all-cathodes-dark. `setValue(v)` relights it live. A longer string is truncated to its
+first character (with a one-time console warning) — use `createNixieRow` for multi-digit
+values.
+
+## Row
+
+`createNixieRow(container, opts)` lights **one tube per character** of `value`
+(`'12:34'`, `'3.14'`, `'-42'`) inside any block element, with the narrow separators
+(`:` `.` `-`) in slimmer slots. The row owns slot sizing — tubes fill the container
+height at a digit aspect and shrink to fit its width — and reads to assistive tech as
+**one** image (`aria-label` = the whole string), not one per tube. All appearance options
+below apply and fan out live via `setOptions`; row extras: `gap` (px between tubes,
+default 6), `digitAspect` (digit width:height, default 0.56), `separatorScale`
+(separator slot width as a fraction of a digit's, default 0.47), and `label` (row
+`aria-label`, defaults to the value). `setValue` with the same string length relights
+tubes in place (a ticking clock never recreates canvases); `tubes` exposes the live
+`NixieTube`s; `dispose()` removes everything it added.
 
 ## Options
 

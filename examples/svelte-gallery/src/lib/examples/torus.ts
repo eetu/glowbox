@@ -7,6 +7,10 @@
 //     of the moving surface would flicker at low res, but at high density it's
 //     imperceptible — hence the split.
 // Hue runs around the major ring.
+//
+// Deliberately NOT the library's `d.torus()` primitive: that draws an axis-aligned,
+// single-colour torus, while this demo tumbles the ring through two rotations and
+// colours it per-voxel. The primitive is for static shapes; this is a program.
 import type { LedDisplay } from '@glowbox/led-grid';
 
 const TAU = Math.PI * 2;

@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/nixie",
-	"version": "1.1.1",
+	"version": "1.2.0",
 	"description": "Nixie-tube display component — a glowing vector-numeral rendering core in the glowbox family.",
 	"keywords": [
 		"glowbox",
@@ -47,7 +47,7 @@
 		{
 			"name": "esm",
 			"path": "dist/index.js",
-			"limit": "4 kB"
+			"limit": "5 kB"
 		}
 	],
 	"devDependencies": {

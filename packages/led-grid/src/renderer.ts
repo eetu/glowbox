@@ -43,6 +43,9 @@ export type RendererParams = {
 	/** Comic brightness: false = cel-shade (keep tone), true = flat vivid (full value). */
 	vivid: boolean;
 	antialias: boolean;
+	/** Transparent canvas (premultiplied compositing): the glow floats over whatever is
+	 *  behind the canvas instead of over `background`. Fixed at context creation. */
+	alpha: boolean;
 };
 
 export type RenderView = {
@@ -248,15 +251,18 @@ const COMP_VERT = `
     gl_Position = vec4(aQuad, 0.0, 1.0);
   }
 `;
-// Fallback (RGBA8): over-composite the accumulated light onto the background.
+// Fallback (RGBA8): over-composite the accumulated light onto the background —
+// or, transparent mode, hand the same premultiplied light to the page compositor.
 const COMP_FRAG = `
   precision highp float;
   uniform sampler2D uScene;
   uniform vec3 uBg;
+  uniform float uTransparent;
   varying vec2 vUv;
   void main() {
     vec4 s = texture2D(uScene, vUv);
-    gl_FragColor = vec4(uBg * (1.0 - clamp(s.a, 0.0, 1.0)) + s.rgb, 1.0);
+    float a = clamp(s.a, 0.0, 1.0);
+    gl_FragColor = mix(vec4(uBg * (1.0 - a) + s.rgb, 1.0), vec4(s.rgb, a), uTransparent);
   }
 `;
 // 9-tap separable Gaussian blur of the emissive HDR buffer → soft light halos.
@@ -286,6 +292,7 @@ const BLOOM_FRAG = `
   uniform sampler2D uBloom;   // blurred halo
   uniform vec3 uBg;
   uniform float uStrength;
+  uniform float uTransparent;
   varying vec2 vUv;
   vec3 aces(vec3 x) { return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
   void main() {
@@ -295,7 +302,10 @@ const BLOOM_FRAG = `
     float cov = clamp(max(e.a, max(halo.r, max(halo.g, halo.b))), 0.0, 1.0);
     // Tone-map only the emitted light; the background is preserved and the light
     // is over-composited onto it (like a real emitter in front of a surface).
-    gl_FragColor = vec4(mix(uBg, aces(light), cov), 1.0);
+    // Transparent mode writes the identical result premultiplied for the page
+    // compositor: (lit×cov, cov) over the page ≡ mix(page, lit, cov).
+    vec3 lit = aces(light);
+    gl_FragColor = mix(vec4(mix(uBg, lit, cov), 1.0), vec4(lit * cov, cov), uTransparent);
   }
 `;
 
@@ -309,10 +319,14 @@ export function createRenderer(
 	// resize). nx*ny*nz*3 RGB. If omitted the renderer allocates its own.
 	leds: Float32Array = new Float32Array(nx * ny * nz * 3)
 ): Renderer | null {
+	// Transparent mode asks for an alpha canvas with premultiplied compositing — the
+	// final passes then write (light×coverage, coverage) so the glow "over"-composites
+	// onto the page exactly the way it would onto `background`.
+	const transparent = params.alpha;
 	const gl = canvas.getContext('webgl', {
 		antialias: params.antialias,
-		alpha: false,
-		premultipliedAlpha: false,
+		alpha: transparent,
+		premultipliedAlpha: transparent,
 		depth: true // the comic style is opaque + depth-tested (hologram ignores it)
 	});
 	if (!gl) return null;
@@ -492,6 +506,8 @@ export function createRenderer(
 			aQuadComp = g.getAttribLocation(compProg, 'aQuad');
 			uCompScene = g.getUniformLocation(compProg, 'uScene');
 			uCompBg = g.getUniformLocation(compProg, 'uBg');
+			g.useProgram(compProg);
+			g.uniform1f(g.getUniformLocation(compProg, 'uTransparent'), transparent ? 1 : 0);
 			ldrFbo = g.createFramebuffer();
 		}
 		if (w !== ldrW || h !== ldrH) {
@@ -543,6 +559,8 @@ export function createRenderer(
 			uBloomHalo = g.getUniformLocation(bloomProg, 'uBloom');
 			uBloomBg = g.getUniformLocation(bloomProg, 'uBg');
 			uBloomStrength = g.getUniformLocation(bloomProg, 'uStrength');
+			g.useProgram(bloomProg);
+			g.uniform1f(g.getUniformLocation(bloomProg, 'uTransparent'), transparent ? 1 : 0);
 			sceneFbo = g.createFramebuffer();
 			bloomFboA = g.createFramebuffer();
 			bloomFboB = g.createFramebuffer();
@@ -672,7 +690,9 @@ export function createRenderer(
 		g.viewport(0, 0, w, h);
 		g.disable(g.BLEND);
 		g.enable(g.DEPTH_TEST);
-		g.clearColor(bg[0], bg[1], bg[2], 1);
+		// Transparent mode: clear to nothing — the page is the background.
+		if (transparent) g.clearColor(0, 0, 0, 0);
+		else g.clearColor(bg[0], bg[1], bg[2], 1);
 		g.clear(g.COLOR_BUFFER_BIT | g.DEPTH_BUFFER_BIT);
 		drawPoints();
 	}

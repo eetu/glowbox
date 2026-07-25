@@ -2,9 +2,32 @@
 // works with any wrapper (they operate on the plain VoxelGrid / LedDisplay):
 //   import { makeGifPlayer, makeImagePlayer, text } from "@glowbox/extras";
 //   display.onFrame(makeGifPlayer("/loop.gif", { plane: "xy" }));
+export {
+	type AudioBands,
+	type AudioBandsOptions,
+	makeAudioBands,
+	makeBarsVisualizer,
+	makeRadialVisualizer,
+	type VisualizerColor,
+	type VisualizerOptions
+} from './audio';
 export { FONT_5X7, glyph5x7 } from './font5x7';
-export { decodeGif, frameAt, framesFromBuffer, type GifFrame, makeGifPlayer } from './gif';
-export { decodeImage, type DrawFn, makeImagePlayer, type PlayerOptions } from './image';
+export {
+	decodeGif,
+	frameAt,
+	framesFromBuffer,
+	type GifFrame,
+	makeFramePlayer,
+	makeGifPlayer
+} from './gif';
+export {
+	decodeImage,
+	type DrawFn,
+	makeImagePlayer,
+	type PlayerControls,
+	type PlayerDrawFn,
+	type PlayerOptions
+} from './image';
 export { paintImage, type PaintOptions, type Plane } from './plane';
 export { type Fit, type GridSample, type ImageSource, sampleImageToGrid } from './sample';
 export { makeTextScroller, type TextScrollerOptions } from './scroller';

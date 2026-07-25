@@ -6,7 +6,7 @@
 import type { LedDisplay } from '@glowbox/led-grid';
 import { decompressFrames, parseGIF } from 'gifuct-js';
 
-import { type DrawFn, type PlayerOptions } from './image';
+import { type PlayerDrawFn, type PlayerOptions } from './image';
 import { paintImage, type PaintOptions } from './plane';
 import type { ImageSource } from './sample';
 
@@ -77,7 +77,7 @@ export async function decodeGif(url: string): Promise<GifFrame[]> {
 export function frameAt(frames: GifFrame[], elapsedMs: number): number {
 	const total = frames.reduce((a, f) => a + f.delay, 0);
 	if (total <= 0) return 0;
-	let t = elapsedMs % total;
+	let t = ((elapsedMs % total) + total) % total; // wrap negatives (rate < 0 seeks back)
 	for (let i = 0; i < frames.length; i++) {
 		if (t < frames[i].delay) return i;
 		t -= frames[i].delay;
@@ -85,24 +85,75 @@ export function frameAt(frames: GifFrame[], elapsedMs: number): number {
 	return frames.length - 1;
 }
 
+// The shared transport: one clock (`elapsed`) advanced by rate-scaled dt while
+// playing, frames arriving whenever the decode lands. Both players are this.
+function framePlayer(
+	opts: PlayerOptions,
+	ready: Promise<boolean>,
+	getFrames: () => GifFrame[] | null
+): PlayerDrawFn {
+	let elapsed = 0;
+	let paused = false;
+	let rate = 1;
+	const clear = opts.clear ?? true;
+	const paint: PaintOptions = opts;
+	const draw = (d: LedDisplay, dt: number) => {
+		if (clear) d.clear();
+		const frames = getFrames();
+		if (!frames || frames.length === 0) return;
+		if (!paused) elapsed += dt * 1000 * rate; // dt is seconds
+		paintImage(d, frames[frameAt(frames, elapsed)].src, paint);
+	};
+	const player = Object.assign(draw, {
+		pause: () => {
+			paused = true;
+		},
+		play: () => {
+			paused = false;
+		},
+		seek: (seconds: number) => {
+			elapsed = seconds * 1000;
+		},
+		ready
+	}) as unknown as PlayerDrawFn;
+	// Accessors can't ride Object.assign (it copies values, not getters).
+	Object.defineProperty(player, 'paused', { get: () => paused });
+	Object.defineProperty(player, 'rate', {
+		get: () => rate,
+		set: (v: number) => {
+			rate = v;
+		}
+	});
+	return player;
+}
+
+/**
+ * Play a frame sequence you already have — composited GIF frames (`decodeGif` /
+ * `framesFromBuffer`) or your own procedural `{ src, delay }` list — onto the grid
+ * plane, looping. Same transport controls as `makeGifPlayer`.
+ */
+export function makeFramePlayer(frames: GifFrame[], opts: PlayerOptions = {}): PlayerDrawFn {
+	return framePlayer(opts, Promise.resolve(true), () => frames);
+}
+
 /**
  * Load `url` and return a draw callback that plays the GIF onto the grid plane,
  * advancing frames by their delays and looping. Give the result to
  * `display.onFrame(...)` (or a wrapper's `draw` prop). Draws nothing until loaded.
+ * The returned fn carries transport controls: `pause()` / `play()` / `seek(s)` /
+ * `rate` / `paused` / `ready`.
  */
-export function makeGifPlayer(url: string, opts: PlayerOptions = {}): DrawFn {
+export function makeGifPlayer(url: string, opts: PlayerOptions = {}): PlayerDrawFn {
 	let frames: GifFrame[] | null = null;
-	let elapsed = 0;
-	decodeGif(url).then(
-		(f) => (frames = f),
-		(e) => console.warn(e)
+	const ready = decodeGif(url).then(
+		(f) => {
+			frames = f;
+			return true;
+		},
+		(e) => {
+			console.warn(e);
+			return false;
+		}
 	);
-	const clear = opts.clear ?? true;
-	const paint: PaintOptions = opts;
-	return (d: LedDisplay, dt: number) => {
-		if (clear) d.clear();
-		if (!frames || frames.length === 0) return;
-		elapsed += dt * 1000; // dt is seconds
-		paintImage(d, frames[frameAt(frames, elapsed)].src, paint);
-	};
+	return framePlayer(opts, ready, () => frames);
 }

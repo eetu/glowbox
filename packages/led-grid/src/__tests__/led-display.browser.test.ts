@@ -59,7 +59,8 @@ test('createRenderer initialises a live WebGL renderer', () => {
 		rgb: false,
 		rgbLayout: 'auto',
 		vivid: false,
-		antialias: true
+		antialias: true,
+		alpha: false
 	});
 	expect(r).not.toBeNull();
 	expect(r?.leds.length).toBe(4 * 4 * 4 * 3);
@@ -298,4 +299,50 @@ test('a display can be recreated on the same canvas after dispose (StrictMode-sa
 	d2!.render();
 	expect(litPixels(canvas)).toBeGreaterThan(0);
 	d2!.dispose();
+});
+
+test('quality.alpha renders a transparent canvas: glow has coverage, gaps have none', () => {
+	const canvas = makeCanvas();
+	const d = display(canvas, { quality: { paused: true, alpha: true } });
+	expect(d).not.toBeNull();
+	if (!d) return;
+	const gl = canvas.getContext('webgl')!;
+	const px = new Uint8Array(canvas.width * canvas.height * 4);
+	d.clear();
+	d.render();
+	gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, px);
+	// Nothing drawn → every pixel fully transparent (the page is the background).
+	let maxA = 0;
+	for (let i = 3; i < px.length; i += 4) maxA = Math.max(maxA, px[i]);
+	expect(maxA).toBe(0);
+
+	// A bright sphere → lit pixels carry alpha (coverage), but the corner stays clear.
+	d.sphere([2, 2, 2], 2, [1, 1, 1], true);
+	d.render();
+	gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, px);
+	let covered = 0;
+	for (let i = 3; i < px.length; i += 4) if (px[i] > 20) covered++;
+	expect(covered).toBeGreaterThan(0);
+	expect(px[3]).toBeLessThan(10); // pixel (0,0) — far from the centred sphere
+	d.dispose();
+});
+
+test('comic style on a transparent canvas: opaque discs, clear gaps', () => {
+	const canvas = makeCanvas();
+	const d = display(canvas, {
+		quality: { paused: true, alpha: true },
+		led: { style: 'comic' }
+	});
+	if (!d) return;
+	d.clear();
+	d.sphere([2, 2, 2], 2, [0, 0.4, 1], true);
+	d.render();
+	const gl = canvas.getContext('webgl')!;
+	const px = new Uint8Array(canvas.width * canvas.height * 4);
+	gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, px);
+	let opaque = 0;
+	for (let i = 3; i < px.length; i += 4) if (px[i] > 200) opaque++;
+	expect(opaque).toBeGreaterThan(0); // discs are solid
+	expect(px[3]).toBeLessThan(10); // corner clear
+	d.dispose();
 });

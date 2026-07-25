@@ -1,12 +1,13 @@
 <script lang="ts">
-	// A nixie-tube clock built from @glowbox/svelte's <NixieTube> component (over the
-	// @glowbox/nixie core) — one tube per slot; a clock is just a row of them. Mirrors the
-	// LED-grid demo's shell: shared CoreNav header + a right-hand control drawer (an
-	// off-canvas sheet on mobile), so the two cores read as one app.
-	import { type NixieStyle } from '@glowbox/nixie';
-	import { NixieTube } from '@glowbox/svelte';
+	// A nixie-tube clock on @glowbox/nixie's createNixieRow — the framework-free row
+	// helper drives the whole 2D clock from one call (one tube per char, narrow ':'
+	// slots, container-fitted sizing). Mirrors the LED-grid demo's shell: shared CoreNav
+	// header + a right-hand control drawer (an off-canvas sheet on mobile), so the two
+	// cores read as one app.
+	import { createNixieRow, type NixieRow, type NixieStyle } from '@glowbox/nixie';
 	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
 	import X from '@lucide/svelte/icons/x';
+	import { untrack } from 'svelte';
 
 	import CoreNav from '$lib/components/CoreNav.svelte';
 	import NixieScene3D from '$lib/components/NixieScene3D.svelte';
@@ -21,30 +22,57 @@
 	// 2D = flat <NixieTube> canvases; 3D = real bent-wire cathodes in refractive glass
 	// tubes (three.js), extruded from the same glyph paths via @glowbox/nixie's glyphPath.
 	let mode = $state<'2d' | '3d'>('2d');
-	// Tube dimensions (px); separators are a fraction of a digit tube's width.
+	// Tube dimensions (px) — the row turns them into a digit aspect + container height
+	// and handles separator widths + shrink-to-fit itself.
 	let tubeW = $state(84);
 	let tubeH = $state(150);
-	const colonW = $derived(Math.round(tubeW * 0.47));
-	// Scale the whole clock down to fit the stage width (so slider sizes never overflow).
-	let stageW = $state(0);
-	let clockW = $state(0);
-	const fit = $derived(stageW && clockW ? Math.min(1, (stageW - 40) / clockW) : 1);
 	let panelOpen = $state(false);
 	// Escape closes the mobile sheet (matches the scrim / close button).
 	const onKeydown = (e: KeyboardEvent) => {
 		if (e.key === 'Escape' && panelOpen) panelOpen = false;
 	};
 
-	// The current time as 8 slot chars (HH:MM:SS) — each drives one <NixieTube value>.
+	// The current time (HH:MM:SS) — the whole string goes to the row; the 3D scene still
+	// takes it as slot chars.
 	const pad = (n: number) => String(n).padStart(2, '0');
-	const clockChars = () => {
+	const clockStr = () => {
 		const t = new Date();
-		return `${pad(t.getHours())}:${pad(t.getMinutes())}:${pad(t.getSeconds())}`.split('');
+		return `${pad(t.getHours())}:${pad(t.getMinutes())}:${pad(t.getSeconds())}`;
 	};
-	let digits = $state<string[]>(clockChars());
+	let time = $state(clockStr());
+	const digits = $derived(time.split(''));
 	$effect(() => {
-		const id = setInterval(() => (digits = clockChars()), 250);
+		const id = setInterval(() => (time = clockStr()), 250);
 		return () => clearInterval(id);
+	});
+
+	// The 2D clock: one createNixieRow on a plain div. Created when the 2D stage mounts
+	// (options snapshot untracked so tweaks don't recreate it); the follow-up effects
+	// push option/value changes into the live row.
+	let rowEl = $state<HTMLDivElement>();
+	let row: NixieRow | null = null;
+	$effect(() => {
+		if (!rowEl) return;
+		row = createNixieRow(
+			rowEl,
+			untrack(() => ({
+				value: time,
+				style,
+				color,
+				background: glass,
+				digitAspect: tubeW / tubeH
+			}))
+		);
+		return () => {
+			row?.dispose();
+			row = null;
+		};
+	});
+	$effect(() => {
+		row?.setOptions({ style, color, background: glass, digitAspect: tubeW / tubeH });
+	});
+	$effect(() => {
+		row?.setValue(time);
 	});
 </script>
 
@@ -68,7 +96,7 @@
 		<span class="hint"
 			>{mode === '3d'
 				? 'bent-wire cathodes in refractive glass · drag to orbit'
-				: 'a row of @glowbox/nixie tubes · one per canvas'}</span
+				: 'one createNixieRow call · one tube per char'}</span
 		>
 		<ThemeToggle />
 		<button
@@ -82,18 +110,11 @@
 		</button>
 	</header>
 
-	<div class="stage" style="background: {backdrop}" bind:clientWidth={stageW}>
+	<div class="stage" style="background: {backdrop}">
 		{#if mode === '3d'}
 			<NixieScene3D {digits} {color} {glass} {backdrop} {style} />
 		{:else}
-			<div class="clock" bind:clientWidth={clockW} style="transform: scale({fit})">
-				{#each digits as d, i (i)}
-					{@const isColon = i === 2 || i === 5}
-					<div class="slot" style="width: {isColon ? colonW : tubeW}px; height: {tubeH}px">
-						<NixieTube value={d} tubeStyle={style} {color} background={glass} />
-					</div>
-				{/each}
-			</div>
+			<div class="clock" bind:this={rowEl} style="height: {tubeH}px"></div>
 		{/if}
 	</div>
 
@@ -167,6 +188,18 @@
 				<input type="color" bind:value={backdrop} aria-label="backdrop colour" />
 			</div>
 		</section>
+
+		<section>
+			<h2>example</h2>
+			<a
+				class="src-link"
+				href="https://github.com/eetu/glowbox/blob/main/examples/svelte-gallery/src/routes/nixie/+page.svelte"
+				target="_blank"
+				rel="noreferrer"
+			>
+				view source — <code>nixie/+page.svelte</code>
+			</a>
+		</section>
 	</aside>
 </div>
 
@@ -214,24 +247,15 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		/* The clock is a fixed-width row scaled to fit visually; its untransformed layout box
-		   can still be wider than the stage, so clip it here (the scaled clock stays within). */
 		overflow: hidden;
 		/* colour set inline from the `backdrop` control (defaults to a warm near-black) */
 		padding: 24px;
 		transition: background var(--halo-d-fast) ease-out;
 	}
+	/* The row helper owns everything inside: slot widths, separator slots, shrink-to-fit.
+	   The div just gives it a box — full stage width, slider-driven height. */
 	.clock {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		/* scaled to fit the stage width (see `fit`); shrink toward the centre */
-		transform-origin: center;
-	}
-	/* each slot is sized inline by the width/height sliders; the <NixieTube> fills it and
-	   draws its own rounded glass + drop shadow into a transparent margin */
-	.slot {
-		flex: 0 0 auto;
+		width: 100%;
 	}
 	/* The 3D scene fills the stage regardless of the flex centring used for the 2D row. */
 	.stage :global(.scene3d) {
@@ -298,6 +322,18 @@
 		border-radius: var(--halo-radius);
 		background: none;
 		cursor: pointer;
+	}
+	.src-link {
+		font-size: 12px;
+		color: var(--halo-text-muted);
+		text-decoration: none;
+	}
+	.src-link:hover {
+		color: var(--halo-text-main);
+		text-decoration: underline;
+	}
+	.src-link code {
+		font-size: 12px;
 	}
 	/* Sliders sit in a column with breathing room. */
 	.panel :global(.slider) {

@@ -16,7 +16,8 @@ here and the component uses it** — no paste-back, no regeneration.
   `fill`/`stroke`/`width` here are only so the file previews in a viewer; the renderer
   supplies its own stroke, round caps, glow, and per-style weighting.)
 - **`colon.svg` is the separator** (two dots); the renderer fills it. `dash.svg` is `-`.
-- Filenames map to symbols: `0.svg`…`9.svg`, `dash.svg` → `-`, `colon.svg` → `:`.
+- Filenames map to symbols: `0.svg`…`9.svg`, `dash.svg` → `-`, `colon.svg` → `:`,
+  `dot.svg` → `.` (the decimal point — a single low dot, authentic to real tubes).
 
 ## Editing
 

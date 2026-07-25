@@ -8,9 +8,13 @@ packages.
 
 Everything planned landed in 1.1.0 — see `CHANGELOG.md` for the full list.
 
-## 1.2 — "clocks & music"
+## 1.2 — "clocks & music" — SHIPPED except StackBlitz links
 
-The two use-cases the library exists for.
+Everything below landed in 1.2.0 (see `CHANGELOG.md`) except the **StackBlitz links**,
+which want real projects built against the published 1.2.0 packages — do those
+post-release. (View-source links in the gallery shipped; the torus demo deliberately
+keeps its hand-rolled tumbling torus — `d.torus()` is axis-aligned/single-colour, see
+the note in `torus.ts`.)
 
 - **`createNixieRow`** — a framework-free multi-tube row/clock helper (the demo
   hand-builds exactly this), plus a decimal-point glyph (authentic to real tubes;

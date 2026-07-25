@@ -9,6 +9,8 @@
 	import Blend from '@lucide/svelte/icons/blend';
 	import Circle from '@lucide/svelte/icons/circle';
 	import Grid2x2 from '@lucide/svelte/icons/grid-2x2';
+	import Layers from '@lucide/svelte/icons/layers';
+	import Music from '@lucide/svelte/icons/music';
 	import Orbit from '@lucide/svelte/icons/orbit';
 	import Palette from '@lucide/svelte/icons/palette';
 	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
@@ -28,9 +30,11 @@
 	import { makeAttractor } from '$lib/examples/attractor';
 	import { makeGifDraw } from '$lib/examples/gif';
 	import { makeXwing } from '$lib/examples/model';
+	import { makeMusicViz } from '$lib/examples/music';
 	import { makePacman } from '$lib/examples/pacman';
 	import { makeRain } from '$lib/examples/rain';
 	import { makeScroller } from '$lib/examples/scroller';
+	import { makeSphere, SPHERE_SHOWS, type SphereShow } from '$lib/examples/sphere';
 	import { makeTorusDraw } from '$lib/examples/torus';
 	import { makeWave } from '$lib/examples/wave';
 	import { makeWormhole } from '$lib/examples/wormhole';
@@ -50,25 +54,49 @@
 		// builds a cube maze of the smallest dimension.
 		make: (size: Size) => (d: LedDisplay, dt: number) => void;
 		view?: View;
+		// Source file under src/lib/examples — the panel links it (the examples are
+		// the real tutorial).
+		file: string;
 	};
 	// Ordered as a showcase: lead with the abstract, glow-forward pieces where the LED
 	// bloom is the star, then the voxelized model + flat-content billboards, the ambient
 	// motion, the POV fly-through, and finally 3D Pac-Man (a fun but special game case).
 	const examples: Record<string, Example> = {
-		'Spinning torus': { size: [16, 16, 16], make: () => makeTorusDraw() },
-		'Strange attractor': { size: [40, 48, 40], make: () => makeAttractor() },
-		'X-wing (model)': { size: [56, 56, 56], make: () => makeXwing() },
-		'Wave field': { size: [40, 20, 40], make: () => makeWave() },
-		'GIF billboard': { size: [64, 48, 6], make: () => makeGifDraw() },
-		'Text scroller': { size: [64, 12, 6], make: () => makeScroller() },
-		Rain: { size: [24, 40, 24], make: () => makeRain() },
+		'Spinning torus': { size: [16, 16, 16], make: () => makeTorusDraw(), file: 'torus.ts' },
+		'Strange attractor': { size: [40, 48, 40], make: () => makeAttractor(), file: 'attractor.ts' },
+		'X-wing (model)': { size: [56, 56, 56], make: () => makeXwing(), file: 'model.ts' },
+		'Wave field': { size: [40, 20, 40], make: () => makeWave(), file: 'wave.ts' },
+		'Music viz': {
+			size: [32, 24, 16],
+			make: () => makeMusicViz(() => musicSound),
+			file: 'music.ts'
+		},
+		// The eye tracks your cursor — keep the ball still by default so it can.
+		Sphere: {
+			size: [40, 40, 40],
+			make: () =>
+				makeSphere(
+					() => stagePointer,
+					() => sphereShow
+				),
+			file: 'sphere.ts',
+			view: { autoOrbit: false }
+		},
+		'GIF billboard': { size: [64, 48, 6], make: () => makeGifDraw(), file: 'gif.ts' },
+		'Text scroller': { size: [64, 12, 6], make: () => makeScroller(), file: 'scroller.ts' },
+		Rain: { size: [24, 40, 24], make: () => makeRain(), file: 'rain.ts' },
 		// POV down the tube axis (+z), close in, wide FOV, no orbit — a fly-through.
 		Wormhole: {
 			size: [32, 32, 64],
 			make: () => makeWormhole(),
+			file: 'wormhole.ts',
 			view: { autoOrbit: false, yaw: 0, pitch: 0.06, distance: 1.4, fov: 1.15 }
 		},
-		'3D Pac-Man': { size: [7, 7, 7], make: (s) => makePacman(Math.min(s[0], s[1], s[2])) }
+		'3D Pac-Man': {
+			size: [7, 7, 7],
+			make: (s) => makePacman(Math.min(s[0], s[1], s[2])),
+			file: 'pacman.ts'
+		}
 	};
 	const exampleOptions = Object.keys(examples).map((k) => ({ value: k, label: k }));
 
@@ -152,6 +180,9 @@
 	let projection = $state<Projection>('perspective');
 	let zoom = $state(true);
 	let background = $state('#05050c'); // CSS string → Color, straight from <input type=color>
+	// quality.alpha is fixed at context creation, so this toggle remounts the display
+	// (the {#key} below). The stage shows a gradient behind it to make it visible.
+	let transparent = $state(false);
 
 	// Optional render-loop cap (0 = uncapped). A power/cadence knob, not a speed-up.
 	let fpsCap = $state('off');
@@ -166,6 +197,30 @@
 	// Text-scroller-specific controls (shown only for that example).
 	let scrollText = $state('GLOWBOX · ');
 	let scrollFont = $state('bitmap');
+
+	// Music-viz-specific: real synth audio (needs the click — WebAudio autoplay policy);
+	// off = the simulated groove. Reset when leaving the example so sound never lingers.
+	let musicSound = $state(false);
+	$effect(() => {
+		if (name !== 'Music viz') musicSound = false;
+	});
+
+	// Sphere-specific: pin one show or rotate through them all ('auto'); and the eye
+	// follows the cursor over the stage (-1..1 from centre; null until the first move
+	// so the unattended eye wanders instead of staring).
+	let sphereShow = $state<SphereShow>('auto');
+	const SPHERE_SHOW_OPTIONS = [
+		{ value: 'auto', label: 'auto (rotate)' },
+		...SPHERE_SHOWS.map((s) => ({ value: s, label: s }))
+	];
+	let stagePointer: [number, number] | null = null;
+	const onStageMove = (e: PointerEvent) => {
+		const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+		stagePointer = [
+			((e.clientX - r.left) / r.width) * 2 - 1,
+			((e.clientY - r.top) / r.height) * 2 - 1
+		];
+	};
 	const FONTS = [
 		{ value: 'bitmap', label: '5×7 bitmap (built-in)' },
 		{ value: "'Space Grotesk', sans-serif", label: 'Space Grotesk' },
@@ -237,7 +292,7 @@
 		</button>
 	</header>
 
-	<div class="stage">
+	<div class="stage" class:transparent onpointermove={onStageMove} role="presentation">
 		{#if tooBig}
 			<div class="toobig">
 				<TriangleAlert size={20} />
@@ -245,8 +300,9 @@
 			</div>
 		{:else}
 			<!-- Keyed on the example so switching programs remounts a fresh canvas; the
-			     control props update live via setOptions, and size resizes in place. -->
-			{#key name}
+			     control props update live via setOptions, and size resizes in place.
+			     (Also keyed on `transparent`: quality.alpha is fixed at creation.) -->
+			{#key name + (transparent ? ' (transparent)' : '')}
 				<LedGrid
 					{size}
 					{draw}
@@ -271,7 +327,7 @@
 					}}
 					interaction={{ zoom, zoomLimits: [0.35, 12] }}
 					color={{ background }}
-					quality={{ fps: fpsCapNum }}
+					quality={{ fps: fpsCapNum, alpha: transparent }}
 					oncreate={(d) => (display = d)}
 				/>
 			{/key}
@@ -317,6 +373,26 @@
 			</section>
 		{/if}
 
+		{#if name === 'Sphere'}
+			<section>
+				<h2>show</h2>
+				<div class="row">
+					<span class="rlabel">shape</span>
+					<Select bind:value={sphereShow} options={SPHERE_SHOW_OPTIONS} ariaLabel="sphere show" />
+				</div>
+			</section>
+		{/if}
+
+		{#if name === 'Music viz'}
+			<section>
+				<h2>sound</h2>
+				<div class="row">
+					<span class="rlabel">synth audio</span>
+					<ToggleChip bind:checked={musicSound} label="play" icon={Music} />
+				</div>
+			</section>
+		{/if}
+
 		<section>
 			<h2>look</h2>
 			<div class="row mobile-only">
@@ -344,6 +420,7 @@
 			<div class="chips">
 				<ToggleChip bind:checked={stagger} label="stagger" icon={Grid2x2} />
 				<ToggleChip bind:checked={rgb} label="rgb" icon={Blend} />
+				<ToggleChip bind:checked={transparent} label="transparent" icon={Layers} />
 				{#if style === 'comic'}
 					<ToggleChip bind:checked={vivid} label="vivid" icon={Sparkles} />
 				{/if}
@@ -440,6 +517,21 @@
 				</span>
 			</div>
 		</section>
+
+		<!-- The example files are the real tutorial — link the one on screen. -->
+		<section>
+			<h2>example</h2>
+			<a
+				class="src-link"
+				href="https://github.com/eetu/glowbox/blob/main/examples/svelte-gallery/src/lib/examples/{examples[
+					name
+				].file}"
+				target="_blank"
+				rel="noreferrer"
+			>
+				view source — <code>{examples[name].file}</code>
+			</a>
+		</section>
 	</aside>
 </div>
 
@@ -492,6 +584,14 @@
 		position: relative;
 		min-height: 0;
 		background: var(--halo-bg-main);
+	}
+	/* With quality.alpha on, the canvas is see-through — put something behind it so
+	   the transparency is visible (the "widget floating over your page" promise). */
+	.stage.transparent {
+		background:
+			radial-gradient(ellipse at 30% 20%, #2b1a4d 0%, transparent 55%),
+			radial-gradient(ellipse at 75% 75%, #143a3a 0%, transparent 60%),
+			repeating-linear-gradient(45deg, #101018 0 24px, #16161f 24px 48px);
 	}
 	.toobig {
 		display: grid;
@@ -665,6 +765,19 @@
 	.swatch code {
 		font-size: 12px;
 		color: var(--halo-text-muted);
+	}
+
+	.src-link {
+		font-size: 12px;
+		color: var(--halo-text-muted);
+		text-decoration: none;
+	}
+	.src-link:hover {
+		color: var(--halo-text-main);
+		text-decoration: underline;
+	}
+	.src-link code {
+		font-size: 12px;
 	}
 
 	.text-input {

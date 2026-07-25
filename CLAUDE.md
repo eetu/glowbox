@@ -99,9 +99,10 @@ on rerun (`npm view` guard); prerelease versions (`-rc.N`) go to the `rc` dist-t
 
 ## Status / next
 
-- **1.0.0 / 1.0.1 / 1.1.0 ("text & confidence") shipped 2026-07-13** — all six packages
-  live on npm; **1.1.1** (nixie glyph redraw + polish: SSR/observer guards, doc + CI
-  fixes) staged under CHANGELOG `[Unreleased]`.
+- **1.0.0 / 1.0.1 / 1.1.0 shipped 2026-07-13; 1.1.1 (glyph redraw + polish) 2026-07-25**
+  — all six packages live on npm; **1.2.0 "clocks & music"** (`createNixieRow` + `.`
+  glyph, audio-reactive extras, player transport controls, led-grid `quality.alpha`,
+  gallery music-viz/sphere/rain-v2) developed on the `1.2.0` branch.
 - **Direction:** see `docs/ROADMAP.md` — next up 1.2 "clocks & music" (nixie row,
   audio-reactive extras, transparent canvas, gif player controls), then the bets:
   `@glowbox/bridge` (WLED/DDP hardware streaming), more display cores (seven-segment →

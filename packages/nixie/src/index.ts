@@ -24,3 +24,4 @@ export {
 	nixieStyle,
 	type NixieTube
 } from './nixie';
+export { createNixieRow, type NixieRow, type NixieRowOptions } from './row';
