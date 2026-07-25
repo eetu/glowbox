@@ -4,6 +4,15 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [Unreleased]
+
+### Added
+
+- **StackBlitz starters** (`examples/starters/{svelte,react,vue}`): minimal Vite apps
+  on the published packages — a pulsing sphere + torus on `<LedGrid>` and a ticking
+  `<NixieTube>` — booted by new **"Open in StackBlitz"** links in the wrapper READMEs
+  and the root README. Verified against the live 1.2.0 npm packages.
+
 ## [1.2.0] — 2026-07-25
 
 "Clocks & music" — the two use-cases the library exists for.

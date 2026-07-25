@@ -1,6 +1,9 @@
 # glowbox
 
 **▶ [Live demo](https://eetu.github.io/glowbox/)** — the interactive playground, in your browser.
+**⚡ Try it now:** [Svelte](https://stackblitz.com/github/eetu/glowbox/tree/main/examples/starters/svelte) ·
+[React](https://stackblitz.com/github/eetu/glowbox/tree/main/examples/starters/react) ·
+[Vue](https://stackblitz.com/github/eetu/glowbox/tree/main/examples/starters/vue) — editable StackBlitz starters, no install.
 
 Glowing retro **display components**: a generic **3D LED-grid display** — an
 nx×ny×nz lattice of glowing "LEDs" you draw on like a tiny 3D canvas, rendered
