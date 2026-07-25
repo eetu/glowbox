@@ -4,9 +4,36 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
-## [Unreleased]
+## [1.3.0] — 2026-07-25
+
+The **seven-segment display** joins the family — the third rendering core, and the
+first of the display-core franchise. The bar it had to clear: genuinely better than
+"just use a 7-seg font" — so everything a font structurally can't do.
 
 ### Added
+
+- **`@glowbox/seven-segment`** — a zero-dep 2D-canvas seven-segment digit
+  (`createSevenSegment(canvas, opts)`), sibling core to nixie:
+  - **Per-segment dynamics**: value changes cross-fade each segment individually with
+    a small stagger (real multiplexing smear); rAF only while moving; instant under
+    `prefers-reduced-motion`.
+  - **Ageing** (`age: 0..1`): a deterministic per-instance wear fingerprint dims
+    segments unevenly; past ~0.7 the most-worn segment flickers (sparse timeout-driven
+    dips — idle cost ≈ 0); from ~0.95 it is **permanently dead** while the runner-up
+    takes over the flickering.
+  - **Materials**: `'led'` (red-orange emitter, smoked window, unlit segment ghosts) and
+    `'vfd'` (phosphor cyan, whiter hot core, wider halo, anode-grid mesh).
+  - `0–9`, `-`, hex `A b C d E F` (case-tolerant), the decimal point (`dp`), and `':'`
+    as a first-class two-dot clock separator (height-fitted for slim slots).
+  - **3D parity**: `segmentGeometry()` / `SEGMENT_VIEWBOX` / `SEGMENT_SLANT` /
+    `litSegments()` export the named segment polygons + font, nixieCathodes-style.
+- **`<SevenSegment>` in all three wrappers** (svelte/react/vue) alongside `<LedGrid>` +
+  `<NixieTube>`, with the same live-update prop contract.
+- **Demo**: a `/seven` clock route (HH:MM:SS with real colon modules) — style toggle,
+  glow, the **age slider**, ghost toggle, sizes; a third "7-seg" tab in the core nav.
+- The publish smoke packs/imports/type-checks/mounts all **seven** packages.
+
+### Added (from right after 1.2.0)
 
 - **StackBlitz starters** (`examples/starters/{svelte,react,vue}`): minimal Vite apps
   on the published packages — a pulsing sphere + torus on `<LedGrid>` and a ticking
@@ -244,6 +271,7 @@ generic `@glowbox/core`.)
   page/glass colour (`color` + `background` retint glow and glass together). Compose a
   row of tubes into a clock or counter.
 
+[1.3.0]: https://github.com/eetu/glowbox/releases/tag/v1.3.0
 [1.2.0]: https://github.com/eetu/glowbox/releases/tag/v1.2.0
 [1.1.1]: https://github.com/eetu/glowbox/releases/tag/v1.1.1
 [1.1.0]: https://github.com/eetu/glowbox/releases/tag/v1.1.0

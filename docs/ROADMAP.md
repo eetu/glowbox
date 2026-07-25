@@ -38,10 +38,15 @@ torus — `d.torus()` is axis-aligned/single-colour, see the note in `torus.ts`.
    package (map + gamma + pack + send) with zero renderer risk — and it upgrades the
    story to "the software twin of your LED cube: the same `onFrame` renders in the
    browser and on the wall". Ships as 1.3-class, additive.
-2. **Display-core franchise** — one core per minor, as the mood strikes: seven-segment
-   (a weekend; VFD as a style) → flip-dot (dithering + optional click) → split-flap
-   (most delightful, most work, last). Nixie proved the pattern: standalone 2D core +
-   wrapper components + a demo page; the 1.0.1 decoupling made cores independent.
+2. **Display-core franchise** — ship each core the moment it's done (minors are free;
+   don't batch a finished core behind an unfinished one), as the mood strikes.
+   **Seven-segment SHIPPED in 1.3.0** — it cleared the "beats a 7-seg font" bar with
+   per-segment dynamics, the ageing arc (dim → flicker → dead segment), and LED/VFD
+   materials. Next: flip-dot (dithering + optional click; also the family's first
+   genuinely 3D spectacle if a 3D demo ever itches) → split-flap (most delightful,
+   most work, last). The bar for every core: real wow beyond the trivial alternative,
+   or it doesn't ship. Nixie proved the pattern: standalone 2D core + wrapper
+   components + a demo page; the 1.0.1 decoupling made cores independent.
 3. **WebGL2 instanced-quad renderer — the only true 2.0, trigger-based.** Fixes the
    2–64 px sprite clamp (hi-dpi close-ups), makes float buffers guaranteed (the LDR
    fallback disappears), enables per-LED geometry, and solves lattice-mode cost. Do it

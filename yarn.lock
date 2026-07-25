@@ -706,6 +706,7 @@ __metadata:
     "@anarkisti/eslint-config": "npm:^1"
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/nixie": "workspace:^"
+    "@glowbox/seven-segment": "workspace:^"
     "@types/react": "npm:^19"
     "@types/react-dom": "npm:^19"
     "@vitejs/plugin-react": "npm:^5"
@@ -722,6 +723,22 @@ __metadata:
     vitest-browser-react: "npm:^2"
   peerDependencies:
     react: ^18 || ^19
+  languageName: unknown
+  linkType: soft
+
+"@glowbox/seven-segment@workspace:^, @glowbox/seven-segment@workspace:packages/seven-segment":
+  version: 0.0.0-use.local
+  resolution: "@glowbox/seven-segment@workspace:packages/seven-segment"
+  dependencies:
+    "@anarkisti/eslint-config": "npm:^1"
+    "@vitest/browser": "npm:^4.1"
+    "@vitest/browser-playwright": "npm:^4.1"
+    eslint: "npm:^10"
+    playwright: "npm:^1.61"
+    typescript: "npm:^6"
+    vite: "npm:^8.1"
+    vite-plugin-dts: "npm:^5"
+    vitest: "npm:^4.1"
   languageName: unknown
   linkType: soft
 
@@ -757,6 +774,7 @@ __metadata:
     "@anarkisti/eslint-config": "npm:^1"
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/nixie": "workspace:^"
+    "@glowbox/seven-segment": "workspace:^"
     "@size-limit/file": "npm:^13"
     "@sveltejs/package": "npm:^2.5"
     "@sveltejs/vite-plugin-svelte": "npm:^7"
@@ -783,6 +801,7 @@ __metadata:
     "@anarkisti/eslint-config": "npm:^1"
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/nixie": "workspace:^"
+    "@glowbox/seven-segment": "workspace:^"
     "@vitest/browser": "npm:^4.1"
     "@vitest/browser-playwright": "npm:^4.1"
     "@vue/compiler-dom": "npm:^3.5"

@@ -17,23 +17,26 @@ framework wrappers you install into any SPA.
 attractor, a voxelized X-wing model, a wave field, a GIF billboard, a text
 ticker, rain, a wormhole fly-through, and a self-playing 3D Pac-Man, plus a
 nixie-tube clock — flat 2D tubes or a 3D wire-cathode-in-glass scene — on the
-`/nixie` route.
+`/nixie` route, and an ageing seven-segment clock on `/seven`.
 
 ## Packages
 
-| package                                  | install                      | what it is                                                     |
-| ---------------------------------------- | ---------------------------- | -------------------------------------------------------------- |
-| [`@glowbox/led-grid`](packages/led-grid) | `yarn add @glowbox/led-grid` | plain-TS WebGL display + voxel API (zero deps)                 |
-| [`@glowbox/nixie`](packages/nixie)       | `yarn add @glowbox/nixie`    | nixie-tube display core: glowing vector numerals (2D canvas)   |
-| [`@glowbox/svelte`](packages/svelte)     | `yarn add @glowbox/svelte`   | Svelte 5 components: `<LedGrid>` + `<NixieTube>`               |
-| [`@glowbox/react`](packages/react)       | `yarn add @glowbox/react`    | React components: `<LedGrid>` + `<NixieTube>` (`^18 \|\| ^19`) |
-| [`@glowbox/vue`](packages/vue)           | `yarn add @glowbox/vue`      | Vue 3 components: `<LedGrid>` + `<NixieTube>`                  |
-| [`@glowbox/extras`](packages/extras)     | `yarn add @glowbox/extras`   | content: GIF/image players, 5×7 LED font text + scroller       |
+| package                                            | install                           | what it is                                                          |
+| -------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------- |
+| [`@glowbox/led-grid`](packages/led-grid)           | `yarn add @glowbox/led-grid`      | plain-TS WebGL display + voxel API (zero deps)                      |
+| [`@glowbox/nixie`](packages/nixie)                 | `yarn add @glowbox/nixie`         | nixie-tube display core: glowing vector numerals (2D canvas)        |
+| [`@glowbox/seven-segment`](packages/seven-segment) | `yarn add @glowbox/seven-segment` | seven-segment display core: per-segment dynamics, ageing, LED/VFD   |
+| [`@glowbox/svelte`](packages/svelte)               | `yarn add @glowbox/svelte`        | Svelte 5 components: `<LedGrid>` + `<NixieTube>` + `<SevenSegment>` |
+| [`@glowbox/react`](packages/react)                 | `yarn add @glowbox/react`         | React components: the same three (`^18 \|\| ^19`)                   |
+| [`@glowbox/vue`](packages/vue)                     | `yarn add @glowbox/vue`           | Vue 3 components: the same three                                    |
+| [`@glowbox/extras`](packages/extras)               | `yarn add @glowbox/extras`        | content: GIF/image players, 5×7 LED font text + scroller            |
 
-Two rendering cores — the 3D LED grid (`@glowbox/led-grid`) and the nixie tube
-(`@glowbox/nixie`) — and each framework package (`svelte`/`react`/`vue`) ships a thin
-component for **both** (`<LedGrid>` + `<NixieTube>`), with room for more cores later.
-`@glowbox/extras` layers content (GIF/image animation, text) on the core's draw API.
+Three rendering cores — the 3D LED grid (`@glowbox/led-grid`), the nixie tube
+(`@glowbox/nixie`), and the seven-segment display (`@glowbox/seven-segment`) — and each
+framework package (`svelte`/`react`/`vue`) ships a thin component for **all of them**
+(`<LedGrid>` + `<NixieTube>` + `<SevenSegment>`), with room for more cores later.
+`@glowbox/extras` layers content (GIF/image animation, text, audio bands) on the core's
+draw API.
 
 ![The @glowbox/nixie demo: a row of glowing nixie tubes wired into a clock, with tube-style and colour controls](media/nixie.png)
 
@@ -83,6 +86,7 @@ packages/react           @glowbox/react     — the React wrapper
 packages/vue             @glowbox/vue       — the Vue 3 wrapper
 packages/extras          @glowbox/extras    — content helpers (GIF/image/text)
 packages/nixie           @glowbox/nixie     — nixie-tube rendering core (2D canvas)
+packages/seven-segment   @glowbox/seven-segment — seven-segment rendering core (2D canvas)
 examples/svelte-gallery  the demo SPA (voxel gallery + a /nixie clock) → GitHub Pages
 ```
 
@@ -101,7 +105,7 @@ their own `build`/`test`.
 
 ## Publishing
 
-All six packages publish to the public npm registry under the `@glowbox` scope. Tag
+All seven packages publish to the public npm registry under the `@glowbox` scope. Tag
 a release (`vX.Y.Z`) and the `release` workflow publishes each via **npm trusted
 publishing (OIDC)** with provenance — no `NPM_TOKEN` secret (the cores — led-grid,
 nixie — first, then the wrappers + extras). Each package needs a trusted publisher
