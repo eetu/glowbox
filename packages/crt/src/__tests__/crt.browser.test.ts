@@ -179,6 +179,53 @@ test('orientation survives the no-flip upload path (top stays top), both pipelin
 	}
 });
 
+test('outside the curved face is TRANSPARENT — the wrapped element keeps its CSS', async () => {
+	const src = makeSource();
+	const crt = createCrtScreen(src, { curvature: 0.6, noise: 0, flicker: 0 });
+	if (!crt) return;
+	mountOutput(crt);
+	crt.resize();
+	await frame();
+	const gl = crt.canvas.getContext('webgl')!;
+	const px = new Uint8Array(4);
+	gl.readPixels(1, 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); // corner, beyond the face
+	expect(px[3]).toBe(0); // alpha 0 — page shows through, not blacked out
+	const mid = new Uint8Array(4);
+	gl.readPixels(
+		crt.canvas.width >> 1,
+		crt.canvas.height >> 1,
+		1,
+		1,
+		gl.RGBA,
+		gl.UNSIGNED_BYTE,
+		mid
+	);
+	expect(mid[3]).toBe(255); // the face itself stays opaque
+	crt.dispose();
+});
+
+test('element mode: the container background colour is the face floor', async () => {
+	const box = document.createElement('div');
+	box.style.cssText = 'width:120px;height:90px;background:#a00000';
+	// One small canvas in the corner — most of the face shows the floor.
+	const small = document.createElement('canvas');
+	small.width = 20;
+	small.height = 20;
+	small.style.cssText = 'position:absolute;left:0;top:0;width:20px;height:20px';
+	box.appendChild(small);
+	document.body.appendChild(box);
+	const crt = createCrtScreen(box, { curvature: 0, noise: 0, flicker: 0, vignette: 0 });
+	if (!crt) return;
+	crt.resize();
+	await frame();
+	const gl = crt.canvas.getContext('webgl')!;
+	const px = new Uint8Array(4);
+	gl.readPixels(crt.canvas.width >> 1, crt.canvas.height >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+	expect(px[0]).toBeGreaterThan(60); // reddish floor, not black
+	expect(px[1]).toBeLessThan(60);
+	crt.dispose();
+});
+
 test('dispose releases the WebGL context (per-page context budget)', () => {
 	const src = makeSource();
 	const crt = createCrtScreen(src);

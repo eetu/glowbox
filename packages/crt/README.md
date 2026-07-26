@@ -32,27 +32,32 @@ ResizeObservers stay alive), and **forwards pointer + wheel events** to the chil
 canvas under the cursor — drag-orbit and zoom work straight through the tube.
 `dispose()` hands everything back exactly as found.
 
-It composites _canvases_: text and CSS backgrounds inside the container are not
-captured (it's a compositor, not a screenshotter); the tube face floor is black.
+Your CSS survives around and behind the tube: **outside the curved face the output is
+transparent** (the container's background, borders, and radius show around the tube),
+and the **face floor defaults to the container's computed background colour** (override
+with `background`). The one real limit: it composites _canvases_ — non-canvas
+_children_ (text labels, styled divs between the canvases) are not captured; it's a
+compositor, not a screenshotter.
 
 ## The artifacts
 
 All 0..1 knobs, live-updatable via `setOptions`:
 
-| knob          | default | what it is                                                                  |
-| ------------- | ------- | --------------------------------------------------------------------------- |
-| `curvature`   | `0.35`  | barrel distortion of the tube face (real resampling, black beyond the face) |
-| `scanlines`   | `0.45`  | raster lines, following the content rows through the curve                  |
-| `mask`        | `0.2`   | RGB phosphor stripe mask (screen space)                                     |
-| `persistence` | `0.3`   | **phosphor decay from real frame history** — moving content ghosts          |
-| `convergence` | `0.35`  | R/G/B gun misalignment, worsening toward the edges                          |
-| `vignette`    | `0.4`   | corner darkening                                                            |
-| `flicker`     | `0.15`  | mains brightness wobble                                                     |
-| `band`        | `0.12`  | slow rolling refresh band                                                   |
-| `noise`       | `0.08`  | static                                                                      |
-| `gain`        | `1.08`  | brightness compensation (the mask/scanlines eat some light)                 |
-| `events`      | `true`  | forward pointer/wheel to the source                                         |
-| `pixelRatio`  | `2`     | cap on devicePixelRatio                                                     |
+| knob          | default      | what it is                                                                  |
+| ------------- | ------------ | --------------------------------------------------------------------------- |
+| `curvature`   | `0.35`       | barrel distortion of the tube face (real resampling, black beyond the face) |
+| `scanlines`   | `0.45`       | raster lines, following the content rows through the curve                  |
+| `mask`        | `0.2`        | RGB phosphor stripe mask (screen space)                                     |
+| `persistence` | `0.3`        | **phosphor decay from real frame history** — moving content ghosts          |
+| `convergence` | `0.35`       | R/G/B gun misalignment, worsening toward the edges                          |
+| `vignette`    | `0.4`        | corner darkening                                                            |
+| `flicker`     | `0.15`       | mains brightness wobble                                                     |
+| `band`        | `0.12`       | slow rolling refresh band                                                   |
+| `noise`       | `0.08`       | static                                                                      |
+| `gain`        | `1.08`       | brightness compensation (the mask/scanlines eat some light)                 |
+| `background`  | container bg | the face floor behind sparse content (any CSS colour)                       |
+| `events`      | `true`       | forward pointer/wheel to the source                                         |
+| `pixelRatio`  | `2`          | cap on devicePixelRatio                                                     |
 
 `prefers-reduced-motion` freezes the temporal artifacts (flicker, band, noise
 animation) and disables persistence. The output canvas is `aria-hidden` — it is a
