@@ -52,8 +52,13 @@ torus — `d.torus()` is axis-aligned/single-colour, see the note in `torus.ts`.
 3. **WebGL2 instanced-quad renderer — the only true 2.0, trigger-based.** Fixes the
    2–64 px sprite clamp (hi-dpi close-ups), makes float buffers guaranteed (the LDR
    fallback disappears), enables per-LED geometry, and solves lattice-mode cost. Do it
-   only when triggered (a close-up LED-wall look is wanted, or bridge users at 64³+),
-   only after the golden screenshots exist — and go WebGL2-only when it happens.
+   only when triggered (a close-up LED-wall look is wanted, or bridge users at 64³+,
+   or — added 2026-07-26 — a page needs more simultaneous displays than Safari's
+   WebGL context budget allows: the shared-context multi-view architecture, one
+   full-viewport canvas scissored per display, belongs to this rewrite since it
+   inverts the display-owns-its-canvas assumption; the same rewrite should consider a
+   led-grid-integrated CRT pass so grid+effect costs one context), only after the
+   golden screenshots exist — and go WebGL2-only when it happens.
 
 ## Deliberately not doing
 

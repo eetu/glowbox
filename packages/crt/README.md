@@ -63,6 +63,37 @@ All 0..1 knobs, live-updatable via `setOptions`:
 animation) and disables persistence. The output canvas is `aria-hidden` — it is a
 visual duplicate; your source keeps the accessible semantics.
 
+## Wrapping your own WebGL
+
+Any WebGL canvas — a game, a three.js scene — wraps like everything else:
+
+```ts
+startGameLoop(); // your render loop running first
+const crt = createCrtScreen(gameCanvas); // or the container, element mode
+stage.appendChild(crt.canvas); // canvas mode: place it; element mode: automatic
+```
+
+One sneaky caveat: WebGL canvases default to `preserveDrawingBuffer: false`, so their
+buffer may be cleared after each composite — sampling from outside their render tick
+can read black (Safari is strict; Chrome forgives). In practice the CRT samples in the
+same rAF tick as your loop when it's created _after_ your loop starts, but the
+bulletproof fix is creating **your** context with `preserveDrawingBuffer: true` (for
+three.js: `new WebGLRenderer({ preserveDrawingBuffer: true })`).
+
+## Context budget
+
+Browsers cap live WebGL contexts per page (Safari is the tight one, roughly 8–16).
+Each CRT screen is one context; each `@glowbox/led-grid` display is one more (nixie /
+seven-segment are 2D — effectively unlimited). Rules of thumb:
+
+- Keep `#displays + #screens` comfortably under ~8 for Safari headroom.
+- **Group under one element-mode screen** — a whole dashboard of canvases behind one
+  tube is a single context, never one per canvas.
+- `dispose()` frees the context slot immediately (the screen also deletes its GL
+  objects) — for long pages, dispose offscreen displays and recreate on scroll-in.
+- If the browser evicts a context anyway, the screen (and led-grid) recover on
+  restore — a blip, not a permanent black box.
+
 ## Performance
 
 One texture upload + two fullscreen passes per frame: **≈1 ms/frame at 1080p on an
