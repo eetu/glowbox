@@ -575,6 +575,9 @@ export function createLedDisplay(
 			canvas.removeEventListener('wheel', wheel);
 			canvas.removeEventListener('webglcontextlost', onContextLost);
 			canvas.removeEventListener('webglcontextrestored', onContextRestored);
+			// Hand the consumer's canvas back without our ARIA (it may be reused).
+			canvas.removeAttribute('role');
+			canvas.removeAttribute('aria-label');
 			// Free the GL objects but leave the context intact — forcing `loseContext()`
 			// here poisons the canvas for reuse, which breaks re-creating a display on the
 			// same element (e.g. React StrictMode's mount → unmount → remount in dev). The

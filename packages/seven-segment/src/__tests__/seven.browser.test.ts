@@ -30,6 +30,7 @@ test('lights a digit; blank goes dark', () => {
 	d.setValue(null);
 	expect(litPixels(canvas)).toBeLessThan(eight / 8);
 	d.dispose();
+	expect(canvas.getAttribute('role')).toBeNull(); // canvas handed back without our ARIA
 });
 
 test('per-segment transition eases between digits (mid-fade frame exists)', async () => {

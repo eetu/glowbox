@@ -593,6 +593,10 @@ export function createSevenSegment(
 			ro?.disconnect();
 			if (raf) cancelAnimationFrame(raf);
 			if (flickerTimer) clearTimeout(flickerTimer);
+			// Hand the consumer's canvas back without our ARIA (it may be reused).
+			canvas.removeAttribute('role');
+			canvas.removeAttribute('aria-label');
+			canvas.removeAttribute('aria-hidden');
 		}
 	};
 }

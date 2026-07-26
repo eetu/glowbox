@@ -299,6 +299,7 @@ test('a display can be recreated on the same canvas after dispose (StrictMode-sa
 	d2!.render();
 	expect(litPixels(canvas)).toBeGreaterThan(0);
 	d2!.dispose();
+	expect(canvas.getAttribute('role')).toBeNull(); // canvas handed back without our ARIA
 });
 
 test('quality.alpha renders a transparent canvas: glow has coverage, gaps have none', () => {
