@@ -4,6 +4,35 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [1.4.0] — 2026-07-26
+
+The family's first **effects layer**: where the display cores render physically honest
+objects, `@glowbox/crt` renders _watching one through a curved phosphor screen_ — and
+it composes over **any** canvas, glowbox or not. Now **eight** packages in lockstep.
+
+### Added
+
+- **`@glowbox/crt`** — `createCrtScreen(source, opts)`, a per-frame WebGL pass with
+  barrel curvature (real resampling), scanlines, an RGB phosphor mask, **phosphor
+  persistence from real frame history** (moving content ghosts), convergence error
+  that worsens toward the edges, vignette, mains flicker, a rolling refresh band, and
+  static — all 0..1 knobs, live-updatable; `prefers-reduced-motion` freezes the
+  temporal ones. Zero deps, SSR-import-safe.
+  - **Element mode** — slap it over a whole element: `createCrtScreen(clockDiv)`
+    mounts itself, composites every descendant canvas at its layout position (slots
+    added/removed later are picked up), hides the originals (still laid out — their
+    observers keep working), and **forwards pointer/wheel to the child canvas under
+    the cursor**, so drag-orbit/zoom work straight through the tube. `dispose()`
+    restores everything.
+  - Canvas mode stays as the low-level API (you place the output canvas).
+  - Perf: ~1 ms/frame at 1080p on an Apple M1; measured by the new
+    **`scripts/bench-crt.mjs`**. Uniform locations cached, no CPU-side upload flip
+    (shader-side V-flip), `texSubImage2D` streaming, and a single-fullsize-canvas
+    fast path in element mode.
+- **Demo gallery**: a **CRT** toggle on the LED gallery (with a nine-knob "crt" panel
+  section) and on the `/seven` clock — the whole eight-canvas row on one tube.
+- No framework wrappers, deliberately: element mode is one call from any framework.
+
 ## [1.3.1] — 2026-07-26
 
 ### Fixed
@@ -283,6 +312,7 @@ generic `@glowbox/core`.)
   page/glass colour (`color` + `background` retint glow and glass together). Compose a
   row of tubes into a clock or counter.
 
+[1.4.0]: https://github.com/eetu/glowbox/releases/tag/v1.4.0
 [1.3.1]: https://github.com/eetu/glowbox/releases/tag/v1.3.1
 [1.3.0]: https://github.com/eetu/glowbox/releases/tag/v1.3.0
 [1.2.0]: https://github.com/eetu/glowbox/releases/tag/v1.2.0
