@@ -309,10 +309,12 @@ export function createSevenSegment(
 
 		// The window: a rounded module inset from the canvas edge (shadow into the
 		// margin, like the nixie glass), tinted per style.
+		// Pads floor at 2px, so clamp the window box to ≥1px — a sub-5px canvas must
+		// degrade to a sliver, not feed roundRect a negative radius (IndexSizeError).
 		const padX = Math.max(2, w * 0.04);
 		const padY = Math.max(2, h * 0.04);
-		const bw = w - padX * 2;
-		const bh = h - padY * 2;
+		const bw = Math.max(1, w - padX * 2);
+		const bh = Math.max(1, h - padY * 2);
 		const rad = Math.min(bw, bh) * 0.08;
 		const micro = Math.min((bw * 0.7) / VB_W, (bh * 0.75) / VB_H) * VB_H < 34;
 		g.save();
@@ -603,7 +605,7 @@ function roundRect(
 	rh: number,
 	r: number
 ) {
-	const rr = Math.min(r, rw / 2, rh / 2);
+	const rr = Math.max(0, Math.min(r, rw / 2, rh / 2)); // arcTo throws on negative radii
 	g.beginPath();
 	g.moveTo(x + rr, y);
 	g.arcTo(x + rw, y, x + rw, y + rh, rr);

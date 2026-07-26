@@ -61,3 +61,21 @@ test('setValue and setOptions redraw live', () => {
 	expect(tube.snapshot().startsWith('data:image/png')).toBe(true);
 	tube.dispose();
 });
+
+test('survives absurdly small canvases (regression: negative glass inset threw)', () => {
+	// A sub-9px box used to feed roundRect a negative radius (IndexSizeError).
+	for (const [cw, cy] of [
+		['1px', '1px'],
+		['6px', '150px'],
+		['120px', '5px']
+	]) {
+		const canvas = document.createElement('canvas');
+		canvas.style.width = cw;
+		canvas.style.height = cy;
+		document.body.appendChild(canvas);
+		const tube = createNixieTube(canvas, { value: 8 });
+		expect(tube).not.toBeNull();
+		tube?.setValue(3);
+		tube?.dispose();
+	}
+});

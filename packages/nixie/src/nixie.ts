@@ -254,7 +254,7 @@ export function createNixieTube(
 	}
 	// The glass envelope shape — its shadow, fill/clip, and rim all trace this rounded rect.
 	function roundRect(x: number, y: number, rw: number, rh: number, r: number) {
-		const rr = Math.min(r, rw / 2, rh / 2);
+		const rr = Math.max(0, Math.min(r, rw / 2, rh / 2)); // arcTo throws on negative radii
 		const g = ctx!;
 		g.beginPath();
 		g.moveTo(x + rr, y);
@@ -282,10 +282,12 @@ export function createNixieTube(
 		// smaller margin).
 		// `bare` (3D / compositing): no glass module — full transparent canvas, glow drawn
 		// source-over (straight alpha), with mesh/ghost still honoured.
+		// Pads floor at 4px, so clamp the glass box to ≥1px — a sub-9px canvas must
+		// degrade to a sliver, not feed roundRect a negative radius (IndexSizeError).
 		const padX = bare ? 0 : Math.max(4, w * 0.08);
 		const padY = bare ? 0 : Math.max(4, h * 0.05);
-		const bw = w - 2 * padX;
-		const bh = h - 2 * padY;
+		const bw = Math.max(1, w - 2 * padX);
+		const bh = Math.max(1, h - 2 * padY);
 		const rad = Math.min(bw, bh) * 0.1;
 		const sPad = Math.min(padX, padY);
 

@@ -95,3 +95,21 @@ test('the colon separator lights two dots and fits by height in a slim slot', ()
 	expect(litPixels(canvas)).toBeLessThan(lit / 4);
 	d.dispose();
 });
+
+test('survives absurdly small canvases (regression: negative window inset threw)', () => {
+	// A sub-5px box used to feed roundRect a negative radius (IndexSizeError).
+	for (const [cw, cy] of [
+		['1px', '1px'],
+		['4px', '180px'],
+		['120px', '3px']
+	]) {
+		const canvas = document.createElement('canvas');
+		canvas.style.width = cw;
+		canvas.style.height = cy;
+		document.body.appendChild(canvas);
+		const d = createSevenSegment(canvas, { value: 8, transition: 0 });
+		expect(d).not.toBeNull();
+		d?.setValue(3);
+		d?.dispose();
+	}
+});
