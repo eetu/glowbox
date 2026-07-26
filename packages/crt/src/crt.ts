@@ -54,11 +54,13 @@ const CRT_FRAG = `
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 
   void main() {
-    // Barrel curvature: displace toward the corners, black beyond the face.
+    // Barrel curvature: displace toward the corners; TRANSPARENT beyond the face, so
+    // the page (the container's own CSS — background, borders, radius) shows around
+    // the curved tube instead of being blacked out.
     vec2 c = vUv * 2.0 - 1.0;
     vec2 uv = (c + c.yx * c.yx * c * uCurvature * 0.28) * 0.5 + 0.5;
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
-      gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+      gl_FragColor = vec4(0.0);
       return;
     }
 
@@ -122,6 +124,10 @@ export interface CrtOptions {
 	noise?: number;
 	/** Brightness compensation (default 1.08 — the mask/scanlines eat some light). */
 	gain?: number;
+	/** The tube-face floor behind sparse content (any CSS colour). Default: the
+	 *  container's computed background colour in element mode (so your backdrop shows
+	 *  through the tube), else black. */
+	background?: string;
 	/** Forward pointer + wheel events from the output to the source canvas, so
 	 *  drag-orbit/zoom keep working through the effect (default true). */
 	events?: boolean;
@@ -158,7 +164,14 @@ export function createCrtScreen(
 ): CrtScreen | null {
 	if (typeof document === 'undefined') return null;
 	const canvas = document.createElement('canvas');
-	const gl = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false });
+	// Alpha output: only the area OUTSIDE the curved face is transparent — the face
+	// itself is opaque — so the wrapped element's own CSS survives around the tube.
+	const gl = canvas.getContext('webgl', {
+		alpha: true,
+		premultipliedAlpha: true,
+		antialias: false,
+		depth: false
+	});
 	if (!gl) return null;
 
 	const canvasSource = source instanceof HTMLCanvasElement ? source : null;
@@ -177,8 +190,11 @@ export function createCrtScreen(
 	let band = opts.band ?? 0.12;
 	let noise = opts.noise ?? 0.08;
 	let gain = opts.gain ?? 1.08;
+	let background = opts.background ?? null;
 	let events = opts.events ?? true;
 	let pixelRatio = opts.pixelRatio ?? 2;
+	// Element mode: the container's own backdrop is the natural face floor.
+	let containerBg: string | null = null;
 
 	const reduced =
 		typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -346,7 +362,7 @@ export function createCrtScreen(
 			comp!.height = h;
 		}
 		const c2 = compCtx!;
-		c2.fillStyle = '#000';
+		c2.fillStyle = background ?? containerBg ?? '#000';
 		c2.fillRect(0, 0, w, h);
 		for (const c of tracked) {
 			if (!c.width || !c.height) continue;
@@ -493,6 +509,10 @@ export function createCrtScreen(
 		canvas.style.position = 'absolute';
 		canvas.style.inset = '0';
 		el.appendChild(canvas);
+		if (typeof getComputedStyle !== 'undefined') {
+			const bg = getComputedStyle(el).backgroundColor;
+			if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') containerBg = bg;
+		}
 		collect();
 		mo?.observe(el, { childList: true, subtree: true });
 	}
@@ -513,6 +533,7 @@ export function createCrtScreen(
 			if (patch.band != null) band = patch.band;
 			if (patch.noise != null) noise = patch.noise;
 			if (patch.gain != null) gain = patch.gain;
+			if (patch.background !== undefined) background = patch.background ?? null;
 			if (patch.events != null) events = patch.events;
 			if (patch.pixelRatio != null) {
 				pixelRatio = patch.pixelRatio;
