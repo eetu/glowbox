@@ -39,7 +39,9 @@ torus — `d.torus()` is axis-aligned/single-colour, see the note in `torus.ts`.
    story to "the software twin of your LED cube: the same `onFrame` renders in the
    browser and on the wall". Ships as 1.3-class, additive.
 2. **Display-core franchise** — ship each core the moment it's done (minors are free;
-   don't batch a finished core behind an unfinished one), as the mood strikes.
+   don't batch a finished core behind an unfinished one), as the mood strikes. The
+   franchise grew a second axis in 1.4.0: **effects layers** (`@glowbox/crt`) that
+   multiply every core instead of adding one — same wow bar applies.
    **Seven-segment SHIPPED in 1.3.0** — it cleared the "beats a 7-seg font" bar with
    per-segment dynamics, the ageing arc (dim → flicker → dead segment), and LED/VFD
    materials. Next: flip-dot (dithering + optional click; also the family's first

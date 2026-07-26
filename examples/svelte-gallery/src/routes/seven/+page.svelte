@@ -4,6 +4,7 @@
 	// The point of this page is the stuff a font can't do: flip the style to VFD,
 	// watch digits cross-fade segment by segment, and drag the AGE slider to wear the
 	// display out (dim segments, and past ~0.7 a dying one starts to flicker).
+	import { createCrtScreen } from '@glowbox/crt';
 	import {
 		createSevenSegment,
 		type SevenSegmentDisplay,
@@ -72,6 +73,16 @@
 		const patch = { style, glow, age, ghost };
 		for (const d of displays) d?.setOptions(patch);
 	});
+
+	// The composable @glowbox/crt layer over the WHOLE clock: element mode composites
+	// all eight digit canvases at their layout spots onto one curved tube.
+	let crtOn = $state(false);
+	let clockEl = $state<HTMLDivElement>();
+	$effect(() => {
+		if (!crtOn || !clockEl) return;
+		const crt = createCrtScreen(clockEl, { persistence: 0.45 });
+		return () => crt?.dispose();
+	});
 	$effect(() => {
 		for (let i = 0; i < displays.length; i++) displays[i]?.setValue(time[i]);
 	});
@@ -100,7 +111,7 @@
 	</header>
 
 	<div class="stage" style="background: {backdrop}">
-		<div class="clock" role="img" aria-label={time}>
+		<div class="clock" role="img" aria-label={time} bind:this={clockEl}>
 			{#each slots as ch, i (i)}
 				<canvas
 					bind:this={canvases[i]}
@@ -156,6 +167,7 @@
 			/>
 			<div class="row">
 				<ToggleChip bind:checked={ghost} label="segment ghosts" />
+				<ToggleChip bind:checked={crtOn} label="CRT" />
 			</div>
 		</section>
 

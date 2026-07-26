@@ -649,6 +649,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@glowbox/crt@workspace:packages/crt":
+  version: 0.0.0-use.local
+  resolution: "@glowbox/crt@workspace:packages/crt"
+  dependencies:
+    "@anarkisti/eslint-config": "npm:^1"
+    "@vitest/browser": "npm:^4.1"
+    "@vitest/browser-playwright": "npm:^4.1"
+    eslint: "npm:^10"
+    playwright: "npm:^1.61"
+    typescript: "npm:^6"
+    vite: "npm:^8.1"
+    vite-plugin-dts: "npm:^5"
+    vitest: "npm:^4.1"
+  languageName: unknown
+  linkType: soft
+
 "@glowbox/extras@workspace:^, @glowbox/extras@workspace:packages/extras":
   version: 0.0.0-use.local
   resolution: "@glowbox/extras@workspace:packages/extras"

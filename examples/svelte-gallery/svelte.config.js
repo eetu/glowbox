@@ -35,7 +35,8 @@ const config = {
 			'@glowbox/svelte': '../../packages/svelte/src/lib/index.ts',
 			'@glowbox/extras': '../../packages/extras/src/index.ts',
 			'@glowbox/nixie': '../../packages/nixie/src/index.ts',
-			'@glowbox/seven-segment': '../../packages/seven-segment/src/index.ts'
+			'@glowbox/seven-segment': '../../packages/seven-segment/src/index.ts',
+			'@glowbox/crt': '../../packages/crt/src/index.ts'
 		}
 	}
 };

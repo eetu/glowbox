@@ -19,7 +19,7 @@ import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const PACKAGES = ['led-grid', 'nixie', 'seven-segment', 'svelte', 'react', 'vue', 'extras'];
+const PACKAGES = ['led-grid', 'nixie', 'seven-segment', 'crt', 'svelte', 'react', 'vue', 'extras'];
 // @glowbox/svelte ships .svelte source (compiled by the consumer's bundler), so it gets
 // the tsc types check but not a bare-node import.
 const NODE_IMPORTABLE = PACKAGES.filter((p) => p !== 'svelte');
@@ -96,6 +96,7 @@ try {
 		`import { createLedDisplay, createVoxelGrid, type LedDisplay } from '@glowbox/led-grid';
 import { createNixieTube, nixieCathodes, type NixieOptions } from '@glowbox/nixie';
 import { createSevenSegment, segmentGeometry, type SevenSegmentOptions } from '@glowbox/seven-segment';
+import { createCrtScreen, type CrtOptions } from '@glowbox/crt';
 import { makeGifPlayer, text } from '@glowbox/extras';
 import { LedGrid as SvelteLedGrid, NixieTube as SvelteNixieTube, SevenSegment as SvelteSevenSegment } from '@glowbox/svelte';
 import { LedGrid as ReactLedGrid, NixieTube as ReactNixieTube, SevenSegment as ReactSevenSegment } from '@glowbox/react';
@@ -105,12 +106,14 @@ const g = createVoxelGrid(4, 4, 4);
 g.plot(1, 2, 3, [1, 0.5, 0]);
 const opts: NixieOptions = { value: 8, style: 'classic', label: 'eight' };
 const segOpts: SevenSegmentOptions = { value: 8, style: 'vfd', age: 0.5 };
+const crtOpts: CrtOptions = { persistence: 0.5, events: true };
 export const used = [
 	createLedDisplay,
 	createNixieTube,
 	nixieCathodes,
 	createSevenSegment,
 	segmentGeometry,
+	createCrtScreen,
 	makeGifPlayer,
 	text,
 	SvelteLedGrid,
@@ -123,7 +126,8 @@ export const used = [
 	VueNixieTube,
 	VueSevenSegment,
 	opts,
-	segOpts
+	segOpts,
+	crtOpts
 ] as const;
 export type D = LedDisplay;
 `
@@ -163,6 +167,7 @@ export type D = LedDisplay;
 		"@glowbox/led-grid": "/node_modules/@glowbox/led-grid/dist/index.js",
 		"@glowbox/nixie": "/node_modules/@glowbox/nixie/dist/index.js",
 		"@glowbox/seven-segment": "/node_modules/@glowbox/seven-segment/dist/index.js",
+		"@glowbox/crt": "/node_modules/@glowbox/crt/dist/index.js",
 		"@glowbox/extras": "/node_modules/@glowbox/extras/dist/index.js"
 	}
 }
@@ -174,6 +179,7 @@ export type D = LedDisplay;
 	import { createLedDisplay } from '@glowbox/led-grid';
 	import { createNixieTube } from '@glowbox/nixie';
 	import { createSevenSegment } from '@glowbox/seven-segment';
+	import { createCrtScreen } from '@glowbox/crt';
 	import { text } from '@glowbox/extras';
 	const d = createLedDisplay(document.getElementById('g'), {
 		size: [8, 8, 8],
@@ -187,6 +193,8 @@ export type D = LedDisplay;
 	if (!t) throw new Error('createNixieTube returned null');
 	const s = createSevenSegment(document.getElementById('s'), { value: 8, transition: 0 });
 	if (!s) throw new Error('createSevenSegment returned null');
+	const crt = createCrtScreen(document.getElementById('n'));
+	if (!crt) throw new Error('createCrtScreen returned null');
 	window.__ok = true;
 </script>
 `

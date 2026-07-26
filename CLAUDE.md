@@ -15,6 +15,7 @@ packages/
   led-grid/  @glowbox/led-grid — plain-TS WebGL 3D LED display + canvas-like voxel API. Zero deps.
   nixie/     @glowbox/nixie    — 2D-canvas nixie-tube core + stateless 3D-compositing helpers. Zero deps.
   seven-segment/ @glowbox/seven-segment — 2D-canvas 7-seg core: per-segment fades, ageing→dead segments, LED/VFD styles. Zero deps.
+  crt/       @glowbox/crt      — composable CRT effect over any canvas/element (WebGL pass; curvature, persistence, event forwarding). Zero deps.
   svelte/    @glowbox/svelte   — Svelte 5 <LedGrid> + <NixieTube> + <SevenSegment> (ships .svelte source).
   react/     @glowbox/react    — React 18/19 components (dist carries 'use client').
   vue/       @glowbox/vue      — Vue 3 render-function components.
@@ -92,7 +93,7 @@ Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
 
 ## Publishing
 
-Tag `vX.Y.Z` on main → `release.yaml` publishes all seven to npm via **trusted publishing
+Tag `vX.Y.Z` on main → `release.yaml` publishes all eight to npm via **trusted publishing
 (OIDC) + provenance** (no `NPM_TOKEN`). Gates: tag-on-main, tag matches **every**
 package's version, the full validate suite, and the publish smoke. Versions are bumped
 in lockstep across all `packages/*` `package.json`s via `node scripts/bump-version.mjs <version>`,

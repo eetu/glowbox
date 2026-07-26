@@ -1,15 +1,15 @@
 {
-	"name": "@glowbox/nixie",
+	"name": "@glowbox/crt",
 	"version": "1.4.0",
-	"description": "Nixie-tube display component — a glowing vector-numeral rendering core in the glowbox family.",
+	"description": "Composable CRT screen effect for any canvas — curvature, scanlines, phosphor persistence, convergence error — with pointer/wheel forwarding. Part of the glowbox family.",
 	"keywords": [
 		"glowbox",
-		"nixie",
-		"tube",
+		"crt",
+		"scanlines",
+		"phosphor",
 		"retro",
-		"display",
-		"clock",
-		"glow"
+		"post-effect",
+		"webgl"
 	],
 	"license": "MIT",
 	"type": "module",
@@ -31,7 +31,7 @@
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/eetu/glowbox.git",
-		"directory": "packages/nixie"
+		"directory": "packages/crt"
 	},
 	"homepage": "https://eetu.github.io/glowbox/",
 	"scripts": {
@@ -47,7 +47,7 @@
 		{
 			"name": "esm",
 			"path": "dist/index.js",
-			"limit": "5 kB"
+			"limit": "4 kB"
 		}
 	],
 	"devDependencies": {
