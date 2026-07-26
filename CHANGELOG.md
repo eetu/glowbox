@@ -4,6 +4,18 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [1.3.1] — 2026-07-26
+
+### Fixed
+
+- **`@glowbox/seven-segment` + `@glowbox/nixie` threw on tiny canvases**
+  (`IndexSizeError: arcTo … radius is negative`): with the window/glass pads floored
+  at 2px/4px, a canvas under ~5px (seven-segment) / ~9px (nixie) wide or tall drove
+  the inset box negative and fed `arcTo` a negative corner radius — crashing at
+  creation. The box now clamps to a ≥1px sliver (and `roundRect` clamps the radius
+  defensively); regression tests mount both cores at 1px. Thanks for the isolated
+  report.
+
 ## [1.3.0] — 2026-07-25
 
 The **seven-segment display** joins the family — the third rendering core, and the
@@ -271,6 +283,7 @@ generic `@glowbox/core`.)
   page/glass colour (`color` + `background` retint glow and glass together). Compose a
   row of tubes into a clock or counter.
 
+[1.3.1]: https://github.com/eetu/glowbox/releases/tag/v1.3.1
 [1.3.0]: https://github.com/eetu/glowbox/releases/tag/v1.3.0
 [1.2.0]: https://github.com/eetu/glowbox/releases/tag/v1.2.0
 [1.1.1]: https://github.com/eetu/glowbox/releases/tag/v1.1.1
