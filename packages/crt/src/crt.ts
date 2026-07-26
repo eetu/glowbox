@@ -531,6 +531,22 @@ export function createCrtScreen(
 			for (const [c, prev] of hidden) c.style.visibility = prev;
 			hidden.clear();
 			if (restorePosition != null) (source as HTMLElement).style.position = restorePosition;
+			// The output canvas is package-owned and never reused, so release its GL
+			// context slot NOW — contexts are a per-page budget, and waiting for GC while
+			// an app toggles the effect can evict someone else's canvas. (led-grid
+			// deliberately does the opposite: its canvas is consumer-owned and may be
+			// remounted — see its StrictMode test.)
+			gl!.deleteTexture(srcTex);
+			for (const t of histTex) gl!.deleteTexture(t);
+			for (const f of histFbo) gl!.deleteFramebuffer(f);
+			gl!.deleteBuffer(quad);
+			gl!.deleteProgram(crtProg);
+			gl!.deleteProgram(histProg);
+			gl!.getExtension('WEBGL_lose_context')?.loseContext();
+			if (comp) {
+				comp.width = 0; // drop the composite's backing store promptly too
+				comp.height = 0;
+			}
 			canvas.remove();
 		}
 	};
