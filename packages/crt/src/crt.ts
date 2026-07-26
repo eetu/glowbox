@@ -255,42 +255,25 @@ export function createCrtScreen(
 		gl!.linkProgram(p);
 		return gl!.getProgramParameter(p, gl!.LINK_STATUS) ? p : null;
 	}
-	const crtProgN = program(CRT_FRAG);
-	const histProgN = program(HIST_FRAG);
-	if (!crtProgN || !histProgN) return null;
-	// Re-bind as non-null consts: the narrowing above doesn't reach the render closure.
-	const crtProg: WebGLProgram = crtProgN;
-	const histProg: WebGLProgram = histProgN;
-
-	const quad = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, quad);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-	const bindQuad = (loc: number) => {
-		gl!.bindBuffer(gl!.ARRAY_BUFFER, quad);
-		gl!.enableVertexAttribArray(loc);
-		gl!.vertexAttribPointer(loc, 2, gl!.FLOAT, false, 0, 0);
-	};
-	// Locations are string lookups — resolve them once, not ~15 times per frame.
-	const loc = (prog: WebGLProgram, names: string[]) =>
-		Object.fromEntries(names.map((n) => [n, gl!.getUniformLocation(prog, n)]));
-	const crtU = loc(crtProg, [
-		'uSrc',
-		'uRes',
-		'uTime',
-		'uCurvature',
-		'uScanlines',
-		'uMask',
-		'uVignette',
-		'uConvergence',
-		'uFlicker',
-		'uBand',
-		'uNoise',
-		'uGain',
-		'uFlip'
-	]);
-	const histU = loc(histProg, ['uSrc', 'uPrev', 'uDecay']);
-	const crtAttr = gl.getAttribLocation(crtProg, 'aQuad');
-	const histAttr = gl.getAttribLocation(histProg, 'aQuad');
+	// All GL objects live behind buildGL() so they can be REBUILT after a context
+	// loss — Safari's per-page context budget is small and it evicts the oldest
+	// context under pressure; without recovery an evicted screen stays black forever.
+	let crtProg!: WebGLProgram;
+	let histProg!: WebGLProgram;
+	let quad: WebGLBuffer | null = null;
+	let crtU: Record<string, WebGLUniformLocation | null> = {};
+	let histU: Record<string, WebGLUniformLocation | null> = {};
+	let crtAttr = 0;
+	let histAttr = 0;
+	let srcTex: WebGLTexture | null = null;
+	let srcTexW = 0;
+	let srcTexH = 0;
+	// Ping-pong history for persistence.
+	let histW = 0;
+	let histH = 0;
+	let histTex: (WebGLTexture | null)[] = [];
+	let histFbo: (WebGLFramebuffer | null)[] = [];
+	let histFlip = 0;
 
 	const makeTex = () => {
 		const t = gl!.createTexture();
@@ -301,15 +284,54 @@ export function createCrtScreen(
 		gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_T, gl!.CLAMP_TO_EDGE);
 		return t;
 	};
-	const srcTex = makeTex();
-	let srcTexW = 0;
-	let srcTexH = 0;
-	// Ping-pong history for persistence.
-	let histW = 0;
-	let histH = 0;
-	const histTex = [makeTex(), makeTex()];
-	const histFbo = [gl.createFramebuffer(), gl.createFramebuffer()];
-	let histFlip = 0;
+
+	function buildGL(): boolean {
+		const p1 = program(CRT_FRAG);
+		const p2 = program(HIST_FRAG);
+		if (!p1 || !p2) return false;
+		crtProg = p1;
+		histProg = p2;
+		quad = gl!.createBuffer();
+		gl!.bindBuffer(gl!.ARRAY_BUFFER, quad);
+		gl!.bufferData(gl!.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl!.STATIC_DRAW);
+		// Locations are string lookups — resolve them once, not ~15 times per frame.
+		const loc = (prog: WebGLProgram, names: string[]) =>
+			Object.fromEntries(names.map((n) => [n, gl!.getUniformLocation(prog, n)]));
+		crtU = loc(crtProg, [
+			'uSrc',
+			'uRes',
+			'uTime',
+			'uCurvature',
+			'uScanlines',
+			'uMask',
+			'uVignette',
+			'uConvergence',
+			'uFlicker',
+			'uBand',
+			'uNoise',
+			'uGain',
+			'uFlip'
+		]);
+		histU = loc(histProg, ['uSrc', 'uPrev', 'uDecay']);
+		crtAttr = gl!.getAttribLocation(crtProg, 'aQuad');
+		histAttr = gl!.getAttribLocation(histProg, 'aQuad');
+		srcTex = makeTex();
+		srcTexW = 0;
+		srcTexH = 0;
+		histTex = [makeTex(), makeTex()];
+		histFbo = [gl!.createFramebuffer(), gl!.createFramebuffer()];
+		histW = 0;
+		histH = 0;
+		histFlip = 0;
+		return true;
+	}
+	if (!buildGL()) return null;
+
+	const bindQuad = (loc: number) => {
+		gl!.bindBuffer(gl!.ARRAY_BUFFER, quad);
+		gl!.enableVertexAttribArray(loc);
+		gl!.vertexAttribPointer(loc, 2, gl!.FLOAT, false, 0, 0);
+	};
 	const ensureHistory = (w: number, h: number) => {
 		if (histW === w && histH === h) return;
 		histW = w;
@@ -381,6 +403,7 @@ export function createCrtScreen(
 	function frame() {
 		if (!running) return;
 		raf = requestAnimationFrame(frame);
+		if (gl!.isContextLost()) return; // wait for the restore handler to rebuild
 		// Self-heal the output size every frame (one clientWidth read): creation-order
 		// races — the screen made before its container is laid out, a panel that opens
 		// later — must resolve even where ResizeObserver has edge cases.
@@ -497,6 +520,16 @@ export function createCrtScreen(
 	const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => resize()) : null;
 	ro?.observe(canvas);
 
+	// Context-loss recovery: Safari evicts the oldest context under budget pressure.
+	// preventDefault on loss makes the restore possible; on restore every GL object is
+	// rebuilt and the loop (which idles while lost) picks the frame back up.
+	const onContextLost = (e: Event) => e.preventDefault();
+	const onContextRestored = () => {
+		if (!buildGL()) console.warn('glowbox/crt: context restored but rebuild failed');
+	};
+	canvas.addEventListener('webglcontextlost', onContextLost);
+	canvas.addEventListener('webglcontextrestored', onContextRestored);
+
 	// Element mode mounts itself: overlay the container (promoting it to a positioned
 	// box if needed), take over its canvases, and watch for new ones.
 	let restorePosition: string | null = null;
@@ -552,18 +585,23 @@ export function createCrtScreen(
 			for (const [c, prev] of hidden) c.style.visibility = prev;
 			hidden.clear();
 			if (restorePosition != null) (source as HTMLElement).style.position = restorePosition;
+			canvas.removeEventListener('webglcontextlost', onContextLost);
+			canvas.removeEventListener('webglcontextrestored', onContextRestored);
 			// The output canvas is package-owned and never reused, so release its GL
 			// context slot NOW — contexts are a per-page budget, and waiting for GC while
 			// an app toggles the effect can evict someone else's canvas. (led-grid
 			// deliberately does the opposite: its canvas is consumer-owned and may be
-			// remounted — see its StrictMode test.)
-			gl!.deleteTexture(srcTex);
-			for (const t of histTex) gl!.deleteTexture(t);
-			for (const f of histFbo) gl!.deleteFramebuffer(f);
-			gl!.deleteBuffer(quad);
-			gl!.deleteProgram(crtProg);
-			gl!.deleteProgram(histProg);
-			gl!.getExtension('WEBGL_lose_context')?.loseContext();
+			// remounted — see its StrictMode test.) Skip it all if the browser already
+			// evicted this context — loseContext on a lost context warns.
+			if (!gl!.isContextLost()) {
+				gl!.deleteTexture(srcTex);
+				for (const t of histTex) gl!.deleteTexture(t);
+				for (const f of histFbo) gl!.deleteFramebuffer(f);
+				gl!.deleteBuffer(quad);
+				gl!.deleteProgram(crtProg);
+				gl!.deleteProgram(histProg);
+				gl!.getExtension('WEBGL_lose_context')?.loseContext();
+			}
 			if (comp) {
 				comp.width = 0; // drop the composite's backing store promptly too
 				comp.height = 0;

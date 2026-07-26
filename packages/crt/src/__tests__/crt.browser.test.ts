@@ -236,3 +236,38 @@ test('dispose releases the WebGL context (per-page context budget)', () => {
 	crt.dispose();
 	expect(gl.isContextLost()).toBe(true);
 });
+
+test('recovers from a REAL context loss/restore (Safari evicts under budget pressure)', async () => {
+	const src = makeSource();
+	const crt = createCrtScreen(src, { noise: 0, flicker: 0 });
+	if (!crt) return;
+	mountOutput(crt);
+	crt.resize();
+	await frame();
+	const w = crt.canvas.width;
+	const h = crt.canvas.height;
+	const gl = crt.canvas.getContext('webgl')!;
+	const centre = () => {
+		const px = new Uint8Array(4);
+		gl.readPixels(w >> 1, h >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+		return px[0] + px[1] + px[2];
+	};
+	expect(centre()).toBeGreaterThan(60); // painting before the loss
+
+	// Actually lose the context (what Safari does to the "oldest" one), then restore.
+	const ext = gl.getExtension('WEBGL_lose_context')!;
+	ext.loseContext();
+	await frame();
+	expect(gl.isContextLost()).toBe(true);
+	ext.restoreContext();
+	// The restore event fires async; give the rebuild + a repaint a few frames.
+	await new Promise((r) => setTimeout(r, 120));
+	await frame();
+	expect(gl.isContextLost()).toBe(false);
+	expect(centre()).toBeGreaterThan(60); // painting again — not black forever
+
+	// And dispose on an already-lost context must not warn/throw.
+	ext.loseContext();
+	await frame();
+	crt.dispose();
+});
