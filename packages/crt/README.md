@@ -79,6 +79,8 @@ can read black (Safari is strict; Chrome forgives). In practice the CRT samples 
 same rAF tick as your loop when it's created _after_ your loop starts, but the
 bulletproof fix is creating **your** context with `preserveDrawingBuffer: true` (for
 three.js: `new WebGLRenderer({ preserveDrawingBuffer: true })`).
+`@glowbox/led-grid` sets it out of the box since 1.4.1 — glowbox displays need no
+setup on your side.
 
 ## Context budget
 

@@ -79,6 +79,29 @@ test('renders drawn voxels as lit pixels (dark background)', () => {
 	d.dispose();
 });
 
+test('the canvas can be sampled from outside the render tick (preserveDrawingBuffer)', async () => {
+	const canvas = makeCanvas();
+	const d = display(canvas);
+	if (!d) return;
+	// Effects layers (@glowbox/crt) drawImage this canvas from their own rAF —
+	// without preserveDrawingBuffer Safari may have cleared it by then.
+	expect(canvas.getContext('webgl')?.getContextAttributes()?.preserveDrawingBuffer).toBe(true);
+	d.clear();
+	d.sphere([2, 2, 2], 2, [1, 1, 1], true);
+	d.render();
+	await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0))); // past the composite
+	const comp = document.createElement('canvas');
+	comp.width = canvas.width;
+	comp.height = canvas.height;
+	const ctx = comp.getContext('2d')!;
+	ctx.drawImage(canvas, 0, 0);
+	const px = ctx.getImageData(0, 0, comp.width, comp.height).data;
+	let lit = 0;
+	for (let i = 0; i < px.length; i += 4) if (px[i] + px[i + 1] + px[i + 2] > 30) lit++;
+	expect(lit).toBeGreaterThan(0);
+	d.dispose();
+});
+
 test('renders bright LEDs on a white background (reads on any bg)', () => {
 	const canvas = makeCanvas();
 	const d = display(canvas, { color: { background: '#fff', gain: 2 } });
