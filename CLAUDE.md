@@ -102,10 +102,12 @@ on rerun (`npm view` guard); prerelease versions (`-rc.N`) go to the `rc` dist-t
 
 ## Status / next
 
-- **1.0.x–1.2.0 shipped (1.2.0 "clocks & music" on 2026-07-25)**; **1.3.0** adds the
-  **seven-segment core** (`@glowbox/seven-segment` + `<SevenSegment>` wrappers + the
-  `/seven` demo clock) — now **seven** packages in lockstep. NOTE: a new package needs
-  its npm **trusted publisher** configured before the release tag.
+- **1.0.x–1.4.0 shipped** (latest: 1.4.0 on 2026-07-26 — `@glowbox/crt`, the first
+  effects layer) — **eight** packages in lockstep, all live on npm. NOTE for future
+  new packages: npm needs the package to exist before a **trusted publisher** can be
+  configured — first-publish a local `-rc.1` with `npm publish --tag rc --otp=…`,
+  configure the publisher, then tag (the rc doesn't trip the idempotency guard, so
+  the stable still ships via OIDC with provenance).
 - **Direction:** see `docs/ROADMAP.md` — the strategic bets: `@glowbox/bridge`
   (WLED/DDP hardware streaming), more display cores (flip-dot → split-flap; each must
   clear the wow-over-trivial-alternative bar), trigger-based WebGL2 renderer (the
