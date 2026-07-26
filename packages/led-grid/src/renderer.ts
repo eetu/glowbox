@@ -327,7 +327,10 @@ export function createRenderer(
 		antialias: params.antialias,
 		alpha: transparent,
 		premultipliedAlpha: transparent,
-		depth: true // the comic style is opaque + depth-tested (hologram ignores it)
+		depth: true, // the comic style is opaque + depth-tested (hologram ignores it)
+		// Effects layers (@glowbox/crt) sample this canvas from their own rAF; without
+		// this Safari may clear the buffer after composite and they read black.
+		preserveDrawingBuffer: true
 	});
 	if (!gl) return null;
 

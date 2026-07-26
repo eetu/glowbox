@@ -4,6 +4,18 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [1.4.1] — 2026-07-26
+
+### Fixed
+
+- **`@glowbox/led-grid`: the display canvas can now be sampled reliably from outside
+  its own render tick** — the WebGL context is created with
+  `preserveDrawingBuffer: true`. Without it, Safari may clear the buffer after
+  compositing, so an effects layer (`@glowbox/crt`) or any `drawImage`/`toDataURL`
+  reading the canvas from its own rAF could see black. The cost is one buffer copy per
+  composite — noise next to the bloom passes. Nixie and seven-segment need no change:
+  2D contexts always preserve their buffer.
+
 ## [1.4.0] — 2026-07-26
 
 The family's first **effects layer**: where the display cores render physically honest
