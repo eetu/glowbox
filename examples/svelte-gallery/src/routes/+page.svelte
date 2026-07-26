@@ -4,6 +4,7 @@
 	// programs are demo drivers (src/lib/examples). A top header holds the two
 	// decisions you change most (example + style); everything else lives in a
 	// grouped, collapsible side panel — a working tour of the 1.0 customization API.
+	import { createCrtScreen, type CrtScreen } from '@glowbox/crt';
 	import type { LedDisplay, LedShape, LedStyle, Projection, RgbLayout } from '@glowbox/led-grid';
 	import { LedGrid } from '@glowbox/svelte';
 	import Blend from '@lucide/svelte/icons/blend';
@@ -17,6 +18,7 @@
 	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import Square from '@lucide/svelte/icons/square';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
+	import Tv from '@lucide/svelte/icons/tv';
 	import X from '@lucide/svelte/icons/x';
 	import ZoomIn from '@lucide/svelte/icons/zoom-in';
 	import { untrack } from 'svelte';
@@ -184,6 +186,52 @@
 	// (the {#key} below). The stage shows a gradient behind it to make it visible.
 	let transparent = $state(false);
 
+	// CRT: the @glowbox/crt overlay — watch the display through a curved phosphor
+	// screen. The effect canvas sits over the (hidden-but-laid-out) source; pointer +
+	// wheel forward through, so drag-orbit/zoom still work. Rebinds on remount via
+	// `display` (the wrap div and canvas are recreated inside the {#key}).
+	let crtOn = $state(false);
+	let gridWrap = $state<HTMLDivElement>();
+	// The knobs (package defaults), shown as sliders while the CRT is on.
+	let crtCurvature = $state(0.35);
+	let crtScanlines = $state(0.45);
+	let crtMask = $state(0.2);
+	let crtVignette = $state(0.4);
+	let crtConvergence = $state(0.35);
+	let crtPersistence = $state(0.3);
+	let crtFlicker = $state(0.15);
+	let crtBand = $state(0.12);
+	let crtNoise = $state(0.08);
+	const crtKnobs = () => ({
+		curvature: crtCurvature,
+		scanlines: crtScanlines,
+		mask: crtMask,
+		vignette: crtVignette,
+		convergence: crtConvergence,
+		persistence: crtPersistence,
+		flicker: crtFlicker,
+		band: crtBand,
+		noise: crtNoise
+	});
+	let crt = $state.raw<CrtScreen | null>(null);
+	$effect(() => {
+		void display; // rebind when the display (and its canvas) is recreated
+		if (!crtOn || !gridWrap) return;
+		// Element mode: the screen mounts itself over the wrap, hides the canvas
+		// underneath, and forwards pointer/wheel — drag-orbit works through the tube.
+		const screen = createCrtScreen(gridWrap, untrack(crtKnobs));
+		if (!screen) return;
+		crt = screen;
+		return () => {
+			screen.dispose();
+			if (crt === screen) crt = null;
+		};
+	});
+	// Live-tune the knobs into the running screen.
+	$effect(() => {
+		crt?.setOptions(crtKnobs());
+	});
+
 	// Optional render-loop cap (0 = uncapped). A power/cadence knob, not a speed-up.
 	let fpsCap = $state('off');
 	const FPS_OPTIONS = [
@@ -303,33 +351,37 @@
 			     control props update live via setOptions, and size resizes in place.
 			     (Also keyed on `transparent`: quality.alpha is fixed at creation.) -->
 			{#key name + (transparent ? ' (transparent)' : '')}
-				<LedGrid
-					{size}
-					{draw}
-					led={{
-						style,
-						shape,
-						stagger,
-						rgb,
-						rgbLayout,
-						vivid,
-						outline,
-						glow: glowExp,
-						size: ledSize
-					}}
-					camera={{
-						autoOrbit,
-						projection,
-						yaw: view.yaw,
-						pitch: view.pitch,
-						distance: view.distance,
-						fov: view.fov
-					}}
-					interaction={{ zoom, zoomLimits: [0.35, 12] }}
-					color={{ background }}
-					quality={{ fps: fpsCapNum, alpha: transparent }}
-					oncreate={(d) => (display = d)}
-				/>
+				<!-- The CRT overlay needs a positioned box around the display canvas; the
+				     wrapper is inside the key so remounts rebind the effect to the fresh canvas. -->
+				<div class="crt-wrap" bind:this={gridWrap}>
+					<LedGrid
+						{size}
+						{draw}
+						led={{
+							style,
+							shape,
+							stagger,
+							rgb,
+							rgbLayout,
+							vivid,
+							outline,
+							glow: glowExp,
+							size: ledSize
+						}}
+						camera={{
+							autoOrbit,
+							projection,
+							yaw: view.yaw,
+							pitch: view.pitch,
+							distance: view.distance,
+							fov: view.fov
+						}}
+						interaction={{ zoom, zoomLimits: [0.35, 12] }}
+						color={{ background }}
+						quality={{ fps: fpsCapNum, alpha: transparent }}
+						oncreate={(d) => (display = d)}
+					/>
+				</div>
 			{/key}
 			<div class="stats" aria-hidden="true">
 				<span><b>{Math.round(fps)}</b> fps</span>
@@ -421,6 +473,7 @@
 				<ToggleChip bind:checked={stagger} label="stagger" icon={Grid2x2} />
 				<ToggleChip bind:checked={rgb} label="rgb" icon={Blend} />
 				<ToggleChip bind:checked={transparent} label="transparent" icon={Layers} />
+				<ToggleChip bind:checked={crtOn} label="CRT" icon={Tv} />
 				{#if style === 'comic'}
 					<ToggleChip bind:checked={vivid} label="vivid" icon={Sparkles} />
 				{/if}
@@ -451,6 +504,21 @@
 				hint={style !== 'comic' ? 'only in comic' : undefined}
 			/>
 		</section>
+
+		{#if crtOn}
+			<section>
+				<h2>crt</h2>
+				<Slider bind:value={crtCurvature} label="curvature" min={0} max={1} step={0.05} />
+				<Slider bind:value={crtScanlines} label="scanlines" min={0} max={1} step={0.05} />
+				<Slider bind:value={crtMask} label="phosphor mask" min={0} max={1} step={0.05} />
+				<Slider bind:value={crtPersistence} label="persistence" min={0} max={1} step={0.05} />
+				<Slider bind:value={crtConvergence} label="convergence" min={0} max={1} step={0.05} />
+				<Slider bind:value={crtVignette} label="vignette" min={0} max={1} step={0.05} />
+				<Slider bind:value={crtFlicker} label="flicker" min={0} max={1} step={0.05} />
+				<Slider bind:value={crtBand} label="refresh band" min={0} max={1} step={0.05} />
+				<Slider bind:value={crtNoise} label="noise" min={0} max={1} step={0.05} />
+			</section>
+		{/if}
 
 		<section>
 			<h2>resolution</h2>
@@ -585,6 +653,13 @@
 		min-height: 0;
 		background: var(--halo-bg-main);
 	}
+	/* The CRT overlay positions against this box; it fills the stage like the canvas. */
+	.crt-wrap {
+		position: relative;
+		width: 100%;
+		height: 100%;
+	}
+
 	/* With quality.alpha on, the canvas is see-through — put something behind it so
 	   the transparency is visible (the "widget floating over your page" promise). */
 	.stage.transparent {
