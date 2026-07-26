@@ -365,6 +365,12 @@ export function createCrtScreen(
 	function frame() {
 		if (!running) return;
 		raf = requestAnimationFrame(frame);
+		// Self-heal the output size every frame (one clientWidth read): creation-order
+		// races — the screen made before its container is laid out, a panel that opens
+		// later — must resolve even where ResizeObserver has edge cases.
+		const cw = Math.round((canvas.clientWidth || 0) * dpr);
+		const ch = Math.round((canvas.clientHeight || 0) * dpr);
+		if (cw && ch && (Math.abs(canvas.width - cw) > 1 || Math.abs(canvas.height - ch) > 1)) resize();
 		if (!canvas.width || !canvas.height) return;
 		const src = texSource();
 		if (!src) return;
