@@ -32,6 +32,35 @@ it composes over **any** canvas, glowbox or not. Now **eight** packages in locks
 - **Demo gallery**: a **CRT** toggle on the LED gallery (with a nine-knob "crt" panel
   section) and on the `/seven` clock — the whole eight-canvas row on one tube.
 - No framework wrappers, deliberately: element mode is one call from any framework.
+- **Testing** (the layers the package suite can't reach): a SwiftShader-pinned
+  **golden** of the tube look over a colour-bar test card; **webkit** joins the crt
+  browser suite; a gallery e2e drives **real (trusted) mouse drag + wheel** through
+  the overlay and verifies forwarding to the hidden source.
+
+### Fixed (hardened through `1.4.0-rc.1…3` against a real app)
+
+- **Creation-order races self-heal**: a screen created before its container lays out
+  (or inside a closed panel) resolves once layout arrives — `frame()` checks the
+  backing store against the live CSS box, beyond ResizeObserver; three orderings
+  regression-tested.
+- **The wrapped element keeps its CSS**: outside the curved face the output is
+  transparent (backgrounds/borders/radius show around the tube), and the element-mode
+  face floor defaults to the container's computed background colour (`background`
+  overrides). Non-canvas children remain the documented compositor limit.
+- **WebGL context lifecycle** (found on Safari, whose per-page context budget is
+  small): `dispose()` deletes the GL objects and **releases the context slot** via
+  `WEBGL_lose_context` (the output canvas is package-owned — led-grid deliberately
+  keeps its consumer-owned context, guarded by its StrictMode test); the screen
+  **recovers from context loss** (rebuilds everything on restore instead of staying
+  black); dispose no longer double-loses an already-evicted context. Real
+  lose/restore round-trip tested on chromium + webkit.
+- **Cleanup audit across the family**: all three canvas cores now remove their
+  `role`/`aria-label`/`aria-hidden` from the consumer's canvas on dispose (the row,
+  the CRT, the wrappers, and the demo's three.js scene already restored everything).
+- **Docs for real apps**: wrapping your own WebGL (the `preserveDrawingBuffer`
+  gotcha, Safari-strict) and the context-budget rules, in the crt README; the
+  shared-context multi-view architecture recorded as a trigger on the roadmap's
+  WebGL2 2.0 entry.
 
 ## [1.3.1] — 2026-07-26
 
