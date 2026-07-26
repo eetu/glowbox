@@ -178,3 +178,14 @@ test('orientation survives the no-flip upload path (top stays top), both pipelin
 		crt.dispose();
 	}
 });
+
+test('dispose releases the WebGL context (per-page context budget)', () => {
+	const src = makeSource();
+	const crt = createCrtScreen(src);
+	if (!crt) return;
+	mountOutput(crt);
+	const gl = crt.canvas.getContext('webgl')!;
+	expect(gl.isContextLost()).toBe(false);
+	crt.dispose();
+	expect(gl.isContextLost()).toBe(true);
+});

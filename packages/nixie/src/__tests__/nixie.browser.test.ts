@@ -33,6 +33,7 @@ test('createNixieTube lights a numeral and a blank tube stays dark', () => {
 	tube.setValue(null); // all cathodes dark — only the faint glass rim/highlight remain
 	expect(litPixels(canvas)).toBeLessThan(lit / 5);
 	tube.dispose();
+	expect(canvas.getAttribute('role')).toBeNull(); // canvas handed back without our ARIA
 });
 
 test('a tiny tube still lights a legible numeral (small-size render path)', () => {

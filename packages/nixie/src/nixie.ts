@@ -526,6 +526,10 @@ export function createNixieTube(
 		},
 		dispose() {
 			ro?.disconnect();
+			// Hand the consumer's canvas back without our ARIA (it may be reused).
+			canvas.removeAttribute('role');
+			canvas.removeAttribute('aria-label');
+			canvas.removeAttribute('aria-hidden');
 		}
 	};
 }
