@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/react",
-	"version": "1.4.1",
+	"version": "1.5.0",
 	"description": "glowbox components for React — <LedGrid> (3D WebGL LED grid) + <NixieTube> (nixie-tube display).",
 	"keywords": [
 		"glowbox",
@@ -53,6 +53,7 @@
 				"react",
 				"react-dom",
 				"react/jsx-runtime",
+				"@glowbox/flip-dot",
 				"@glowbox/led-grid",
 				"@glowbox/nixie",
 				"@glowbox/seven-segment"
@@ -64,6 +65,7 @@
 		"react": "^18 || ^19"
 	},
 	"dependencies": {
+		"@glowbox/flip-dot": "workspace:^",
 		"@glowbox/led-grid": "workspace:^",
 		"@glowbox/nixie": "workspace:^",
 		"@glowbox/seven-segment": "workspace:^"

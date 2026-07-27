@@ -97,6 +97,17 @@
 <div class="app">
 	<header>
 		<CoreNav core="seven" />
+		<label class="hdr-field style-field"
+			>style
+			<Segmented
+				bind:value={style}
+				ariaLabel="display style"
+				options={[
+					{ value: 'led', label: 'LED' },
+					{ value: 'vfd', label: 'VFD' }
+				]}
+			/>
+		</label>
 		<span class="hint">per-segment fades · drag AGE to wear it out</span>
 		<ThemeToggle />
 		<button
@@ -140,17 +151,6 @@
 
 		<section>
 			<h2>display</h2>
-			<div class="row">
-				<span class="rlabel">style</span>
-				<Segmented
-					bind:value={style}
-					ariaLabel="display style"
-					options={[
-						{ value: 'led', label: 'LED' },
-						{ value: 'vfd', label: 'VFD' }
-					]}
-				/>
-			</div>
 			<Slider bind:value={glow} label="glow" min={0} max={1} step={0.05} />
 			<Slider
 				bind:value={age}
@@ -219,6 +219,13 @@
 		gap: 16px;
 		padding: 8px 16px;
 		background: var(--halo-bg-light);
+	}
+	.hdr-field {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 13px;
+		color: var(--halo-text-muted);
 	}
 	.hint {
 		margin-left: auto;

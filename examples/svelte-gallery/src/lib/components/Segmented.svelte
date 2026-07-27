@@ -1,6 +1,7 @@
 <script lang="ts" generics="T extends string">
 	// A segmented (single-choice) control — a pill of buttons where the active one
-	// carries the accent. For 2–3 mutually exclusive options you flip often.
+	// carries the accent. For a handful of mutually exclusive options you flip
+	// often; wraps onto extra rows when the panel is narrower than the options.
 	import type { Component } from 'svelte';
 
 	let {
@@ -35,6 +36,8 @@
 <style>
 	.seg {
 		display: inline-flex;
+		flex-wrap: wrap;
+		max-width: 100%;
 		padding: 2px;
 		gap: 2px;
 		border: 1px solid var(--halo-border);

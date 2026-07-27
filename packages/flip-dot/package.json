@@ -1,16 +1,16 @@
 {
-	"name": "@glowbox/seven-segment",
+	"name": "@glowbox/flip-dot",
 	"version": "1.5.0",
-	"description": "Seven-segment display component — per-segment light dynamics, ageing, LED + VFD styles, in the glowbox family.",
+	"description": "Electromechanical flip-dot board component — physical disc flips, scan-wave stagger, dithering, optional solenoid click, in the glowbox family.",
 	"keywords": [
 		"glowbox",
-		"seven-segment",
-		"7-segment",
-		"vfd",
+		"flip-dot",
+		"flipdot",
+		"flip-disc",
 		"retro",
 		"display",
-		"clock",
-		"glow"
+		"dithering",
+		"electromechanical"
 	],
 	"license": "MIT",
 	"type": "module",
@@ -32,7 +32,7 @@
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/eetu/glowbox.git",
-		"directory": "packages/seven-segment"
+		"directory": "packages/flip-dot"
 	},
 	"homepage": "https://eetu.github.io/glowbox/",
 	"scripts": {

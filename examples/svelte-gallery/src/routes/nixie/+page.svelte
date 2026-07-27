@@ -85,14 +85,29 @@
 <div class="app">
 	<header>
 		<CoreNav core="nixie" />
-		<Segmented
-			bind:value={mode}
-			ariaLabel="render mode"
-			options={[
-				{ value: '2d', label: '2D' },
-				{ value: '3d', label: '3D' }
-			]}
-		/>
+		<label class="hdr-field"
+			>mode
+			<Segmented
+				bind:value={mode}
+				ariaLabel="render mode"
+				options={[
+					{ value: '2d', label: '2D' },
+					{ value: '3d', label: '3D' }
+				]}
+			/>
+		</label>
+		<label class="hdr-field style-field"
+			>style
+			<Segmented
+				bind:value={style}
+				ariaLabel="tube style"
+				options={[
+					{ value: 'classic', label: 'classic' },
+					{ value: 'slim', label: 'slim' },
+					{ value: 'tall', label: 'tall' }
+				]}
+			/>
+		</label>
 		<span class="hint"
 			>{mode === '3d'
 				? 'bent-wire cathodes in refractive glass · drag to orbit'
@@ -137,18 +152,6 @@
 
 		<section>
 			<h2>tube</h2>
-			<div class="row">
-				<span class="rlabel">style</span>
-				<Segmented
-					bind:value={style}
-					ariaLabel="tube style"
-					options={[
-						{ value: 'classic', label: 'classic' },
-						{ value: 'slim', label: 'slim' },
-						{ value: 'tall', label: 'tall' }
-					]}
-				/>
-			</div>
 			<!-- The 3D scene builds its own tube geometry and sizes itself to the stage;
 			     width/height drive the 2D canvas slots only. -->
 			<Slider
@@ -221,6 +224,13 @@
 		gap: 16px;
 		padding: 8px 16px;
 		background: var(--halo-bg-light);
+	}
+	.hdr-field {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 13px;
+		color: var(--halo-text-muted);
 	}
 	.hint {
 		margin-left: auto;

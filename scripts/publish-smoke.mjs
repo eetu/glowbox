@@ -19,7 +19,17 @@ import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const PACKAGES = ['led-grid', 'nixie', 'seven-segment', 'crt', 'svelte', 'react', 'vue', 'extras'];
+const PACKAGES = [
+	'led-grid',
+	'nixie',
+	'seven-segment',
+	'flip-dot',
+	'crt',
+	'svelte',
+	'react',
+	'vue',
+	'extras'
+];
 // @glowbox/svelte ships .svelte source (compiled by the consumer's bundler), so it gets
 // the tsc types check but not a bare-node import.
 const NODE_IMPORTABLE = PACKAGES.filter((p) => p !== 'svelte');
@@ -96,16 +106,19 @@ try {
 		`import { createLedDisplay, createVoxelGrid, type LedDisplay } from '@glowbox/led-grid';
 import { createNixieTube, nixieCathodes, type NixieOptions } from '@glowbox/nixie';
 import { createSevenSegment, segmentGeometry, type SevenSegmentOptions } from '@glowbox/seven-segment';
+import { createFlipDots, createMechSound, ditherFrame, type FlipDotsOptions } from '@glowbox/flip-dot';
 import { createCrtScreen, type CrtOptions } from '@glowbox/crt';
 import { makeGifPlayer, text } from '@glowbox/extras';
-import { LedGrid as SvelteLedGrid, NixieTube as SvelteNixieTube, SevenSegment as SvelteSevenSegment } from '@glowbox/svelte';
-import { LedGrid as ReactLedGrid, NixieTube as ReactNixieTube, SevenSegment as ReactSevenSegment } from '@glowbox/react';
-import { LedGrid as VueLedGrid, NixieTube as VueNixieTube, SevenSegment as VueSevenSegment } from '@glowbox/vue';
+import { FlipDots as SvelteFlipDots, LedGrid as SvelteLedGrid, NixieTube as SvelteNixieTube, SevenSegment as SvelteSevenSegment } from '@glowbox/svelte';
+import { FlipDots as ReactFlipDots, LedGrid as ReactLedGrid, NixieTube as ReactNixieTube, SevenSegment as ReactSevenSegment } from '@glowbox/react';
+import { FlipDots as VueFlipDots, LedGrid as VueLedGrid, NixieTube as VueNixieTube, SevenSegment as VueSevenSegment } from '@glowbox/vue';
 
 const g = createVoxelGrid(4, 4, 4);
 g.plot(1, 2, 3, [1, 0.5, 0]);
 const opts: NixieOptions = { value: 8, style: 'classic', label: 'eight' };
 const segOpts: SevenSegmentOptions = { value: 8, style: 'vfd', age: 0.5 };
+const dotOpts: FlipDotsOptions = { cols: 28, rows: 14, shape: 'square', sound: 0.4 };
+const bits = ditherFrame((x, y) => (x + y) / 42, 28, 14, { mode: 'bayer' });
 const crtOpts: CrtOptions = { persistence: 0.5, events: true };
 export const used = [
 	createLedDisplay,
@@ -113,20 +126,27 @@ export const used = [
 	nixieCathodes,
 	createSevenSegment,
 	segmentGeometry,
+	createFlipDots,
+	createMechSound,
 	createCrtScreen,
 	makeGifPlayer,
 	text,
 	SvelteLedGrid,
 	SvelteNixieTube,
 	SvelteSevenSegment,
+	SvelteFlipDots,
 	ReactLedGrid,
 	ReactNixieTube,
 	ReactSevenSegment,
+	ReactFlipDots,
 	VueLedGrid,
 	VueNixieTube,
 	VueSevenSegment,
+	VueFlipDots,
 	opts,
 	segOpts,
+	dotOpts,
+	bits,
 	crtOpts
 ] as const;
 export type D = LedDisplay;
@@ -167,6 +187,7 @@ export type D = LedDisplay;
 		"@glowbox/led-grid": "/node_modules/@glowbox/led-grid/dist/index.js",
 		"@glowbox/nixie": "/node_modules/@glowbox/nixie/dist/index.js",
 		"@glowbox/seven-segment": "/node_modules/@glowbox/seven-segment/dist/index.js",
+		"@glowbox/flip-dot": "/node_modules/@glowbox/flip-dot/dist/index.js",
 		"@glowbox/crt": "/node_modules/@glowbox/crt/dist/index.js",
 		"@glowbox/extras": "/node_modules/@glowbox/extras/dist/index.js"
 	}
@@ -175,10 +196,12 @@ export type D = LedDisplay;
 <canvas id="g" style="width:160px;height:120px"></canvas>
 <canvas id="n" style="width:60px;height:100px"></canvas>
 <canvas id="s" style="width:60px;height:100px"></canvas>
+<canvas id="f" style="width:280px;height:140px"></canvas>
 <script type="module">
 	import { createLedDisplay } from '@glowbox/led-grid';
 	import { createNixieTube } from '@glowbox/nixie';
 	import { createSevenSegment } from '@glowbox/seven-segment';
+	import { createFlipDots, ditherFrame } from '@glowbox/flip-dot';
 	import { createCrtScreen } from '@glowbox/crt';
 	import { text } from '@glowbox/extras';
 	const d = createLedDisplay(document.getElementById('g'), {
@@ -193,6 +216,9 @@ export type D = LedDisplay;
 	if (!t) throw new Error('createNixieTube returned null');
 	const s = createSevenSegment(document.getElementById('s'), { value: 8, transition: 0 });
 	if (!s) throw new Error('createSevenSegment returned null');
+	const f = createFlipDots(document.getElementById('f'), { cols: 28, rows: 14, flipMs: 0 });
+	if (!f) throw new Error('createFlipDots returned null');
+	f.setFrame(ditherFrame((x, y) => (x + y) / 42, 28, 14));
 	const crt = createCrtScreen(document.getElementById('n'));
 	if (!crt) throw new Error('createCrtScreen returned null');
 	window.__ok = true;

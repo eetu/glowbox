@@ -44,11 +44,15 @@ torus — `d.torus()` is axis-aligned/single-colour, see the note in `torus.ts`.
    multiply every core instead of adding one — same wow bar applies.
    **Seven-segment SHIPPED in 1.3.0** — it cleared the "beats a 7-seg font" bar with
    per-segment dynamics, the ageing arc (dim → flicker → dead segment), and LED/VFD
-   materials. Next: flip-dot (dithering + optional click; also the family's first
-   genuinely 3D spectacle if a 3D demo ever itches) → split-flap (most delightful,
-   most work, last). The bar for every core: real wow beyond the trivial alternative,
-   or it doesn't ship. Nixie proved the pattern: standalone 2D core + wrapper
-   components + a demo page; the 1.0.1 decoupling made cores independent.
+   materials. **Flip-dot SHIPPED in 1.5.0** — physical disc/vane rotation, the scan
+   wave, mechanism-honest notch/flap geometry, dithering, and the recording-tuned
+   solenoid click; its `createMechSound` (shared AudioContext, per-tick recipes) is
+   the mechanical-sound groundwork the next core inherits. Next: split-flap (most
+   delightful, most work, last of the planned cores — vendor-copy the sound engine,
+   the card slap is just another tick recipe). The bar for every core: real wow
+   beyond the trivial alternative, or it doesn't ship. Nixie proved the pattern:
+   standalone 2D core + wrapper components + a demo page; the 1.0.1 decoupling made
+   cores independent.
 3. **WebGL2 instanced-quad renderer — the only true 2.0, trigger-based.** Fixes the
    2–64 px sprite clamp (hi-dpi close-ups), makes float buffers guaranteed (the LDR
    fallback disappears), enables per-LED geometry, and solves lattice-mode cost. Do it

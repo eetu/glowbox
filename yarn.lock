@@ -683,6 +683,22 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@glowbox/flip-dot@workspace:^, @glowbox/flip-dot@workspace:packages/flip-dot":
+  version: 0.0.0-use.local
+  resolution: "@glowbox/flip-dot@workspace:packages/flip-dot"
+  dependencies:
+    "@anarkisti/eslint-config": "npm:^1"
+    "@vitest/browser": "npm:^4.1"
+    "@vitest/browser-playwright": "npm:^4.1"
+    eslint: "npm:^10"
+    playwright: "npm:^1.61"
+    typescript: "npm:^6"
+    vite: "npm:^8.1"
+    vite-plugin-dts: "npm:^5"
+    vitest: "npm:^4.1"
+  languageName: unknown
+  linkType: soft
+
 "@glowbox/led-grid@workspace:^, @glowbox/led-grid@workspace:packages/led-grid":
   version: 0.0.0-use.local
   resolution: "@glowbox/led-grid@workspace:packages/led-grid"
@@ -720,6 +736,7 @@ __metadata:
   resolution: "@glowbox/react@workspace:packages/react"
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
+    "@glowbox/flip-dot": "workspace:^"
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/nixie": "workspace:^"
     "@glowbox/seven-segment": "workspace:^"
@@ -788,6 +805,7 @@ __metadata:
   resolution: "@glowbox/svelte@workspace:packages/svelte"
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
+    "@glowbox/flip-dot": "workspace:^"
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/nixie": "workspace:^"
     "@glowbox/seven-segment": "workspace:^"
@@ -815,6 +833,7 @@ __metadata:
   resolution: "@glowbox/vue@workspace:packages/vue"
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
+    "@glowbox/flip-dot": "workspace:^"
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/nixie": "workspace:^"
     "@glowbox/seven-segment": "workspace:^"
