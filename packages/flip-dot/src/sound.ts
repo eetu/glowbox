@@ -1,0 +1,212 @@
+// A tiny mechanical-sound synth over the Web Audio API — the audible half of an
+// electromechanical display. Deliberately generic: a *tick* is one transient
+// (a resonant ping + a filtered noise burst), and every mechanical core is a recipe
+// over it — the flip-dot solenoid click today, the split-flap card slap tomorrow.
+// Like `color.ts`, this file is written to be vendor-copied between sibling cores
+// (a core must not depend on a sibling for one helper).
+//
+// One AudioContext for EVERYTHING: browsers cap live contexts (iOS Safari is the
+// tight one), and a dashboard of boards must not burn one each. All channels share
+// a module-level context + noise buffer, refcounted — the last dispose() closes it.
+//
+// Autoplay-policy honest: the context is created lazily on the first tick and, if
+// the browser boots it suspended, a one-time pointer/key listener resumes it —
+// sound simply starts on the first user gesture, no API for the consumer to call.
+// Import-safe under node/SSR: no AudioContext at module scope, and
+// `createMechSound` returns a silent no-op implementation where Web Audio
+// doesn't exist.
+
+export interface MechTick {
+	/** Resonant ping frequency, Hz (default ~2400 with per-tick jitter). */
+	freq?: number;
+	/** Ping decay, seconds (default 0.014). */
+	decay?: number;
+	/** Noise-burst level 0..1 relative to the ping (default 0.8). */
+	noise?: number;
+	/** Noise highpass cutoff, Hz (default 2800). */
+	noiseHz?: number;
+	/** Tick gain 0..1 (default 1; scaled by the master volume). */
+	gain?: number;
+	/** Stereo position -1..1 (default 0). */
+	pan?: number;
+	/** Schedule offset in seconds from now (default 0). */
+	delay?: number;
+}
+
+export interface MechSound {
+	/** Play one transient. Safe to call at any rate — ticks beyond ~250/s per
+	 *  channel are dropped (the ear reads dense rattle anyway; the audio graph
+	 *  shouldn't pay for it). The ceiling leaves room for a floppotron-style
+	 *  voice: a mechanical "note" is a click stream at the pitch's repetition
+	 *  rate, which wants up to ~200 ticks/s. */
+	tick(t?: MechTick): void;
+	/** Master volume 0..1. 0 keeps the channel alive but silent. */
+	setVolume(v: number): void;
+	/** Release this channel; the shared AudioContext closes with the last one. */
+	dispose(): void;
+}
+
+const MAX_RATE = 250; // ticks/second hard cap per channel
+
+// --- the shared engine (module state, created lazily, refcounted) ---------------
+let sharedCtx: AudioContext | null = null;
+let sharedNoise: AudioBuffer | null = null;
+let channels = 0; // booted channels holding the context open
+let resumeArmed = false;
+
+const onGesture = () => {
+	sharedCtx?.resume().catch(() => undefined);
+	disarmResume();
+};
+const disarmResume = () => {
+	if (!resumeArmed) return;
+	removeEventListener('pointerdown', onGesture);
+	removeEventListener('keydown', onGesture);
+	resumeArmed = false;
+};
+const armResume = () => {
+	if (resumeArmed || !sharedCtx || sharedCtx.state !== 'suspended') return;
+	resumeArmed = true;
+	addEventListener('pointerdown', onGesture);
+	addEventListener('keydown', onGesture);
+};
+
+// Hidden/minimized tabs get their context suspended (WebKit reports a
+// non-standard 'interrupted' state) and it does NOT resume itself on return —
+// without this, sound stays dead until a reload. A resume after a prior
+// user-gesture unlock needs no new gesture, so coming back just works.
+const onVisible = () => {
+	if (!document.hidden && sharedCtx && sharedCtx.state !== 'running')
+		void sharedCtx.resume().catch(() => undefined);
+};
+
+const engine = (): AudioContext | null => {
+	if (sharedCtx) return sharedCtx;
+	const AC = typeof AudioContext !== 'undefined' ? AudioContext : null;
+	if (!AC) return null; // SSR / ancient browser → stay a silent no-op
+	sharedCtx = new AC();
+	document.addEventListener('visibilitychange', onVisible);
+	addEventListener('pageshow', onVisible);
+	// One shared 100ms white-noise buffer; every burst plays a random slice of it.
+	sharedNoise = sharedCtx.createBuffer(
+		1,
+		Math.ceil(sharedCtx.sampleRate * 0.1),
+		sharedCtx.sampleRate
+	);
+	const data = sharedNoise.getChannelData(0);
+	for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+	armResume();
+	return sharedCtx;
+};
+
+/** Create a mechanical-sound channel. `volume` 0..1 (default 0.5). */
+export function createMechSound(opts: { volume?: number } = {}): MechSound {
+	let volume = Math.max(0, Math.min(1, opts.volume ?? 0.5));
+	let master: GainNode | null = null; // this channel's gain into the shared context
+	let disposed = false;
+	let windowStart = 0; // 1s rate-limit window
+	let windowCount = 0;
+
+	const boot = (): boolean => {
+		if (disposed) return false;
+		if (master) return true;
+		const ctx = engine();
+		if (!ctx) return false;
+		master = ctx.createGain();
+		master.gain.value = volume * volume; // perceptual-ish volume curve
+		master.connect(ctx.destination);
+		channels++;
+		return true;
+	};
+
+	return {
+		tick(t = {}) {
+			if (volume <= 0 || !boot() || !sharedCtx || !master || !sharedNoise) return;
+			const ctx = sharedCtx;
+			if (ctx.state !== 'running') {
+				// Covers both the autoplay lock ('suspended' before any gesture) and a
+				// tab-hidden suspension (including WebKit's 'interrupted'). A direct
+				// resume works once audio was ever unlocked; the gesture listener is
+				// the backstop for the never-unlocked case. This tick is dropped —
+				// the next one lands.
+				void ctx.resume().catch(() => undefined);
+				armResume();
+				return;
+			}
+			const now = ctx.currentTime;
+			if (now - windowStart >= 1) {
+				windowStart = now;
+				windowCount = 0;
+			}
+			if (++windowCount > MAX_RATE) return;
+
+			const when = now + Math.max(0, t.delay ?? 0);
+			const gain = Math.max(0, Math.min(1, t.gain ?? 1));
+			// StereoPanner is missing in a few older WebKits — pan is a nicety; also
+			// skipped near centre to save a node on most ticks.
+			let dest: AudioNode = master;
+			const pan = t.pan ?? 0;
+			if (typeof StereoPannerNode !== 'undefined' && Math.abs(pan) > 0.05) {
+				const p = ctx.createStereoPanner();
+				p.pan.value = Math.max(-1, Math.min(1, pan));
+				p.connect(master);
+				dest = p;
+			}
+
+			// The resonant ping: the disc/armature ringing after the strike. A sine —
+			// measured against a real board the resonances are narrow (a 10.1 kHz
+			// spike, not a harmonic stack), and triangle harmonics up there alias.
+			// The tick gain is folded into the envelope peaks — no per-tick out node.
+			const decay = t.decay ?? 0.014;
+			const osc = ctx.createOscillator();
+			osc.type = 'sine';
+			osc.frequency.value = t.freq ?? 2400 * (0.85 + Math.random() * 0.3);
+			const env = ctx.createGain();
+			env.gain.setValueAtTime(0.5 * gain, when);
+			env.gain.exponentialRampToValueAtTime(0.001, when + decay);
+			osc.connect(env);
+			env.connect(dest);
+			osc.start(when);
+			osc.stop(when + decay + 0.01);
+
+			// The strike itself: a few ms of high-passed noise.
+			const noise = t.noise ?? 0.8;
+			if (noise > 0) {
+				const src = ctx.createBufferSource();
+				src.buffer = sharedNoise;
+				const hp = ctx.createBiquadFilter();
+				hp.type = 'highpass';
+				hp.frequency.value = t.noiseHz ?? 2800;
+				const nEnv = ctx.createGain();
+				nEnv.gain.setValueAtTime(noise * gain, when);
+				nEnv.gain.exponentialRampToValueAtTime(0.001, when + 0.006);
+				src.connect(hp);
+				hp.connect(nEnv);
+				nEnv.connect(dest);
+				src.start(when, Math.random() * 0.09, 0.02);
+			}
+		},
+		setVolume(v) {
+			volume = Math.max(0, Math.min(1, v));
+			if (master) master.gain.value = volume * volume;
+		},
+		dispose() {
+			if (disposed) return;
+			disposed = true;
+			if (master) {
+				master.disconnect();
+				master = null;
+				channels--;
+				if (channels <= 0) {
+					// Last channel out closes the shared context and frees its thread.
+					disarmResume();
+					document.removeEventListener('visibilitychange', onVisible);
+					removeEventListener('pageshow', onVisible);
+					void sharedCtx?.close().catch(() => undefined);
+					sharedCtx = null;
+					sharedNoise = null;
+				}
+			}
+		}
+	};
+}

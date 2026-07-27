@@ -447,17 +447,6 @@
 
 		<section>
 			<h2>look</h2>
-			<div class="row mobile-only">
-				<span class="rlabel">style</span>
-				<Segmented
-					bind:value={style}
-					ariaLabel="style (panel)"
-					options={[
-						{ value: 'hologram', label: 'hologram' },
-						{ value: 'comic', label: 'comic' }
-					]}
-				/>
-			</div>
 			<div class="row">
 				<span class="rlabel">shape</span>
 				<Segmented
@@ -882,11 +871,6 @@
 		padding: 0;
 	}
 
-	/* Rows that only make sense on mobile (controls pulled out of the header). */
-	.mobile-only {
-		display: none;
-	}
-
 	/* --- mobile: panel becomes an off-canvas sheet --- */
 	@media (max-width: 720px) {
 		.app {
@@ -895,14 +879,16 @@
 				'header'
 				'stage';
 		}
-		.hint,
-		.style-field {
-			display: none; /* free header width; style lives in the panel on mobile */
+		.hint {
+			display: none;
 		}
-		/* Tighten the header + let the example field shrink so it never forces the
-		   grid column (and canvas) wider than the viewport. */
+		/* Tighten the header, let it wrap (style takes the second row — every
+		   selector lives in the header ONLY, no panel duplicates), and let the
+		   example field shrink so it never forces the grid column (and canvas)
+		   wider than the viewport. */
 		header {
-			gap: 8px;
+			flex-wrap: wrap;
+			gap: 6px 8px;
 			padding: 8px 12px;
 		}
 		.example-field {
@@ -921,9 +907,6 @@
 		.example-field :global(select) {
 			width: 100%;
 			min-width: 0;
-		}
-		.mobile-only {
-			display: flex;
 		}
 		.panel-toggle {
 			display: inline-flex;

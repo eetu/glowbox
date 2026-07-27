@@ -36,6 +36,7 @@ const config = {
 			'@glowbox/extras': '../../packages/extras/src/index.ts',
 			'@glowbox/nixie': '../../packages/nixie/src/index.ts',
 			'@glowbox/seven-segment': '../../packages/seven-segment/src/index.ts',
+			'@glowbox/flip-dot': '../../packages/flip-dot/src/index.ts',
 			'@glowbox/crt': '../../packages/crt/src/index.ts'
 		}
 	}
