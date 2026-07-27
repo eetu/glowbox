@@ -101,7 +101,7 @@ test('scan stagger sweeps top rows before bottom rows', async () => {
 	canvas.remove();
 });
 
-test('sound off by default: no AudioContext is ever constructed', async () => {
+test('sound: no AudioContext before a user gesture, then exactly one, shared', async () => {
 	const RealAC = window.AudioContext;
 	let constructed = 0;
 	window.AudioContext = class extends RealAC {
@@ -110,17 +110,34 @@ test('sound off by default: no AudioContext is ever constructed', async () => {
 			constructed++;
 		}
 	};
+	const realActivation = Object.getOwnPropertyDescriptor(Navigator.prototype, 'userActivation');
 	try {
+		// 1. Sound off → nothing, ever.
 		const canvas = makeCanvas();
 		const board = createFlipDots(canvas, { cols: 6, rows: 3, flipMs: 20 })!;
 		board.fill();
 		await sleep(150);
 		expect(constructed).toBe(0);
 
-		// Enabling sound boots exactly ONE context on the first flip — and a second
-		// sound-enabled board SHARES it (contexts are a capped browser resource).
+		// 2. Sound ON but the page has never seen a gesture → still nothing: a
+		//    pre-gesture context would sit suspended and burn a slot on a host
+		//    page already running its own audio.
+		Object.defineProperty(navigator, 'userActivation', {
+			value: { hasBeenActive: false, isActive: false },
+			configurable: true
+		});
 		board.setOptions({ sound: 0.5 });
 		board.clear();
+		await sleep(150);
+		expect(constructed).toBe(0);
+
+		// 3. After the page has a gesture, the first flip boots exactly ONE
+		//    context — and a second sound-enabled board SHARES it.
+		Object.defineProperty(navigator, 'userActivation', {
+			value: { hasBeenActive: true, isActive: false },
+			configurable: true
+		});
+		board.fill();
 		await sleep(150);
 		expect(constructed).toBe(1);
 
@@ -138,6 +155,9 @@ test('sound off by default: no AudioContext is ever constructed', async () => {
 		canvas2.remove();
 	} finally {
 		window.AudioContext = RealAC;
+		delete (navigator as { userActivation?: unknown }).userActivation;
+		if (realActivation)
+			Object.defineProperty(Navigator.prototype, 'userActivation', realActivation);
 	}
 });
 

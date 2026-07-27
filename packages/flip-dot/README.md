@@ -46,8 +46,10 @@ nothing.
   click — tuned against a recording of a real board: a narrow metallic ring in
   the 6.5–10.5 kHz band, a 2–4 ms strike, wide click-to-click level spread.
   Dense sweeps collapse into a budgeted rattle instead of a buzz. Sound starts
-  on the first user gesture (autoplay policy) and survives tab hide/restore —
-  nothing to wire up.
+  on the first user gesture (autoplay policy) — and the AudioContext itself is
+  not created until the page has seen one (`navigator.userActivation`), so a
+  sound-enabled board adds zero audio footprint to a host page that runs its
+  own audio. Survives tab hide/restore; nothing to wire up.
 
 ## Content is one bit — dither it
 

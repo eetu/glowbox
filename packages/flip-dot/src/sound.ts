@@ -52,21 +52,32 @@ const MAX_RATE = 250; // ticks/second hard cap per channel
 let sharedCtx: AudioContext | null = null;
 let sharedNoise: AudioBuffer | null = null;
 let channels = 0; // booted channels holding the context open
-let resumeArmed = false;
+let live = 0; // channels created and not yet disposed (may not have booted)
+let gestureArmed = false;
+
+// Has the page seen a real user gesture? An AudioContext created before one is
+// guaranteed-suspended console noise AND a slot against the browser's context
+// cap — rude to a host page already running its own audio. Where the API is
+// missing (old WebKit), err on creating; the resume listener still unlocks.
+const pageActivated = (): boolean =>
+	typeof navigator === 'undefined' || (navigator.userActivation?.hasBeenActive ?? true);
 
 const onGesture = () => {
-	sharedCtx?.resume().catch(() => undefined);
-	disarmResume();
+	// The gesture either unlocks the existing context or is our cue to finally
+	// create it (in-gesture creation starts running everywhere).
+	if (sharedCtx) void sharedCtx.resume().catch(() => undefined);
+	else if (live > 0) engine();
+	disarmGesture();
 };
-const disarmResume = () => {
-	if (!resumeArmed) return;
+const disarmGesture = () => {
+	if (!gestureArmed) return;
 	removeEventListener('pointerdown', onGesture);
 	removeEventListener('keydown', onGesture);
-	resumeArmed = false;
+	gestureArmed = false;
 };
-const armResume = () => {
-	if (resumeArmed || !sharedCtx || sharedCtx.state !== 'suspended') return;
-	resumeArmed = true;
+const armGesture = () => {
+	if (gestureArmed) return;
+	gestureArmed = true;
 	addEventListener('pointerdown', onGesture);
 	addEventListener('keydown', onGesture);
 };
@@ -95,7 +106,7 @@ const engine = (): AudioContext | null => {
 	);
 	const data = sharedNoise.getChannelData(0);
 	for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-	armResume();
+	if (sharedCtx.state === 'suspended') armGesture();
 	return sharedCtx;
 };
 
@@ -106,10 +117,18 @@ export function createMechSound(opts: { volume?: number } = {}): MechSound {
 	let disposed = false;
 	let windowStart = 0; // 1s rate-limit window
 	let windowCount = 0;
+	live++;
 
 	const boot = (): boolean => {
 		if (disposed) return false;
 		if (master) return true;
+		if (!sharedCtx && !pageActivated()) {
+			// No context yet and no gesture seen: don't create one — it would sit
+			// suspended and burn a context slot on the host page. The gesture
+			// listener creates it the moment the user first interacts.
+			armGesture();
+			return false;
+		}
 		const ctx = engine();
 		if (!ctx) return false;
 		master = ctx.createGain();
@@ -130,7 +149,7 @@ export function createMechSound(opts: { volume?: number } = {}): MechSound {
 				// the backstop for the never-unlocked case. This tick is dropped —
 				// the next one lands.
 				void ctx.resume().catch(() => undefined);
-				armResume();
+				armGesture();
 				return;
 			}
 			const now = ctx.currentTime;
@@ -193,13 +212,16 @@ export function createMechSound(opts: { volume?: number } = {}): MechSound {
 		dispose() {
 			if (disposed) return;
 			disposed = true;
+			live--;
+			// Nobody left waiting for a gesture-deferred context → don't create one.
+			if (live <= 0 && !sharedCtx) disarmGesture();
 			if (master) {
 				master.disconnect();
 				master = null;
 				channels--;
 				if (channels <= 0) {
 					// Last channel out closes the shared context and frees its thread.
-					disarmResume();
+					disarmGesture();
 					document.removeEventListener('visibilitychange', onVisible);
 					removeEventListener('pageshow', onVisible);
 					void sharedCtx?.close().catch(() => undefined);
