@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/svelte",
-	"version": "1.4.1",
+	"version": "1.5.0",
 	"description": "glowbox components for Svelte 5 — <LedGrid> (3D WebGL LED grid) + <NixieTube> (nixie-tube display).",
 	"keywords": [
 		"glowbox",
@@ -51,13 +51,14 @@
 		{
 			"name": "shipped files (no bundle — components ship as .svelte source)",
 			"path": "dist/**/*.{js,svelte}",
-			"limit": "4 kB"
+			"limit": "5 kB"
 		}
 	],
 	"peerDependencies": {
 		"svelte": "^5"
 	},
 	"dependencies": {
+		"@glowbox/flip-dot": "workspace:^",
 		"@glowbox/led-grid": "workspace:^",
 		"@glowbox/nixie": "workspace:^",
 		"@glowbox/seven-segment": "workspace:^"

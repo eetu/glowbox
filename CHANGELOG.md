@@ -4,6 +4,49 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [1.5.0] — 2026-07-27
+
+The fourth display core: an **electromechanical flip-dot board**. Where the LED grid
+glows, the nixie burns and the seven-segment fades, this one _moves_ — and, if you let
+it, clicks. Now **nine** packages in lockstep.
+
+### Added
+
+- **`@glowbox/flip-dot`** — `createFlipDots(canvas, opts)`, a 2D-canvas board of
+  physically flipping dots. Zero deps, SSR-import-safe, ~4.6 kB.
+  - **Physical flips**: each disc rotates about its pivot axis (diagonal by default,
+    like the real pivot pins), foreshortening to an edge-on sliver mid-flip; frame
+    changes sweep the board as a row-driver **scan wave** (stagger scan / random /
+    none). A dot re-targeted mid-flip completes its previous flip first.
+  - **Mechanism-honest detail** (researched against patents, photos and a 3D model of
+    the mechanism): the drive-pole **notch** sits 90° off the pivot axis and mirrors
+    between disc faces — the electromagnet's pole pair straddles the axis. The
+    `shape: 'square'` style is the octagonal bus-sign vane: **one triangular flap
+    folding across the diagonal hinge** over two painted base halves — blank hides
+    the base's pole hole, open reveals it.
+  - **Flat matte by default** (how the boards photograph); `shaded: true` opts into
+    the lighting story — face gradients, socket wells, axle dimples, edge-on glint.
+  - **`ditherFrame`** — threshold (default) / Bayer / Floyd–Steinberg, pure and
+    node-tested, for driving the one-bit board from grayscale.
+  - **`createMechSound`** — a mechanical-tick synth over ONE shared, refcounted
+    AudioContext (a page of boards costs one context, not one each). The solenoid
+    click is tuned against a recording of a real board (narrow 6.5–10.5 kHz ring,
+    2–4 ms strike, wide level spread); a click budget keeps continuous shows a
+    rattle, not a buzz; suspended/interrupted contexts self-resume on tab return.
+    Exported as split-flap groundwork — a flap slap is just another recipe.
+  - Perf: baked face sprites, a pre-squashed atlas on dense boards, `fillRect`
+    board in flat mode — the demo board's worst case runs ~134 fps at dpr 2 on an
+    Apple M1 (**`scripts/bench-flip-dot.mjs`**); idle costs zero by construction.
+- **`<FlipDots>` in all three wrappers** (`@glowbox/svelte` / `react` / `vue`):
+  frame + option props over the core, imperative board handle via
+  `oncreate` / ref / `expose`.
+- **Demo gallery `/flipdot`**: clock with a seconds sweep, the loop.gif dithered to
+  one bit (turn the sound on), plasma, a live-editable text marquee, and a
+  click-to-count tally counter — plus sound, CRT, shape/axis/stagger/dither knobs.
+- **Gallery UI unified across all four cores**: the primary selectors (example/show
+  plus style) live in the header only — no duplicated controls in the drawer;
+  headers wrap on mobile instead of hiding things.
+
 ## [1.4.1] — 2026-07-26
 
 ### Fixed

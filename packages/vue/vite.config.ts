@@ -23,11 +23,18 @@ export default defineConfig({
 			fileName: 'index'
 		},
 		rollupOptions: {
-			external: ['vue', '@glowbox/led-grid', '@glowbox/nixie', '@glowbox/seven-segment']
+			external: [
+				'vue',
+				'@glowbox/flip-dot',
+				'@glowbox/led-grid',
+				'@glowbox/nixie',
+				'@glowbox/seven-segment'
+			]
 		}
 	},
 	test: {
 		alias: {
+			'@glowbox/flip-dot': resolve(import.meta.dirname, '../flip-dot/src/index.ts'),
 			'@glowbox/led-grid': coreSrc,
 			'@glowbox/nixie': nixieSrc,
 			'@glowbox/seven-segment': sevenSrc

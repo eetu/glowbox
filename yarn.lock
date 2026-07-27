@@ -683,7 +683,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@glowbox/flip-dot@workspace:packages/flip-dot":
+"@glowbox/flip-dot@workspace:^, @glowbox/flip-dot@workspace:packages/flip-dot":
   version: 0.0.0-use.local
   resolution: "@glowbox/flip-dot@workspace:packages/flip-dot"
   dependencies:
@@ -736,6 +736,7 @@ __metadata:
   resolution: "@glowbox/react@workspace:packages/react"
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
+    "@glowbox/flip-dot": "workspace:^"
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/nixie": "workspace:^"
     "@glowbox/seven-segment": "workspace:^"
@@ -804,6 +805,7 @@ __metadata:
   resolution: "@glowbox/svelte@workspace:packages/svelte"
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
+    "@glowbox/flip-dot": "workspace:^"
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/nixie": "workspace:^"
     "@glowbox/seven-segment": "workspace:^"
@@ -831,6 +833,7 @@ __metadata:
   resolution: "@glowbox/vue@workspace:packages/vue"
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
+    "@glowbox/flip-dot": "workspace:^"
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/nixie": "workspace:^"
     "@glowbox/seven-segment": "workspace:^"

@@ -27,6 +27,7 @@ export default defineConfig({
 				'react',
 				'react-dom',
 				'react/jsx-runtime',
+				'@glowbox/flip-dot',
 				'@glowbox/led-grid',
 				'@glowbox/nixie',
 				'@glowbox/seven-segment'
@@ -39,6 +40,7 @@ export default defineConfig({
 	test: {
 		// Resolve the sibling cores from source at test time (no prior build needed).
 		alias: {
+			'@glowbox/flip-dot': resolve(import.meta.dirname, '../flip-dot/src/index.ts'),
 			'@glowbox/led-grid': coreSrc,
 			'@glowbox/nixie': nixieSrc,
 			'@glowbox/seven-segment': sevenSrc
