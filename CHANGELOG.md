@@ -32,7 +32,10 @@ it, clicks. Now **nine** packages in lockstep.
     AudioContext (a page of boards costs one context, not one each). The solenoid
     click is tuned against a recording of a real board (narrow 6.5–10.5 kHz ring,
     2–4 ms strike, wide level spread); a click budget keeps continuous shows a
-    rattle, not a buzz; suspended/interrupted contexts self-resume on tab return.
+    rattle, not a buzz; suspended/interrupted contexts self-resume on tab return;
+    and the context is not even created until the page has seen a user gesture
+    (`navigator.userActivation`) — zero audio footprint on a host page running
+    its own audio (found in the `1.5.0-rc.1` shakedown against a real app).
     Exported as split-flap groundwork — a flap slap is just another recipe.
   - Perf: baked face sprites, a pre-squashed atlas on dense boards, `fillRect`
     board in flat mode — the demo board's worst case runs ~134 fps at dpr 2 on an
