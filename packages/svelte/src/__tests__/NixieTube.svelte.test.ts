@@ -16,7 +16,7 @@ const litPixels = (canvas: HTMLCanvasElement): number => {
 
 test('mounts a canvas, lights the numeral, and exposes the tube handle', async () => {
 	let tube: NixieTube | null = null;
-	const screen = render(NixieTubeComp, {
+	const screen = await render(NixieTubeComp, {
 		value: 8,
 		tubeStyle: 'classic',
 		mesh: false,
@@ -37,7 +37,7 @@ test('mounts a canvas, lights the numeral, and exposes the tube handle', async (
 
 test('the value prop drives setValue live (blank → lit)', async () => {
 	let tube: NixieTube | null = null;
-	const screen = render(NixieTubeComp, {
+	const screen = await render(NixieTubeComp, {
 		value: null,
 		mesh: false,
 		ghost: false,

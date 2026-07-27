@@ -18,7 +18,7 @@ const litPixels = (canvas: HTMLCanvasElement): number => {
 };
 
 test('mounts a canvas and renders the draw callback via grouped props', async () => {
-	const screen = render(LedGrid, {
+	const screen = await render(LedGrid, {
 		size: [5, 5, 5] as [number, number, number],
 		camera: { autoOrbit: false },
 		interaction: { drag: false },
@@ -38,7 +38,7 @@ test('mounts a canvas and renders the draw callback via grouped props', async ()
 });
 
 test('reacts to option props via setOptions (offColor off → on)', async () => {
-	const screen = render(LedGrid, {
+	const screen = await render(LedGrid, {
 		size: [5, 5, 5] as [number, number, number],
 		camera: { autoOrbit: false },
 		color: { background: '#000' },
