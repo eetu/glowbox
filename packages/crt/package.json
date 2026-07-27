@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/crt",
-	"version": "1.5.0",
+	"version": "1.5.1",
 	"description": "Composable CRT screen effect for any canvas — curvature, scanlines, phosphor persistence, convergence error — with pointer/wheel forwarding. Part of the glowbox family.",
 	"keywords": [
 		"glowbox",

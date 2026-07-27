@@ -4,6 +4,14 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [1.5.1] — 2026-07-27
+
+Version-number recovery, no code changes: the `v1.5.0` publish run stopped at
+`@glowbox/flip-dot` — its `1.5.0` had been accidentally published (and unpublished)
+during the manual first-publish dance, and npm permanently burns a version number
+that ever existed. Three packages had already shipped `1.5.0`; `1.5.1` is the same
+code for all nine, in lockstep.
+
 ## [1.5.0] — 2026-07-27
 
 The fourth display core: an **electromechanical flip-dot board**. Where the LED grid

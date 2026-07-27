@@ -103,12 +103,16 @@ on rerun (`npm view` guard); prerelease versions (`-rc.N`) go to the `rc` dist-t
 
 ## Status / next
 
-- **1.0.x–1.5.0 shipped** (latest: 1.5.0 on 2026-07-27 — `@glowbox/flip-dot`, the
+- **1.0.x–1.5.1 shipped** (latest: 1.5.1 on 2026-07-27 — `@glowbox/flip-dot`, the
   fourth display core) — **nine** packages in lockstep, all live on npm. NOTE for
   future new packages: npm needs the package to exist before a **trusted publisher**
   can be configured — first-publish a local `-rc.1` with `npm publish --tag rc
 --otp=…`, configure the publisher, then tag (the rc doesn't trip the idempotency
-  guard, so the stable still ships via OIDC with provenance).
+  guard, so the stable still ships via OIDC with provenance). Two hard-won details:
+  make sure the manual publish uses the `-rc.N` version (a stray publish of the
+  STABLE version, even if unpublished, burns that number forever — 1.5.0 → 1.5.1
+  happened this way), and mind that the rc briefly holds the `latest` dist-tag
+  until the stable ships.
 - **Direction:** see `docs/ROADMAP.md` — the strategic bets: `@glowbox/bridge`
   (WLED/DDP hardware streaming), more display cores (split-flap next; each must
   clear the wow-over-trivial-alternative bar; flip-dot's `createMechSound` is the

@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/flip-dot",
-	"version": "1.5.0",
+	"version": "1.5.1",
 	"description": "Electromechanical flip-dot board component — physical disc flips, scan-wave stagger, dithering, optional solenoid click, in the glowbox family.",
 	"keywords": [
 		"glowbox",
