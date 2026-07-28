@@ -1,9 +1,10 @@
 // @glowbox/svelte — glowbox components for Svelte 5:
-//   import { LedGrid, NixieTube, SevenSegment, FlipDots } from "@glowbox/svelte";
+//   import { LedGrid, NixieTube, SevenSegment, FlipDots, SplitFlap } from "@glowbox/svelte";
 export { default as FlipDots } from './FlipDots.svelte';
 export { default as LedGrid } from './LedGrid.svelte';
 export { default as NixieTube } from './NixieTube.svelte';
 export { default as SevenSegment } from './SevenSegment.svelte';
+export { default as SplitFlap } from './SplitFlap.svelte';
 
 // Re-export the cores' option/handle types so consumers can type against the
 // components (`LedDisplay`, `NixieOptions`, …) without adding the core packages as
@@ -22,3 +23,4 @@ export type {
 	SevenSegmentOptions,
 	SevenSegmentStyle
 } from '@glowbox/seven-segment';
+export type { FlapFace, SplitFlapBoard, SplitFlapOptions } from '@glowbox/split-flap';

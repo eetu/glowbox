@@ -1,15 +1,16 @@
 {
-	"name": "@glowbox/crt",
+	"name": "@glowbox/split-flap",
 	"version": "1.6.0",
-	"description": "Composable CRT screen effect for any canvas — curvature, scanlines, phosphor persistence, convergence error — with pointer/wheel forwarding. Part of the glowbox family.",
+	"description": "Electromechanical split-flap display component — Solari-style flap cards falling from the drum, forward-only wrap-through cascades, optional card-slap sound, in the glowbox family.",
 	"keywords": [
 		"glowbox",
-		"crt",
-		"scanlines",
-		"phosphor",
+		"split-flap",
+		"splitflap",
+		"solari",
+		"departure-board",
 		"retro",
-		"post-effect",
-		"webgl"
+		"display",
+		"electromechanical"
 	],
 	"license": "MIT",
 	"type": "module",
@@ -31,7 +32,7 @@
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/eetu/glowbox.git",
-		"directory": "packages/crt"
+		"directory": "packages/split-flap"
 	},
 	"homepage": "https://eetu.github.io/glowbox/",
 	"scripts": {
@@ -47,7 +48,7 @@
 		{
 			"name": "esm",
 			"path": "dist/index.js",
-			"limit": "4 kB"
+			"limit": "6 kB"
 		}
 	],
 	"devDependencies": {

@@ -26,6 +26,7 @@ export default defineConfig({
 			external: [
 				'vue',
 				'@glowbox/flip-dot',
+				'@glowbox/split-flap',
 				'@glowbox/led-grid',
 				'@glowbox/nixie',
 				'@glowbox/seven-segment'
@@ -35,6 +36,7 @@ export default defineConfig({
 	test: {
 		alias: {
 			'@glowbox/flip-dot': resolve(import.meta.dirname, '../flip-dot/src/index.ts'),
+			'@glowbox/split-flap': resolve(import.meta.dirname, '../split-flap/src/index.ts'),
 			'@glowbox/led-grid': coreSrc,
 			'@glowbox/nixie': nixieSrc,
 			'@glowbox/seven-segment': sevenSrc

@@ -22,8 +22,9 @@ import { createMechSound, type MechSound } from './sound';
 /** How a frame change spreads across the board. */
 export type FlipDotStagger = 'scan' | 'random' | 'none';
 
-/** Dot geometry: 'disc' is the classic round dot (rim pivot pins + the coil-pole
- *  notch); 'square' is the octagonal Brose/BUSE bus-sign vane on a central axle. */
+/** Dot geometry: 'disc' is the classic round dot (two stop posts at ±90° to the
+ *  pivot axis, the rim hole wrapping one of them); 'square' is the octagonal
+ *  Brose/BUSE bus-sign vane on a central axle. */
 export type FlipDotShape = 'disc' | 'square';
 
 export interface FlipDotsOptions {
@@ -47,9 +48,8 @@ export interface FlipDotsOptions {
 	/** One disc's flip duration, ms (default 70; 0 = instant — also forced under
 	 *  `prefers-reduced-motion`). */
 	flipMs?: number;
-	/** Pivot-axis angle in degrees (default 135 — the real discs pivot on pins at
-	 *  diagonal corners, and the coil-pole notch sits at 90° to the axis; 135 puts
-	 *  the lit-face notch at lower-right, matching the reference boards.
+	/** Pivot-axis angle in degrees (default 135; the two stop posts sit at ±90°
+	 *  to the axis and the rim hole mirrors between them per face.
 	 *  0 = horizontal axis, 90 = vertical). */
 	axis?: number;
 	/** 'scan' sweeps rows top→bottom like the driver electronics (default),
@@ -205,13 +205,15 @@ export function createFlipDots(
 			g.closePath();
 		};
 
-		// `mirror` mirrors mechanism details across the pivot axis: the electromagnet
-		// has TWO pole tips at ±90° to the axis (US 6,272,778 — "a pair of opposed
-		// spaced-apart poles on either side of the pivot axis"), and a 180° flip maps
-		// the notch from wrapping one pole to wrapping the other. So the disc's ON
-		// and OFF faces carry the notch on opposite sides, perpendicular to the axis.
-		// `notch` is off for the square's dark face: there the hole lives in the
-		// FIXED base under the flap — hidden when blank, revealed when open.
+		// `mirror` picks which mechanism details each face carries. DISC: mechanisms
+		// vary by manufacturer, but all of them stop the disc against one of TWO
+		// posts, and the posts sit at ±90° to the pivot axis (the disc swings
+		// between them — it cannot rotate through its own stops). The rim hole
+		// wraps the post the current face rests against; a 180° flip mirrors it
+		// across the axis to the other post (the free post's head peeks past the
+		// rim — see the board layer). SQUARE: the hole sits in the FIXED base under
+		// the flap — hidden when blank, revealed when open — so `notch` is off for
+		// the square's dark face.
 		const face = (fill: RGB, sheen: number, mirror: 1 | -1, notch: boolean): HTMLCanvasElement => {
 			const s = Math.max(2, Math.ceil(dot * dpr));
 			const c = document.createElement('canvas');
@@ -280,20 +282,35 @@ export function createFlipDots(
 				}
 				g.restore();
 			}
-			// The mechanism notch: a bite wrapping the drive-pole tip, which stands at
-			// 90° to the pivot axis/hinge (photo-confirmed on both board families).
-			// Disc: the hole is in the MOVING disc, so both faces carry it (mirrored —
-			// the pole pair straddles the axis and the flip hands the notch from one
-			// tip to the other). Square: the hole is in the FIXED base half, so only
-			// the lit face carries it.
+			// The mechanism notch: a bite clearing the stop post, which stands at 90°
+			// to the pivot axis/hinge. Disc: the hole is in the MOVING disc, so both
+			// faces carry it (mirrored — the post pair straddles the axis and the
+			// flip hands the hole from one post to the other). Square: the hole is in
+			// the FIXED base half, so only the lit face carries it.
 			if (notch) {
+				// The hole wraps the stop post the face rests against — at ±90° to the
+				// axis, mirrored across it per face (the square's base hole matches).
 				const na = rad + (mirror * Math.PI) / 2;
 				const nb = boundary(Math.cos(na), Math.sin(na));
+				const nx = r + Math.cos(na) * nb * 0.98;
+				const ny = r + Math.sin(na) * nb * 0.98;
 				g.globalCompositeOperation = 'destination-out';
 				g.beginPath();
-				g.arc(r + Math.cos(na) * nb * 0.98, r + Math.sin(na) * nb * 0.98, r * 0.28, 0, Math.PI * 2);
+				g.arc(nx, ny, r * 0.28, 0, Math.PI * 2);
 				g.fill();
 				g.globalCompositeOperation = 'source-over';
+				if (shaded) {
+					// The post the hole wraps, poking through the bite — matte dark
+					// metal, barely catching light (the heads don't shine).
+					g.fillStyle = '#3c3e43';
+					g.beginPath();
+					g.arc(nx, ny, r * 0.13, 0, Math.PI * 2);
+					g.fill();
+					g.fillStyle = 'rgba(255,255,255,0.12)';
+					g.beginPath();
+					g.arc(nx - r * 0.03, ny - r * 0.05, r * 0.05, 0, Math.PI * 2);
+					g.fill();
+				}
 			}
 			return c;
 		};
@@ -375,7 +392,31 @@ export function createFlipDots(
 			g.scale(dpr, dpr);
 			g.fillStyle = rgba(board, 1);
 			g.fillRect(0, 0, w, h);
+			// The molded waffle: each socket is a square recess with pyramid facets —
+			// in the corners between discs the board shows its geometry, diagonal
+			// facets alternating light and shadow between cells.
+			for (let y = 0; y < rows; y++)
+				for (let x = 0; x < cols; x++) {
+					const x0 = ox + x * cell;
+					const y0 = oy + y * cell;
+					const fx = x0 + cell / 2;
+					const fy = y0 + cell / 2;
+					const facet = (ax: number, ay: number, bx: number, by: number, style: string) => {
+						g.fillStyle = style;
+						g.beginPath();
+						g.moveTo(ax, ay);
+						g.lineTo(bx, by);
+						g.lineTo(fx, fy);
+						g.closePath();
+						g.fill();
+					};
+					facet(x0, y0, x0 + cell, y0, 'rgba(0,0,0,0.36)'); // top wall in its own shadow
+					facet(x0 + cell, y0, x0 + cell, y0 + cell, 'rgba(255,255,255,0.04)');
+					facet(x0 + cell, y0 + cell, x0, y0 + cell, 'rgba(255,255,255,0.07)'); // catches the light
+					facet(x0, y0 + cell, x0, y0, 'rgba(0,0,0,0.2)');
+				}
 			const rr = (dot / 2) * 1.08;
+			const prad = (axis * Math.PI) / 180 + Math.PI / 2; // the stop-post line
 			for (let y = 0; y < rows; y++)
 				for (let x = 0; x < cols; x++) {
 					const cx = ox + (x + 0.5) * cell;
@@ -391,6 +432,23 @@ export function createFlipDots(
 						g.arc(cx, cy, rr, 0, Math.PI * 2);
 					}
 					g.fill();
+					if (shape !== 'square') {
+						// The stop posts, at ±90° to the pivot axis — the disc rests
+						// against one; the one the hole isn't wrapping peeks past the
+						// rim. Dark heads — they don't shine.
+						g.fillStyle = '#37393d';
+						for (const dir of [1, -1]) {
+							g.beginPath();
+							g.arc(
+								cx + Math.cos(prad) * (dot / 2) * 1.02 * dir,
+								cy + Math.sin(prad) * (dot / 2) * 1.02 * dir,
+								dot * 0.075,
+								0,
+								Math.PI * 2
+							);
+							g.fill();
+						}
+					}
 				}
 			boardLayer = b;
 		} else {
@@ -455,7 +513,7 @@ export function createFlipDots(
 				// onto the other half. Both base halves are fixed paint: the notch side
 				// bright (with the pole hole), the other side dark. The flap covers one
 				// of them — blank hides the hole, open reveals it. Mid-fold the cell
-				// shows the diagonal-triangle state of the bus-sign photos.
+				// shows the diagonal-triangle state the real bus signs are full of.
 				g.drawImage(halfOff![0], cx - dot / 2, cy - dot / 2, dot, dot); // dark base
 				g.drawImage(halfOn![1], cx - dot / 2, cy - dot / 2, dot, dot); // bright base + hole
 				// k > 0: flap flat over the bright base, dark face up (blank);
@@ -580,10 +638,10 @@ export function createFlipDots(
 		const count = Math.min(starts, 3, Math.floor(clickBudget));
 		if (count <= 0) return;
 		clickBudget -= count;
-		// Recipe tuned against a recording of a real board (Muotialantie, 2026-07-27):
-		// narrow ring somewhere in 6.5–10.5 kHz (each solenoid its own), strike down
-		// to 20% in ~2.4 ms with an ~18 ms tail, and a WIDE click-to-click level
-		// spread (p10 ≈ 0.14, p90 ≈ 0.80 of max).
+		// Recipe matched to the measured character of a real board: a narrow ring
+		// somewhere in 6.5–10.5 kHz (each solenoid its own), a strike down to 20%
+		// in ~2.4 ms with an ~18 ms tail, and a WIDE click-to-click level spread
+		// (p10 ≈ 0.14, p90 ≈ 0.80 of max).
 		const g = Math.min(1, 1.6 / starts) * 0.7 + 0.3;
 		for (let i = 0; i < count; i++) {
 			const j = Math.random();

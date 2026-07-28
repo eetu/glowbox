@@ -37,6 +37,7 @@ const config = {
 			'@glowbox/nixie': '../../packages/nixie/src/index.ts',
 			'@glowbox/seven-segment': '../../packages/seven-segment/src/index.ts',
 			'@glowbox/flip-dot': '../../packages/flip-dot/src/index.ts',
+			'@glowbox/split-flap': '../../packages/split-flap/src/index.ts',
 			'@glowbox/crt': '../../packages/crt/src/index.ts'
 		}
 	}

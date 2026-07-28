@@ -4,6 +4,68 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [1.6.0] — 2026-07-28
+
+The fifth display core: an **electromechanical split-flap (Solari) display** — the
+departure board. Where the flip-dot rattles, this one _cascades_. Now **ten**
+packages in lockstep.
+
+### Added
+
+- **`@glowbox/split-flap`** — `createSplitFlap(canvas, opts)`, a 2D-canvas board of
+  split-flap modules. Zero deps, SSR-import-safe, ~5.8 kB.
+  - **Mechanism-honest model**: each module is a drum of flap cards hinged at the
+    split line (a card carries the top half of one character on its front, the
+    bottom half of the next on its back); a flip is a gravity **release** with a
+    hard stop and a settle bounce, rendered with **true perspective** (projected
+    strips — the free edge magnifies toward the viewer near edge-on). The drum is a
+    **ratchet**: reaching an earlier character wraps the whole flap sequence, the
+    cascade that made these boards famous.
+  - **Drums as data**: `charset` order is drum order, one grapheme per flap
+    (katakana and emoji ride as single cards; input is NFC-normalised). Presets
+    `DRUM_NORDIC` (default, with ÅÄÖ), `DRUM_ALNUM`, `DRUM_DIGITS`.
+  - **Chroma drums**: `palette` paints flaps solid and a wall of modules becomes a
+    rough image display — `chromaDrum()` generates a full hue-ring drum (grey ramp
+    plus hues × shades, serpentine so gradients are neighbouring flaps; `hues: 0`
+    for monochrome), `paletteFrame()` maps RGB frames onto it (nearest-colour, or
+    Floyd–Steinberg). **`FlapFace`** re-inks individual flaps
+    (`{ glyph, ink, paint }`) for dedicated marks — a red X, a whole-word DELAYED
+    card — without duplicating alphabets.
+  - **Card-slap sound** over the vendored `createMechSound`, extended with noise
+    shaping (`noiseLpHz`, `noiseDecay`): a papery band-limited thud, no pitched
+    ping, tuned by ear. Budgeted clatter, gesture-deferred AudioContext, tab-restore
+    safe.
+  - **Flat matte by default**; `shaded: true` adds the mechanical anatomy matched
+    against module close-ups — recessed wells, card gradients, hinge clips in front
+    of the flaps, the ribbed pile of fallen cards, the edge-on glint.
+  - API: `setText` / `setLine` / `setChar` / `getText`, live `setOptions`
+    (charset/palette swaps re-card the modules in place), `aria-label` reads the
+    shown text.
+- **`<SplitFlap>`** in `@glowbox/svelte` / `react` / `vue` — `text` prop drives
+  `setText`, options update live, imperative handle via `oncreate` / ref / expose.
+- **Demo**: `/splitflap` in the gallery — departures with Finnish stations (late
+  trains lose their platform to a dedicated red-X flap), a date-and-seconds flip
+  clock, free text, a **chroma slideshow** of postcard frames with a
+  mono/coarse/rich/ultra drum selector, matrix rain on a half-width-katakana drum,
+  and self-playing snake and pong on three-flap drums; a resolution section
+  (presets and free cols × rows) mirrors the LED page.
+
+### Changed
+
+- **`@glowbox/flip-dot`** shaded mode grew the disc's **stop posts**. Real
+  mechanisms vary by manufacturer, but all of them stop the disc against one of
+  two posts sitting at ±90° to the pivot axis; the rim hole wraps the post the
+  current face rests against and mirrors to the other on flip. A matte **post
+  head** now shows through the hole, the free post peeks past the rim, and the
+  board is a **molded waffle** — square sockets with pyramid facets catching
+  light in the corners between discs.
+- **`createMechSound`** (flip-dot and split-flap, vendored copies kept identical):
+  the tick gained noise shaping — `noiseLpHz` (band-limit the burst from above)
+  and `noiseDecay` (burst length). Additive; existing recipes unchanged.
+- Size budgets adjusted for real growth (svelte 6.5 kB, react 2 kB, flip-dot
+  5.5 kB — the mechanism details above). The chroma slideshow ships as a purpose-built `chroma.gif` (six locally
+  generated postcard frames, 8-second delays baked in).
+
 ## [1.5.1] — 2026-07-27
 
 Version-number recovery, no code changes: the `v1.5.0` publish run stopped at
