@@ -34,6 +34,34 @@
 	let scanMs = $state(150);
 	let dither = $state<DitherMode>('threshold');
 	let marqueeText = $state('GLOWBOX FLIP-DOT');
+
+	// Panel resolution (cols × rows), preset-seeded and user-editable — the same
+	// contract as the LED and split-flap pages. Presets tile the classic 28×14
+	// panel; square dots want cols ≈ 2 × rows at the stage's 2:1.
+	const clampDim = (v: number, max: number) => Math.max(2, Math.min(max, Math.round(v) || 2));
+	let cols = $state(56);
+	let rows = $state(28);
+	const PRESETS: [number, number][] = [
+		[14, 7],
+		[28, 14],
+		[56, 28],
+		[84, 42],
+		[112, 56]
+	];
+	const presetOptions = [
+		{ value: 'custom', label: 'custom', disabled: true },
+		...PRESETS.map(([c, r]) => ({ value: `${c}x${r}`, label: `${c} × ${r}` }))
+	];
+	let preset = $derived(
+		PRESETS.some(([c, r]) => c === cols && r === rows) ? `${cols}x${rows}` : 'custom'
+	);
+	const applyPreset = () => {
+		const m = /^(\d+)x(\d+)$/.exec(preset);
+		if (m) {
+			cols = Number(m[1]);
+			rows = Number(m[2]);
+		}
+	};
 	let onColor = $state('#d5e138');
 	let offColor = $state('#17181a');
 	let boardColor = $state('#101114');
@@ -49,11 +77,13 @@
 	let board = $state.raw<FlipDotBoard | null>(null);
 	$effect(() => {
 		if (!canvas) return;
+		const c = clampDim(cols, 128);
+		const r = clampDim(rows, 64);
 		const b = createFlipDots(
 			canvas,
 			untrack(() => ({
-				cols: 56,
-				rows: 28,
+				cols: c,
+				rows: r,
 				shape,
 				shaded,
 				flipMs,
@@ -265,6 +295,30 @@
 		</section>
 
 		<section>
+			<h2>resolution</h2>
+			<div class="row">
+				<span class="rlabel">preset</span>
+				<Select
+					bind:value={preset}
+					options={presetOptions}
+					ariaLabel="preset"
+					onchange={applyPreset}
+				/>
+			</div>
+			<div class="duo">
+				<label>
+					<span>cols</span>
+					<input type="number" min="2" max="128" bind:value={cols} aria-label="cols" />
+				</label>
+				<label>
+					<span>rows</span>
+					<input type="number" min="2" max="64" bind:value={rows} aria-label="rows" />
+				</label>
+			</div>
+			<div class="count"><b>{clampDim(cols, 128) * clampDim(rows, 64)}</b> dots</div>
+		</section>
+
+		<section>
 			<h2>scene</h2>
 			<div class="row">
 				<ToggleChip bind:checked={shaded} label="shaded details" />
@@ -421,6 +475,57 @@
 	.text-input:focus-visible {
 		outline: 2px solid var(--halo-accent);
 		outline-offset: 1px;
+	}
+
+	.duo {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		border: 1px solid var(--halo-border);
+		border-radius: var(--halo-radius);
+		overflow: hidden;
+	}
+	.duo label {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: 6px 8px;
+	}
+	.duo label + label {
+		border-left: 1px solid var(--halo-border);
+	}
+	.duo span {
+		font-size: 10px;
+		color: var(--halo-text-muted);
+	}
+	.duo input {
+		width: 100%;
+		border: none;
+		background: none;
+		font: inherit;
+		font-size: 14px;
+		font-variant-numeric: tabular-nums;
+		color: var(--halo-text-main);
+		appearance: textfield;
+		-moz-appearance: textfield;
+	}
+	.duo input::-webkit-outer-spin-button,
+	.duo input::-webkit-inner-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+	}
+	.duo input:focus-visible {
+		outline: 2px solid var(--halo-accent);
+		outline-offset: -1px;
+	}
+	.count {
+		margin-top: 8px;
+		text-align: right;
+		font-family: var(--halo-font-heading);
+		font-size: 13px;
+		color: var(--halo-text-muted);
+	}
+	.count b {
+		color: var(--halo-text-main);
 	}
 
 	.row input[type='color'] {
