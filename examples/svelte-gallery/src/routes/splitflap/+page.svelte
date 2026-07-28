@@ -109,7 +109,8 @@
 		if (!b) return;
 		return FLAP_SHOWS[show](b, {
 			text: () => freeText,
-			chroma: () => chromaKind
+			chroma: () => chromaKind,
+			stage: () => stageWrap
 		});
 	});
 
@@ -140,6 +141,7 @@
 					{ value: 'departures', label: 'Departures' },
 					{ value: 'clock', label: 'Clock' },
 					{ value: 'text', label: 'Text' },
+					{ value: 'counter', label: 'Counter' },
 					{ value: 'chroma', label: 'Chroma' },
 					{ value: 'matrix', label: 'Matrix' },
 					{ value: 'snake', label: 'Snake' },
@@ -176,7 +178,7 @@
 	</header>
 
 	<div class="stage" style="background: {backdrop}">
-		<div class="board-wrap" bind:this={stageWrap}>
+		<div class="board-wrap" class:clickable={show === 'counter'} bind:this={stageWrap}>
 			<canvas bind:this={canvas} aria-label="split-flap display"></canvas>
 		</div>
 	</div>
@@ -343,6 +345,9 @@
 	}
 	.board-wrap {
 		width: min(100%, 900px);
+	}
+	.board-wrap.clickable {
+		cursor: pointer;
 	}
 	.board-wrap canvas {
 		display: block;

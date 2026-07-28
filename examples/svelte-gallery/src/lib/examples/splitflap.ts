@@ -9,13 +9,15 @@ import { decodeGif, frameAt, type GifFrame, sampleImageToGrid } from '@glowbox/e
 import {
 	chromaDrum,
 	DEFAULT_CHARSET,
+	DRUM_DIGITS,
 	paletteFrame,
 	type SplitFlapBoard
 } from '@glowbox/split-flap';
 
 import chromaUrl from './chroma.gif?url';
 
-export type FlapShow = 'departures' | 'clock' | 'text' | 'chroma' | 'matrix' | 'snake' | 'pong';
+export type FlapShow =
+	'departures' | 'clock' | 'text' | 'counter' | 'chroma' | 'matrix' | 'snake' | 'pong';
 
 /** The chroma show's drum choices — all `chromaDrum` recipes, coarse to fine.
  *  Mono is the newsprint wall; Ultra pays its 81-flap wraps in longer cascades. */
@@ -31,6 +33,8 @@ export type ChromaKind = keyof typeof CHROMA_KINDS;
 export interface FlapKnobs {
 	text(): string;
 	chroma(): ChromaKind;
+	/** The element to take pointer input from (the board's stage), if any. */
+	stage(): HTMLElement | undefined;
 }
 
 /** A show: start it on a board, get back its stop(). */
@@ -183,6 +187,34 @@ export const makeText: FlapShowFn = (board, { text }) => {
 	apply();
 	const id = setInterval(apply, 300);
 	return () => clearInterval(id);
+};
+
+// --- counter ------------------------------------------------------------------------
+
+/** A mechanical tally counter: tap/click the board to increment — every count
+ *  earns its flips (and, sound on, its clacks). Runs on `DRUM_DIGITS`, the
+ *  dedicated digit module, so a 9 → 0 rollover wraps in a couple of flips and
+ *  0999 → 1000 is the odometer moment. Zero-padded, wraps at 10000. */
+export const makeCounter: FlapShowFn = (board, { stage }) => {
+	board.setOptions({ charset: DRUM_DIGITS });
+	let count = 0;
+	const draw = () => {
+		const { cols, rows } = board;
+		const lines = new Array<string>(rows).fill('');
+		lines[Math.floor((rows - 1) / 2)] = center(String(count % 10000).padStart(4, '0'), cols);
+		board.setText(lines);
+	};
+	const el = stage();
+	const onClick = () => {
+		count++;
+		draw();
+	};
+	el?.addEventListener('click', onClick);
+	draw();
+	return () => {
+		el?.removeEventListener('click', onClick);
+		board.setOptions({ charset: DEFAULT_CHARSET });
+	};
 };
 
 // --- chroma -------------------------------------------------------------------------
@@ -464,6 +496,7 @@ export const FLAP_SHOWS: Record<FlapShow, FlapShowFn> = {
 	departures: makeDepartures,
 	clock: makeClock,
 	text: makeText,
+	counter: makeCounter,
 	chroma: makeChroma,
 	matrix: makeMatrix,
 	snake: makeSnake,
