@@ -205,13 +205,14 @@ export function createFlipDots(
 			g.closePath();
 		};
 
-		// `mirror` mirrors mechanism details across the pivot axis: the electromagnet
-		// has TWO pole tips at ±90° to the axis (US 6,272,778 — "a pair of opposed
-		// spaced-apart poles on either side of the pivot axis"), and a 180° flip maps
-		// the notch from wrapping one pole to wrapping the other. So the disc's ON
-		// and OFF faces carry the notch on opposite sides, perpendicular to the axis.
-		// `notch` is off for the square's dark face: there the hole lives in the
-		// FIXED base under the flap — hidden when blank, revealed when open.
+		// `mirror` picks which mechanism details each face carries. DISC: the macro
+		// photo of the real elements corrected the model — the notch rides the PIVOT
+		// LINE, wrapping one of the two pivot posts, and the flip hands it to the
+		// other post (the ON and OFF faces carry the hole at opposite axis ends; the
+		// free post's head peeks past the rim — see the board layer). SQUARE keeps
+		// its own photo-confirmed model: the hole sits perpendicular to the hinge in
+		// the FIXED base under the flap — hidden when blank, revealed when open —
+		// so `notch` is off for the square's dark face.
 		const face = (fill: RGB, sheen: number, mirror: 1 | -1, notch: boolean): HTMLCanvasElement => {
 			const s = Math.max(2, Math.ceil(dot * dpr));
 			const c = document.createElement('canvas');
@@ -287,7 +288,10 @@ export function createFlipDots(
 			// tip to the other). Square: the hole is in the FIXED base half, so only
 			// the lit face carries it.
 			if (notch) {
-				const na = rad + (mirror * Math.PI) / 2;
+				// Disc: the hole on the pivot line, around a post — opposite ends per
+				// face. Square: perpendicular to the hinge (its own reference photos).
+				const na =
+					shape === 'square' ? rad + (mirror * Math.PI) / 2 : rad + (mirror < 0 ? 0 : Math.PI);
 				const nb = boundary(Math.cos(na), Math.sin(na));
 				const nx = r + Math.cos(na) * nb * 0.98;
 				const ny = r + Math.sin(na) * nb * 0.98;
@@ -297,15 +301,15 @@ export function createFlipDots(
 				g.fill();
 				g.globalCompositeOperation = 'source-over';
 				if (shaded) {
-					// The pole tip the notch exists to clear, poking through the bite —
-					// macro photos show the grey stud sitting right in the cutout.
-					g.fillStyle = '#585b61';
+					// The post the hole wraps, poking through the bite — matte dark
+					// metal, barely catching light (the heads don't shine).
+					g.fillStyle = '#3c3e43';
 					g.beginPath();
 					g.arc(nx, ny, r * 0.13, 0, Math.PI * 2);
 					g.fill();
-					g.fillStyle = 'rgba(255,255,255,0.3)';
+					g.fillStyle = 'rgba(255,255,255,0.12)';
 					g.beginPath();
-					g.arc(nx - r * 0.03, ny - r * 0.05, r * 0.06, 0, Math.PI * 2);
+					g.arc(nx - r * 0.03, ny - r * 0.05, r * 0.05, 0, Math.PI * 2);
 					g.fill();
 				}
 			}
@@ -413,6 +417,7 @@ export function createFlipDots(
 					facet(x0, y0 + cell, x0, y0, 'rgba(0,0,0,0.2)');
 				}
 			const rr = (dot / 2) * 1.08;
+			const prad = (axis * Math.PI) / 180;
 			for (let y = 0; y < rows; y++)
 				for (let x = 0; x < cols; x++) {
 					const cx = ox + (x + 0.5) * cell;
@@ -428,6 +433,23 @@ export function createFlipDots(
 						g.arc(cx, cy, rr, 0, Math.PI * 2);
 					}
 					g.fill();
+					if (shape !== 'square') {
+						// The pivot posts at both axis ends: the one the hole isn't
+						// wrapping peeks past the rim (the grey stud beside every disc
+						// in the macro photos). Dark heads — they don't shine.
+						g.fillStyle = '#37393d';
+						for (const dir of [1, -1]) {
+							g.beginPath();
+							g.arc(
+								cx + Math.cos(prad) * (dot / 2) * 1.02 * dir,
+								cy + Math.sin(prad) * (dot / 2) * 1.02 * dir,
+								dot * 0.075,
+								0,
+								Math.PI * 2
+							);
+							g.fill();
+						}
+					}
 				}
 			boardLayer = b;
 		} else {

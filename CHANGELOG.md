@@ -52,11 +52,13 @@ packages in lockstep.
 
 ### Changed
 
-- **`@glowbox/flip-dot`** shaded mode, matched against a macro photo of the real
-  elements: the **drive-pole stud** now pokes through the disc's notch (the bite
-  finally shows its reason), and the board is a **molded waffle** — square sockets
-  with pyramid facets catching light in the corners between discs, replacing the
-  plain field around the round wells.
+- **`@glowbox/flip-dot`** disc geometry and shaded mode, matched against a macro
+  photo of the real elements: the notch now rides the **pivot line**, wrapping one
+  of the two posts (opposite ends per face — the flip hands the hole from post to
+  post; the earlier perpendicular-pole model read the references wrong). In shaded
+  mode a matte **post head** shows through the hole, the free post peeks past the
+  rim, and the board is a **molded waffle** — square sockets with pyramid facets
+  catching light in the corners between discs.
 - **`createMechSound`** (flip-dot and split-flap, vendored copies kept identical):
   the tick gained noise shaping — `noiseLpHz` (band-limit the burst from above)
   and `noiseDecay` (burst length). Additive; existing recipes unchanged.
