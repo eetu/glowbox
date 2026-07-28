@@ -62,8 +62,8 @@ packages in lockstep.
 - **`createMechSound`** (flip-dot and split-flap, vendored copies kept identical):
   the tick gained noise shaping — `noiseLpHz` (band-limit the burst from above)
   and `noiseDecay` (burst length). Additive; existing recipes unchanged.
-- Wrapper size budgets adjusted for the fifth component (svelte 6.5 kB, react
-  2 kB). The chroma slideshow ships as a purpose-built `chroma.gif` (six locally
+- Size budgets adjusted for real growth (svelte 6.5 kB, react 2 kB, flip-dot
+  5.5 kB — the mechanism details above). The chroma slideshow ships as a purpose-built `chroma.gif` (six locally
   generated postcard frames, 8-second delays baked in).
 
 ## [1.5.1] — 2026-07-27
