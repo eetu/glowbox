@@ -289,11 +289,25 @@ export function createFlipDots(
 			if (notch) {
 				const na = rad + (mirror * Math.PI) / 2;
 				const nb = boundary(Math.cos(na), Math.sin(na));
+				const nx = r + Math.cos(na) * nb * 0.98;
+				const ny = r + Math.sin(na) * nb * 0.98;
 				g.globalCompositeOperation = 'destination-out';
 				g.beginPath();
-				g.arc(r + Math.cos(na) * nb * 0.98, r + Math.sin(na) * nb * 0.98, r * 0.28, 0, Math.PI * 2);
+				g.arc(nx, ny, r * 0.28, 0, Math.PI * 2);
 				g.fill();
 				g.globalCompositeOperation = 'source-over';
+				if (shaded) {
+					// The pole tip the notch exists to clear, poking through the bite —
+					// macro photos show the grey stud sitting right in the cutout.
+					g.fillStyle = '#585b61';
+					g.beginPath();
+					g.arc(nx, ny, r * 0.13, 0, Math.PI * 2);
+					g.fill();
+					g.fillStyle = 'rgba(255,255,255,0.3)';
+					g.beginPath();
+					g.arc(nx - r * 0.03, ny - r * 0.05, r * 0.06, 0, Math.PI * 2);
+					g.fill();
+				}
 			}
 			return c;
 		};
@@ -375,6 +389,29 @@ export function createFlipDots(
 			g.scale(dpr, dpr);
 			g.fillStyle = rgba(board, 1);
 			g.fillRect(0, 0, w, h);
+			// The molded waffle: each socket is a square recess with pyramid facets —
+			// in the corners between discs the board shows its geometry (macro
+			// photos: diagonal facets alternating light and shadow between cells).
+			for (let y = 0; y < rows; y++)
+				for (let x = 0; x < cols; x++) {
+					const x0 = ox + x * cell;
+					const y0 = oy + y * cell;
+					const fx = x0 + cell / 2;
+					const fy = y0 + cell / 2;
+					const facet = (ax: number, ay: number, bx: number, by: number, style: string) => {
+						g.fillStyle = style;
+						g.beginPath();
+						g.moveTo(ax, ay);
+						g.lineTo(bx, by);
+						g.lineTo(fx, fy);
+						g.closePath();
+						g.fill();
+					};
+					facet(x0, y0, x0 + cell, y0, 'rgba(0,0,0,0.36)'); // top wall in its own shadow
+					facet(x0 + cell, y0, x0 + cell, y0 + cell, 'rgba(255,255,255,0.04)');
+					facet(x0 + cell, y0 + cell, x0, y0 + cell, 'rgba(255,255,255,0.07)'); // catches the light
+					facet(x0, y0 + cell, x0, y0, 'rgba(0,0,0,0.2)');
+				}
 			const rr = (dot / 2) * 1.08;
 			for (let y = 0; y < rows; y++)
 				for (let x = 0; x < cols; x++) {

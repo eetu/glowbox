@@ -1,9 +1,11 @@
 // A tiny mechanical-sound synth over the Web Audio API — the audible half of an
 // electromechanical display. Deliberately generic: a *tick* is one transient
 // (a resonant ping + a filtered noise burst), and every mechanical core is a recipe
-// over it — the flip-dot solenoid click today, the split-flap card slap tomorrow.
-// Like `color.ts`, this file is written to be vendor-copied between sibling cores
-// (a core must not depend on a sibling for one helper).
+// over it — the flip-dot solenoid click, the split-flap card slap. Like `color.ts`,
+// this file is vendor-copied between sibling cores (a core must not depend on a
+// sibling for one helper); keep the copies identical. 1.6.0 grew noise shaping
+// (`noiseLpHz`, `noiseDecay`) — first in the split-flap copy for the card slap,
+// a soft band-limited flutter rather than a bright click.
 //
 // One AudioContext for EVERYTHING: browsers cap live contexts (iOS Safari is the
 // tight one), and a dashboard of boards must not burn one each. All channels share
@@ -25,6 +27,12 @@ export interface MechTick {
 	noise?: number;
 	/** Noise highpass cutoff, Hz (default 2800). */
 	noiseHz?: number;
+	/** Noise lowpass cutoff, Hz (default none — full bandwidth). Band-limiting
+	 *  the burst from above is what turns a sharp click into a soft, papery
+	 *  slap: white noise through only a highpass always carries full top end. */
+	noiseLpHz?: number;
+	/** Noise-burst decay, seconds (default 0.006). Longer reads softer. */
+	noiseDecay?: number;
 	/** Tick gain 0..1 (default 1; scaled by the master volume). */
 	gain?: number;
 	/** Stereo position -1..1 (default 0). */
@@ -188,9 +196,11 @@ export function createMechSound(opts: { volume?: number } = {}): MechSound {
 			osc.start(when);
 			osc.stop(when + decay + 0.01);
 
-			// The strike itself: a few ms of high-passed noise.
+			// The strike itself: a burst of band-shaped noise. The highpass keeps
+			// the rumble out; the optional lowpass keeps the sharpness out.
 			const noise = t.noise ?? 0.8;
 			if (noise > 0) {
+				const nDecay = t.noiseDecay ?? 0.006;
 				const src = ctx.createBufferSource();
 				src.buffer = sharedNoise;
 				const hp = ctx.createBiquadFilter();
@@ -198,11 +208,19 @@ export function createMechSound(opts: { volume?: number } = {}): MechSound {
 				hp.frequency.value = t.noiseHz ?? 2800;
 				const nEnv = ctx.createGain();
 				nEnv.gain.setValueAtTime(noise * gain, when);
-				nEnv.gain.exponentialRampToValueAtTime(0.001, when + 0.006);
+				nEnv.gain.exponentialRampToValueAtTime(0.001, when + nDecay);
 				src.connect(hp);
-				hp.connect(nEnv);
+				let tail: AudioNode = hp;
+				if (t.noiseLpHz != null) {
+					const lp = ctx.createBiquadFilter();
+					lp.type = 'lowpass';
+					lp.frequency.value = t.noiseLpHz;
+					hp.connect(lp);
+					tail = lp;
+				}
+				tail.connect(nEnv);
 				nEnv.connect(dest);
-				src.start(when, Math.random() * 0.09, 0.02);
+				src.start(when, Math.random() * 0.07, nDecay + 0.02);
 			}
 		},
 		setVolume(v) {

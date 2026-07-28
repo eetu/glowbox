@@ -52,6 +52,14 @@ packages in lockstep.
 
 ### Changed
 
+- **`@glowbox/flip-dot`** shaded mode, matched against a macro photo of the real
+  elements: the **drive-pole stud** now pokes through the disc's notch (the bite
+  finally shows its reason), and the board is a **molded waffle** — square sockets
+  with pyramid facets catching light in the corners between discs, replacing the
+  plain field around the round wells.
+- **`createMechSound`** (flip-dot and split-flap, vendored copies kept identical):
+  the tick gained noise shaping — `noiseLpHz` (band-limit the burst from above)
+  and `noiseDecay` (burst length). Additive; existing recipes unchanged.
 - Wrapper size budgets adjusted for the fifth component (svelte 6.5 kB, react
   2 kB). The chroma slideshow ships as a purpose-built `chroma.gif` (six locally
   generated postcard frames, 8-second delays baked in).

@@ -61,22 +61,22 @@ for stills). Pure logic, runs under plain node.
 
 ## Options
 
-| option       | default              | notes                                                    |
-| ------------ | -------------------- | -------------------------------------------------------- |
-| `cols, rows` | `28×14`              | one classic panel; tile bigger boards freely             |
-| `shape`      | `'disc'`             | `'disc'` \| `'square'` (octagonal vane, folding flap)    |
-| `onColor`    | fluorescent yellow   | lit face (any CSS string or `[r,g,b]` 0..1)              |
-| `offColor`   | near-black           | dark face — kept distinct from the board on purpose      |
-| `board`      | `'#101114'`          | the plastic behind the dots                              |
-| `gap`        | `0.14`               | cell fraction around each dot                            |
-| `shaded`     | `false`              | opt-in lighting: gradients, socket wells, dimples, glint |
-| `flipMs`     | `70`                 | one disc's flip (0 = instant; forced by reduced motion)  |
-| `axis`       | `135`                | pivot-axis angle°; notch/hinge/squash all follow it      |
-| `stagger`    | `'scan'`             | `'scan'` \| `'random'` \| `'none'`                       |
-| `scanMs`     | `150`                | total sweep spread                                       |
-| `sound`      | off                  | `true` (= 0.5) or `0..1` volume                          |
-| `pixelRatio` | `2`                  | cap on devicePixelRatio                                  |
-| `label`      | `'flip-dot display'` | `aria-label`; `''` hides from the a11y tree              |
+| option       | default              | notes                                                         |
+| ------------ | -------------------- | ------------------------------------------------------------- |
+| `cols, rows` | `28×14`              | one classic panel; tile bigger boards freely                  |
+| `shape`      | `'disc'`             | `'disc'` \| `'square'` (octagonal vane, folding flap)         |
+| `onColor`    | fluorescent yellow   | lit face (any CSS string or `[r,g,b]` 0..1)                   |
+| `offColor`   | near-black           | dark face — kept distinct from the board on purpose           |
+| `board`      | `'#101114'`          | the plastic behind the dots                                   |
+| `gap`        | `0.14`               | cell fraction around each dot                                 |
+| `shaded`     | `false`              | opt-in lighting: gradients, waffle sockets, pole studs, glint |
+| `flipMs`     | `70`                 | one disc's flip (0 = instant; forced by reduced motion)       |
+| `axis`       | `135`                | pivot-axis angle°; notch/hinge/squash all follow it           |
+| `stagger`    | `'scan'`             | `'scan'` \| `'random'` \| `'none'`                            |
+| `scanMs`     | `150`                | total sweep spread                                            |
+| `sound`      | off                  | `true` (= 0.5) or `0..1` volume                               |
+| `pixelRatio` | `2`                  | cap on devicePixelRatio                                       |
+| `label`      | `'flip-dot display'` | `aria-label`; `''` hides from the a11y tree                   |
 
 All options update live via `setOptions(patch)`. API: `set(x, y, on)`,
 `get(x, y)`, `setFrame(bits | fn)`, `clear()`, `fill()`, `resize()`,

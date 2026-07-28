@@ -2,10 +2,10 @@
 // electromechanical display. Deliberately generic: a *tick* is one transient
 // (a resonant ping + a filtered noise burst), and every mechanical core is a recipe
 // over it — the flip-dot solenoid click, the split-flap card slap. Like `color.ts`,
-// this file is vendor-copied between sibling cores (this copy from @glowbox/flip-dot;
-// a core must not depend on a sibling for one helper). This copy extends the
-// original's tick with noise shaping (`noiseLpHz`, `noiseDecay`) — a card slap is a
-// soft band-limited flutter, not a bright click; worth back-porting to flip-dot.
+// this file is vendor-copied between sibling cores (a core must not depend on a
+// sibling for one helper); keep the copies identical. 1.6.0 grew noise shaping
+// (`noiseLpHz`, `noiseDecay`) — first in the split-flap copy for the card slap,
+// a soft band-limited flutter rather than a bright click.
 //
 // One AudioContext for EVERYTHING: browsers cap live contexts (iOS Safari is the
 // tight one), and a dashboard of boards must not burn one each. All channels share
