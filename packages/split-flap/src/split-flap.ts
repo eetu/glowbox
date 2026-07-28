@@ -612,16 +612,16 @@ export function createSplitFlap(
 		for (let i = 0; i < play; i++) {
 			const j = Math.random();
 			const gj = g * (0.3 + 0.7 * j * j);
-			const at = j * 0.014;
+			const at = j * 0.01;
 			// The body: the stack taking the hit under a papery burst.
 			s.tick({
 				delay: at,
 				freq: 140 + j * 90,
-				decay: 0.012 + j * 0.01,
+				decay: 0.009 + j * 0.006,
 				noise: 1,
 				noiseHz: 350,
 				noiseLpHz: 3000 + j * 1500,
-				noiseDecay: 0.014 + j * 0.014,
+				noiseDecay: 0.009 + j * 0.007,
 				gain: gj,
 				pan
 			});
@@ -644,7 +644,7 @@ export function createSplitFlap(
 			s.tick({
 				delay: at + 0.001,
 				freq: 4200 + j * 2800,
-				decay: 0.008 + j * 0.01,
+				decay: 0.006 + j * 0.006,
 				noise: 0,
 				gain: gj * 0.13,
 				pan
