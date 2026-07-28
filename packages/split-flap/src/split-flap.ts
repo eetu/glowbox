@@ -639,6 +639,16 @@ export function createSplitFlap(
 				gain: gj * 0.2,
 				pan
 			});
+			// The metal: the stop arm's faint ring under the thud — a pure
+			// inharmonic partial (no noise), quiet enough to colour, not click.
+			s.tick({
+				delay: at + 0.001,
+				freq: 4200 + j * 2800,
+				decay: 0.008 + j * 0.01,
+				noise: 0,
+				gain: gj * 0.13,
+				pan
+			});
 		}
 	}
 
