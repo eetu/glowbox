@@ -51,6 +51,10 @@ screen over any of them (or any canvas at all).
 
 ![The @glowbox/nixie demo: a row of glowing nixie tubes wired into a clock, with tube-style and colour controls](media/nixie.png)
 
+![The @glowbox/flip-dot demo: a 56×28 flip-dot clock in fluorescent yellow-green, seconds sweeping along the bottom row](media/flipdot.png)
+
+![The @glowbox/split-flap demo: a Solari departures board of Finnish stations in shaded mode, rows mid-cascade](media/splitflap.png)
+
 ## Quickstart
 
 ```svelte
