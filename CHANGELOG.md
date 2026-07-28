@@ -52,13 +52,13 @@ packages in lockstep.
 
 ### Changed
 
-- **`@glowbox/flip-dot`** disc geometry and shaded mode. Real mechanisms vary by
-  manufacturer, but all of them stop the disc against one of **two posts** at the
-  ends of its travel — the rim hole now rides the **pivot line**, wrapping one
-  post per face (the flip hands it from post to post; the perpendicular-pole
-  model is gone). In shaded mode a matte **post head** shows through the hole,
-  the free post peeks past the rim, and the board is a **molded waffle** — square
-  sockets with pyramid facets catching light in the corners between discs.
+- **`@glowbox/flip-dot`** shaded mode grew the disc's **stop posts**. Real
+  mechanisms vary by manufacturer, but all of them stop the disc against one of
+  two posts sitting at ±90° to the pivot axis; the rim hole wraps the post the
+  current face rests against and mirrors to the other on flip. A matte **post
+  head** now shows through the hole, the free post peeks past the rim, and the
+  board is a **molded waffle** — square sockets with pyramid facets catching
+  light in the corners between discs.
 - **`createMechSound`** (flip-dot and split-flap, vendored copies kept identical):
   the tick gained noise shaping — `noiseLpHz` (band-limit the burst from above)
   and `noiseDecay` (burst length). Additive; existing recipes unchanged.
