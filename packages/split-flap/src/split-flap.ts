@@ -596,11 +596,11 @@ export function createSplitFlap(
 
 	// The clack: each frame's landings become at most a few slaps — a full-board
 	// cascade reads as clatter, not as N oscillators. Gain falls as density rises,
-	// pan follows the landing column. Recipe: a card landing on a card stack is a
-	// soft, PAPERY thud — band-limited noise (the lowpass is what keeps it from
-	// reading sharp or plastic) over a low stack thump, plus the faintest dry tick
-	// of an attack. No pitched ping anywhere: pings are what plastic sounds like.
-	// Wide slap-to-slap level spread — real mechanisms are anything but uniform.
+	// pan follows the landing column. Recipe matched to a measured board: the
+	// clack's tonal body sits near 430 Hz (p25–p75 ≈ 390–500 Hz) with about two
+	// thirds of the energy in 300 Hz–1 kHz, a metallic sheen band around 5–9 kHz,
+	// and a wide, top-compressed slap-to-slap level spread (p10 ≈ 0.13,
+	// p90 ≈ 0.62 of max) — real mechanisms are anything but uniform.
 	function slaps(count: number, meanCol: number) {
 		const s = sound();
 		if (!s) return;
@@ -611,17 +611,18 @@ export function createSplitFlap(
 		const pan = cols > 1 ? (meanCol / (cols - 1)) * 1.4 - 0.7 : 0;
 		for (let i = 0; i < play; i++) {
 			const j = Math.random();
-			const gj = g * (0.3 + 0.7 * j * j);
+			const gj = g * (0.35 + 0.5 * j * j);
 			const at = j * 0.01;
-			// The body: the stack taking the hit under a papery burst.
+			// The body: the card striking the stack — a low-mid burst around the
+			// clack's ~430 Hz tonal centre, where the energy actually lives.
 			s.tick({
 				delay: at,
-				freq: 140 + j * 90,
-				decay: 0.009 + j * 0.006,
+				freq: 390 + j * 110,
+				decay: 0.014 + j * 0.01,
 				noise: 1,
-				noiseHz: 350,
-				noiseLpHz: 3000 + j * 1500,
-				noiseDecay: 0.009 + j * 0.007,
+				noiseHz: 300,
+				noiseLpHz: 1100 + j * 700,
+				noiseDecay: 0.01 + j * 0.008,
 				gain: gj,
 				pan
 			});
@@ -639,11 +640,11 @@ export function createSplitFlap(
 				gain: gj * 0.2,
 				pan
 			});
-			// The metal: the stop arm's faint ring under the thud — a pure
-			// inharmonic partial (no noise), quiet enough to colour, not click.
+			// The metal: the stop arm's faint ring in the measured 5–9 kHz sheen
+			// band — a pure partial (no noise), quiet enough to colour, not click.
 			s.tick({
 				delay: at + 0.001,
-				freq: 4200 + j * 2800,
+				freq: 4800 + j * 3400,
 				decay: 0.006 + j * 0.006,
 				noise: 0,
 				gain: gj * 0.13,
