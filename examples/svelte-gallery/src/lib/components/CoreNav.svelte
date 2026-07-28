@@ -5,12 +5,13 @@
 	// siblings of one app rather than separate pages.
 	import { resolve } from '$app/paths';
 
-	let { core }: { core: 'led' | 'nixie' | 'seven' | 'flipdot' } = $props();
+	let { core }: { core: 'led' | 'nixie' | 'seven' | 'flipdot' | 'splitflap' } = $props();
 	const tabs = [
 		{ id: 'led', label: 'LED grid', path: '/' },
 		{ id: 'nixie', label: 'Nixie', path: '/nixie' },
 		{ id: 'seven', label: '7-seg', path: '/seven' },
-		{ id: 'flipdot', label: 'Flip-dot', path: '/flipdot' }
+		{ id: 'flipdot', label: 'Flip-dot', path: '/flipdot' },
+		{ id: 'splitflap', label: 'Split-flap', path: '/splitflap' }
 	] as const;
 </script>
 
