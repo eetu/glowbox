@@ -104,8 +104,9 @@ on rerun (`npm view` guard); prerelease versions (`-rc.N`) go to the `rc` dist-t
 
 ## Status / next
 
-- **1.0.x–1.6.0 staged** (1.6.0: `@glowbox/split-flap`, the fifth display core) —
-  **ten** packages in lockstep. NOTE for
+- **1.0.x–1.6.0 shipped** (latest: 1.6.0 on 2026-07-28 — `@glowbox/split-flap`,
+  the fifth and last planned display core) — **ten** packages in lockstep, all
+  live on npm. NOTE for
   future new packages: npm needs the package to exist before a **trusted publisher**
   can be configured — first-publish a local `-rc.1` with `npm publish --tag rc
 --otp=…`, configure the publisher, then tag (the rc doesn't trip the idempotency
