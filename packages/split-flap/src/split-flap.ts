@@ -202,7 +202,7 @@ export function createSplitFlap(
 		split = Math.max(0.75, cellH * 0.018);
 		cardW = cellW * (1 - gap);
 		// Shaded modules reserve a band under the bottom flap for the FALLEN
-		// stack — the ribbed pile of card edges every real close-up shows. The
+		// stack — the ribbed pile of card edges the real modules show. The
 		// hinge rides up with it; flat mode keeps the pair dead-centre.
 		const stackH = shaded ? cellH * 0.1 : 0;
 		cardH = cellH * (1 - gap) - split - stackH;
@@ -242,8 +242,7 @@ export function createSplitFlap(
 					);
 			// The fallen stack — drawn as board geometry so it never rides a moving
 			// flap: a ribbed band of card edges below the bottom flap, each catching
-			// the light over its shadow gap (the reference close-ups show three or
-			// four). NOTHING shows at the top: the upcoming reserve hides behind the
+			// the light over its shadow gap (the real modules show three or four). NOTHING shows at the top: the upcoming reserve hides behind the
 			// housing, so the top card reads clean to its edge.
 			g.shadowBlur = 0;
 			const e = Math.max(0.75, stackH * 0.14);
@@ -601,7 +600,7 @@ export function createSplitFlap(
 	// soft, PAPERY thud — band-limited noise (the lowpass is what keeps it from
 	// reading sharp or plastic) over a low stack thump, plus the faintest dry tick
 	// of an attack. No pitched ping anywhere: pings are what plastic sounds like.
-	// Wide slap-to-slap level spread, same as the flip-dot recipe's measured boards.
+	// Wide slap-to-slap level spread — real mechanisms are anything but uniform.
 	function slaps(count: number, meanCol: number) {
 		const s = sound();
 		if (!s) return;

@@ -282,12 +282,11 @@ export function createFlipDots(
 				}
 				g.restore();
 			}
-			// The mechanism notch: a bite wrapping the drive-pole tip, which stands at
-			// 90° to the pivot axis/hinge (photo-confirmed on both board families).
-			// Disc: the hole is in the MOVING disc, so both faces carry it (mirrored —
-			// the pole pair straddles the axis and the flip hands the notch from one
-			// tip to the other). Square: the hole is in the FIXED base half, so only
-			// the lit face carries it.
+			// The mechanism notch: a bite clearing the stop post, which stands at 90°
+			// to the pivot axis/hinge. Disc: the hole is in the MOVING disc, so both
+			// faces carry it (mirrored — the post pair straddles the axis and the
+			// flip hands the hole from one post to the other). Square: the hole is in
+			// the FIXED base half, so only the lit face carries it.
 			if (notch) {
 				// The hole wraps the stop post the face rests against — at ±90° to the
 				// axis, mirrored across it per face (the square's base hole matches).
@@ -514,7 +513,7 @@ export function createFlipDots(
 				// onto the other half. Both base halves are fixed paint: the notch side
 				// bright (with the pole hole), the other side dark. The flap covers one
 				// of them — blank hides the hole, open reveals it. Mid-fold the cell
-				// shows the diagonal-triangle state of the bus-sign photos.
+				// shows the diagonal-triangle state the real bus signs are full of.
 				g.drawImage(halfOff![0], cx - dot / 2, cy - dot / 2, dot, dot); // dark base
 				g.drawImage(halfOn![1], cx - dot / 2, cy - dot / 2, dot, dot); // bright base + hole
 				// k > 0: flap flat over the bright base, dark face up (blank);
@@ -639,10 +638,10 @@ export function createFlipDots(
 		const count = Math.min(starts, 3, Math.floor(clickBudget));
 		if (count <= 0) return;
 		clickBudget -= count;
-		// Recipe tuned against a recording of a real board (Muotialantie, 2026-07-27):
-		// narrow ring somewhere in 6.5–10.5 kHz (each solenoid its own), strike down
-		// to 20% in ~2.4 ms with an ~18 ms tail, and a WIDE click-to-click level
-		// spread (p10 ≈ 0.14, p90 ≈ 0.80 of max).
+		// Recipe matched to the measured character of a real board: a narrow ring
+		// somewhere in 6.5–10.5 kHz (each solenoid its own), a strike down to 20%
+		// in ~2.4 ms with an ~18 ms tail, and a WIDE click-to-click level spread
+		// (p10 ≈ 0.14, p90 ≈ 0.80 of max).
 		const g = Math.min(1, 1.6 / starts) * 0.7 + 0.3;
 		for (let i = 0; i < count; i++) {
 			const j = Math.random();
