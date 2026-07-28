@@ -3,9 +3,9 @@
 // (a resonant ping + a filtered noise burst), and every mechanical core is a recipe
 // over it — the flip-dot solenoid click, the split-flap card slap. Like `color.ts`,
 // this file is vendor-copied between sibling cores (a core must not depend on a
-// sibling for one helper); keep the copies identical. 1.6.0 grew noise shaping
-// (`noiseLpHz`, `noiseDecay`) — first in the split-flap copy for the card slap,
-// a soft band-limited flutter rather than a bright click.
+// sibling for one helper); keep the copies identical. The noise burst is fully
+// shapeable (`noiseLpHz`, `noiseDecay`): a solenoid click is a bright snap, a
+// card slap a soft band-limited flutter — same transient, different recipe.
 //
 // One AudioContext for EVERYTHING: browsers cap live contexts (iOS Safari is the
 // tight one), and a dashboard of boards must not burn one each. All channels share
