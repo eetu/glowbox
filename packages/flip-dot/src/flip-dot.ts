@@ -22,8 +22,9 @@ import { createMechSound, type MechSound } from './sound';
 /** How a frame change spreads across the board. */
 export type FlipDotStagger = 'scan' | 'random' | 'none';
 
-/** Dot geometry: 'disc' is the classic round dot (rim pivot pins + the coil-pole
- *  notch); 'square' is the octagonal Brose/BUSE bus-sign vane on a central axle. */
+/** Dot geometry: 'disc' is the classic round dot (pivot posts on the axis, the
+ *  rim hole wrapping one of them); 'square' is the octagonal Brose/BUSE bus-sign
+ *  vane on a central axle. */
 export type FlipDotShape = 'disc' | 'square';
 
 export interface FlipDotsOptions {
@@ -47,10 +48,9 @@ export interface FlipDotsOptions {
 	/** One disc's flip duration, ms (default 70; 0 = instant — also forced under
 	 *  `prefers-reduced-motion`). */
 	flipMs?: number;
-	/** Pivot-axis angle in degrees (default 135 — the real discs pivot on pins at
-	 *  diagonal corners, and the coil-pole notch sits at 90° to the axis; 135 puts
-	 *  the lit-face notch at lower-right, matching the reference boards.
-	 *  0 = horizontal axis, 90 = vertical). */
+	/** Pivot-axis angle in degrees (default 135 — the real discs pivot on posts at
+	 *  diagonal corners; the disc's rim hole rides an axis end, opposite ends per
+	 *  face. 0 = horizontal axis, 90 = vertical). */
 	axis?: number;
 	/** 'scan' sweeps rows top→bottom like the driver electronics (default),
 	 *  'random' scatters, 'none' flips everything at once. */
@@ -205,14 +205,14 @@ export function createFlipDots(
 			g.closePath();
 		};
 
-		// `mirror` picks which mechanism details each face carries. DISC: the macro
-		// photo of the real elements corrected the model — the notch rides the PIVOT
-		// LINE, wrapping one of the two pivot posts, and the flip hands it to the
-		// other post (the ON and OFF faces carry the hole at opposite axis ends; the
-		// free post's head peeks past the rim — see the board layer). SQUARE keeps
-		// its own photo-confirmed model: the hole sits perpendicular to the hinge in
-		// the FIXED base under the flap — hidden when blank, revealed when open —
-		// so `notch` is off for the square's dark face.
+		// `mirror` picks which mechanism details each face carries. DISC: the real
+		// boards vary by manufacturer, but all of them stop the disc against one of
+		// TWO posts at the ends of its travel — the rim hole rides the pivot line,
+		// wrapping one post per face, and the flip hands it to the other (the free
+		// post's head peeks past the rim — see the board layer). SQUARE keeps its
+		// own model: the hole sits perpendicular to the hinge in the FIXED base
+		// under the flap — hidden when blank, revealed when open — so `notch` is
+		// off for the square's dark face.
 		const face = (fill: RGB, sheen: number, mirror: 1 | -1, notch: boolean): HTMLCanvasElement => {
 			const s = Math.max(2, Math.ceil(dot * dpr));
 			const c = document.createElement('canvas');
@@ -289,7 +289,7 @@ export function createFlipDots(
 			// the lit face carries it.
 			if (notch) {
 				// Disc: the hole on the pivot line, around a post — opposite ends per
-				// face. Square: perpendicular to the hinge (its own reference photos).
+				// face. Square: perpendicular to the hinge, in the base.
 				const na =
 					shape === 'square' ? rad + (mirror * Math.PI) / 2 : rad + (mirror < 0 ? 0 : Math.PI);
 				const nb = boundary(Math.cos(na), Math.sin(na));
@@ -394,8 +394,8 @@ export function createFlipDots(
 			g.fillStyle = rgba(board, 1);
 			g.fillRect(0, 0, w, h);
 			// The molded waffle: each socket is a square recess with pyramid facets —
-			// in the corners between discs the board shows its geometry (macro
-			// photos: diagonal facets alternating light and shadow between cells).
+			// in the corners between discs the board shows its geometry, diagonal
+			// facets alternating light and shadow between cells.
 			for (let y = 0; y < rows; y++)
 				for (let x = 0; x < cols; x++) {
 					const x0 = ox + x * cell;
@@ -434,9 +434,9 @@ export function createFlipDots(
 					}
 					g.fill();
 					if (shape !== 'square') {
-						// The pivot posts at both axis ends: the one the hole isn't
-						// wrapping peeks past the rim (the grey stud beside every disc
-						// in the macro photos). Dark heads — they don't shine.
+						// The pivot posts at both axis ends — the stops the disc rests
+						// against; the one the hole isn't wrapping peeks past the rim.
+						// Dark heads — they don't shine.
 						g.fillStyle = '#37393d';
 						for (const dir of [1, -1]) {
 							g.beginPath();
