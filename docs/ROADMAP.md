@@ -47,9 +47,11 @@ torus — `d.torus()` is axis-aligned/single-colour, see the note in `torus.ts`.
    materials. **Flip-dot SHIPPED in 1.5.0** — physical disc/vane rotation, the scan
    wave, mechanism-honest notch/flap geometry, dithering, and the recording-tuned
    solenoid click; its `createMechSound` (shared AudioContext, per-tick recipes) is
-   the mechanical-sound groundwork the next core inherits. Next: split-flap (most
-   delightful, most work, last of the planned cores — vendor-copy the sound engine,
-   the card slap is just another tick recipe). The bar for every core: real wow
+   the mechanical-sound groundwork the next core inherits. **Split-flap SHIPPED in
+   1.6.0** — the drum-of-cards model (forward-only wrap-through cascades), gravity
+   falls with true perspective, grapheme drums, chroma drums (a wall of modules as
+   a low-res image display) and the papery card slap; last of the planned cores.
+   The bar for every core: real wow
    beyond the trivial alternative, or it doesn't ship. Nixie proved the pattern:
    standalone 2D core + wrapper components + a demo page; the 1.0.1 decoupling made
    cores independent.

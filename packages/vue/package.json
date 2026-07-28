@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/vue",
-	"version": "1.5.1",
+	"version": "1.6.0",
 	"description": "glowbox components for Vue 3 — <LedGrid> (3D WebGL LED grid) + <NixieTube> (nixie-tube display).",
 	"keywords": [
 		"glowbox",
@@ -52,6 +52,7 @@
 			"ignore": [
 				"vue",
 				"@glowbox/flip-dot",
+				"@glowbox/split-flap",
 				"@glowbox/led-grid",
 				"@glowbox/nixie",
 				"@glowbox/seven-segment"
@@ -66,7 +67,8 @@
 		"@glowbox/flip-dot": "workspace:^",
 		"@glowbox/led-grid": "workspace:^",
 		"@glowbox/nixie": "workspace:^",
-		"@glowbox/seven-segment": "workspace:^"
+		"@glowbox/seven-segment": "workspace:^",
+		"@glowbox/split-flap": "workspace:^"
 	},
 	"devDependencies": {
 		"@anarkisti/eslint-config": "^1",

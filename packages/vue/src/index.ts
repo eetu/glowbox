@@ -1,9 +1,10 @@
 // @glowbox/vue — glowbox components for Vue 3:
-//   import { LedGrid, NixieTube, SevenSegment, FlipDots } from "@glowbox/vue";
+//   import { LedGrid, NixieTube, SevenSegment, FlipDots, SplitFlap } from "@glowbox/vue";
 export { FlipDots } from './FlipDots';
 export { LedGrid } from './LedGrid';
 export { NixieTube } from './NixieTube';
 export { SevenSegment } from './SevenSegment';
+export { SplitFlap } from './SplitFlap';
 
 // Re-export the cores' option/handle types so consumers can type against the
 // components (`LedDisplay`, `NixieOptions`, …) without adding the core packages as
@@ -22,3 +23,4 @@ export type {
 	SevenSegmentOptions,
 	SevenSegmentStyle
 } from '@glowbox/seven-segment';
+export type { FlapFace, SplitFlapBoard, SplitFlapOptions } from '@glowbox/split-flap';

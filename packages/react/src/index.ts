@@ -1,9 +1,10 @@
 // @glowbox/react — glowbox components for React:
-//   import { LedGrid, NixieTube, SevenSegment, FlipDots } from "@glowbox/react";
+//   import { LedGrid, NixieTube, SevenSegment, FlipDots, SplitFlap } from "@glowbox/react";
 export { FlipDots, type FlipDotsProps } from './FlipDots';
 export { LedGrid, type LedGridProps } from './LedGrid';
 export { NixieTube, type NixieTubeProps } from './NixieTube';
 export { SevenSegment, type SevenSegmentProps } from './SevenSegment';
+export { SplitFlap, type SplitFlapProps } from './SplitFlap';
 
 // Re-export the cores' option/handle types so consumers can type against the
 // components (`LedDisplay`, `NixieOptions`, …) without adding the core packages as
@@ -22,3 +23,4 @@ export type {
 	SevenSegmentOptions,
 	SevenSegmentStyle
 } from '@glowbox/seven-segment';
+export type { FlapFace, SplitFlapBoard, SplitFlapOptions } from '@glowbox/split-flap';

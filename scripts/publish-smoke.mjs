@@ -24,6 +24,7 @@ const PACKAGES = [
 	'nixie',
 	'seven-segment',
 	'flip-dot',
+	'split-flap',
 	'crt',
 	'svelte',
 	'react',
@@ -107,11 +108,12 @@ try {
 import { createNixieTube, nixieCathodes, type NixieOptions } from '@glowbox/nixie';
 import { createSevenSegment, segmentGeometry, type SevenSegmentOptions } from '@glowbox/seven-segment';
 import { createFlipDots, createMechSound, ditherFrame, type FlipDotsOptions } from '@glowbox/flip-dot';
+import { chromaDrum, createSplitFlap, DRUM_DIGITS, paletteFrame, type SplitFlapOptions } from '@glowbox/split-flap';
 import { createCrtScreen, type CrtOptions } from '@glowbox/crt';
 import { makeGifPlayer, text } from '@glowbox/extras';
-import { FlipDots as SvelteFlipDots, LedGrid as SvelteLedGrid, NixieTube as SvelteNixieTube, SevenSegment as SvelteSevenSegment } from '@glowbox/svelte';
-import { FlipDots as ReactFlipDots, LedGrid as ReactLedGrid, NixieTube as ReactNixieTube, SevenSegment as ReactSevenSegment } from '@glowbox/react';
-import { FlipDots as VueFlipDots, LedGrid as VueLedGrid, NixieTube as VueNixieTube, SevenSegment as VueSevenSegment } from '@glowbox/vue';
+import { FlipDots as SvelteFlipDots, LedGrid as SvelteLedGrid, NixieTube as SvelteNixieTube, SevenSegment as SvelteSevenSegment, SplitFlap as SvelteSplitFlap } from '@glowbox/svelte';
+import { FlipDots as ReactFlipDots, LedGrid as ReactLedGrid, NixieTube as ReactNixieTube, SevenSegment as ReactSevenSegment, SplitFlap as ReactSplitFlap } from '@glowbox/react';
+import { FlipDots as VueFlipDots, LedGrid as VueLedGrid, NixieTube as VueNixieTube, SevenSegment as VueSevenSegment, SplitFlap as VueSplitFlap } from '@glowbox/vue';
 
 const g = createVoxelGrid(4, 4, 4);
 g.plot(1, 2, 3, [1, 0.5, 0]);
@@ -119,6 +121,9 @@ const opts: NixieOptions = { value: 8, style: 'classic', label: 'eight' };
 const segOpts: SevenSegmentOptions = { value: 8, style: 'vfd', age: 0.5 };
 const dotOpts: FlipDotsOptions = { cols: 28, rows: 14, shape: 'square', sound: 0.4 };
 const bits = ditherFrame((x, y) => (x + y) / 42, 28, 14, { mode: 'bayer' });
+const sfOpts: SplitFlapOptions = { cols: 12, rows: 1, charset: DRUM_DIGITS, sound: 0.4 };
+const sfDrum = chromaDrum({ hues: 6 });
+const sfLines = paletteFrame([0, 0, 0, 1, 0, 0], 2, 1, sfDrum.palette);
 const crtOpts: CrtOptions = { persistence: 0.5, events: true };
 export const used = [
 	createLedDisplay,
@@ -128,6 +133,7 @@ export const used = [
 	segmentGeometry,
 	createFlipDots,
 	createMechSound,
+	createSplitFlap,
 	createCrtScreen,
 	makeGifPlayer,
 	text,
@@ -135,18 +141,23 @@ export const used = [
 	SvelteNixieTube,
 	SvelteSevenSegment,
 	SvelteFlipDots,
+	SvelteSplitFlap,
 	ReactLedGrid,
 	ReactNixieTube,
 	ReactSevenSegment,
 	ReactFlipDots,
+	ReactSplitFlap,
 	VueLedGrid,
 	VueNixieTube,
 	VueSevenSegment,
 	VueFlipDots,
+	VueSplitFlap,
 	opts,
 	segOpts,
 	dotOpts,
 	bits,
+	sfOpts,
+	sfLines,
 	crtOpts
 ] as const;
 export type D = LedDisplay;
@@ -188,6 +199,7 @@ export type D = LedDisplay;
 		"@glowbox/nixie": "/node_modules/@glowbox/nixie/dist/index.js",
 		"@glowbox/seven-segment": "/node_modules/@glowbox/seven-segment/dist/index.js",
 		"@glowbox/flip-dot": "/node_modules/@glowbox/flip-dot/dist/index.js",
+		"@glowbox/split-flap": "/node_modules/@glowbox/split-flap/dist/index.js",
 		"@glowbox/crt": "/node_modules/@glowbox/crt/dist/index.js",
 		"@glowbox/extras": "/node_modules/@glowbox/extras/dist/index.js"
 	}
@@ -197,11 +209,13 @@ export type D = LedDisplay;
 <canvas id="n" style="width:60px;height:100px"></canvas>
 <canvas id="s" style="width:60px;height:100px"></canvas>
 <canvas id="f" style="width:280px;height:140px"></canvas>
+<canvas id="sf" style="width:280px;height:40px"></canvas>
 <script type="module">
 	import { createLedDisplay } from '@glowbox/led-grid';
 	import { createNixieTube } from '@glowbox/nixie';
 	import { createSevenSegment } from '@glowbox/seven-segment';
 	import { createFlipDots, ditherFrame } from '@glowbox/flip-dot';
+	import { createSplitFlap } from '@glowbox/split-flap';
 	import { createCrtScreen } from '@glowbox/crt';
 	import { text } from '@glowbox/extras';
 	const d = createLedDisplay(document.getElementById('g'), {
@@ -219,6 +233,9 @@ export type D = LedDisplay;
 	const f = createFlipDots(document.getElementById('f'), { cols: 28, rows: 14, flipMs: 0 });
 	if (!f) throw new Error('createFlipDots returned null');
 	f.setFrame(ditherFrame((x, y) => (x + y) / 42, 28, 14));
+	const sf = createSplitFlap(document.getElementById('sf'), { cols: 8, rows: 1, flipMs: 0 });
+	if (!sf) throw new Error('createSplitFlap returned null');
+	sf.setText('GLOWBOX');
 	const crt = createCrtScreen(document.getElementById('n'));
 	if (!crt) throw new Error('createCrtScreen returned null');
 	window.__ok = true;

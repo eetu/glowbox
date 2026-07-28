@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/nixie",
-	"version": "1.5.1",
+	"version": "1.6.0",
 	"description": "Nixie-tube display component — a glowing vector-numeral rendering core in the glowbox family.",
 	"keywords": [
 		"glowbox",
