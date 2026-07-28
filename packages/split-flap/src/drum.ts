@@ -10,16 +10,18 @@
 
 /** The classic 40-flap alphanumeric drum: A–Z, digits, the timetable marks. */
 export const DRUM_ALNUM = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:.-';
-/** The Nordic 46-flap drum: ÅÄÖ after Z in alphabet order (these boards live in
- *  Finnish stations), plus the fuller punctuation row. */
-export const DRUM_NORDIC = ' ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ0123456789:./-?!';
+/** The Nordic 53-flap drum: ÅÄÖ after Z in alphabet order (these boards live in
+ *  Finnish stations), plus the punctuation everyday strings actually carry —
+ *  parentheses, the at-sign, comma, apostrophe, ampersand, plus. Rarer marks
+ *  belong on a custom drum: every flap taxes every wrap. */
+export const DRUM_NORDIC = " ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ0123456789:./-?!()@,'&+";
 /** The dedicated 14-flap digit module — real boards used these for time and
  *  track columns; short drum, short wraps, snappy rollovers. */
 export const DRUM_DIGITS = ' 0123456789:.-';
 
 /** The default drum (= `DRUM_NORDIC`; a colon on board, because a display
- *  spends its life showing times — and ASCII users lose nothing to the extra
- *  six flaps). */
+ *  spends its life showing times — and ASCII users lose little to the extra
+ *  flaps). */
 export const DEFAULT_CHARSET = DRUM_NORDIC;
 
 /** Split a string into its flap sequence — by *grapheme* where the platform has

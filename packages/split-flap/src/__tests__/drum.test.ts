@@ -16,7 +16,7 @@ import {
 test('the drum presets: blank first, no duplicate flap, colons everywhere', () => {
 	for (const [drum, len] of [
 		[DRUM_ALNUM, 40],
-		[DRUM_NORDIC, 46],
+		[DRUM_NORDIC, 53],
 		[DRUM_DIGITS, 14]
 	] as const) {
 		const flaps = flapsOf(drum);

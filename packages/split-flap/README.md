@@ -50,7 +50,7 @@ costs nothing.
 
 The drum is a string — index order is flip order, one **grapheme** per flap
 (katakana with a combining dakuten, or an emoji, is one card). Presets:
-`DRUM_NORDIC` (default: A–Z ÅÄÖ, digits, `:./-?!`), `DRUM_ALNUM` (the classic
+`DRUM_NORDIC` (default: A–Z ÅÄÖ, digits, `:./-?!()@,'&+`), `DRUM_ALNUM` (the classic
 40-flap complement), `DRUM_DIGITS` (the dedicated time/track module — short
 drum, snappy rollovers). Characters not on the drum display as blank; input is
 NFC-normalised and uppercased as a fallback.
