@@ -35,7 +35,12 @@ test('flapIndex: exact, uppercased, umlauts, and off-drum characters', () => {
 	expect(flapIndex(flaps, 'A')).toBe(1);
 	expect(flapIndex(flaps, 'a')).toBe(1); // drums are caps-only
 	expect(flapIndex(flaps, 'ä')).toBe(28); // JYVÄSKYLÄ boards welcome
-	expect(flapIndex(flaps, 'A\u0308')).toBe(28); // decomposed (NFD) Ä finds the same flap
+	// NFD input (macOS SMB filenames, for one, arrive decomposed) — escapes,
+	// not literals: an editor save can silently recompose a decomposed literal
+	// and turn this into x === x. The guard proves the two forms differ.
+	expect('A\u0308').not.toBe('\u00c4');
+	expect(flapIndex(flaps, 'A\u0308')).toBe(flapIndex(flaps, '\u00c4'));
+	expect(flapIndex(flaps, 'A\u0308')).toBe(28);
 	expect(flapIndex(flaps, '~')).toBe(0); // unprintable → the blank flap
 	expect(flapIndex(flapsOf('AB'), '~')).toBe(0); // no blank on the drum → flap 0
 });
