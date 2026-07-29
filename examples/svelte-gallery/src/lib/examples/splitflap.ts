@@ -1,10 +1,13 @@
 // Attract-mode content for the /splitflap page — everything here is *client* code
-// driving the board through its public API (setText/setLine/setOptions), the way a
-// consuming app would. The shows: a departure board (the display's home turf — the
-// top train leaves, every row shifts up, the whole board cascades), a flip clock
+// driving the board through its public API (setText/setLine/setOptions/cellAt), the
+// way a consuming app would. The shows: a departure board (the display's home turf —
+// the top train leaves, every row shifts up, the whole board cascades), a flip clock
 // with the date, free text from an input, three board *games* of the self-playing
-// kind (matrix rain, snake, pong) that swap in tiny custom drums, and a chroma
-// show — colour-flap drums cycling a slideshow of scenes as flap-pixels.
+// kind (matrix rain, snake, pong) that swap in tiny custom drums, a chroma show —
+// colour-flap drums cycling a slideshow of scenes as flap-pixels — and three
+// tappable ones pairing drum zones with `cellAt` hit-testing: counter and poll
+// self-play between taps; the scroller holds still (its text is a story — the
+// reading pace belongs to the reader).
 import { decodeGif, frameAt, type GifFrame, sampleImageToGrid } from '@glowbox/extras';
 import {
 	chromaDrum,
@@ -17,7 +20,16 @@ import {
 import chromaUrl from './chroma.gif?url';
 
 export type FlapShow =
-	'departures' | 'clock' | 'text' | 'counter' | 'chroma' | 'matrix' | 'snake' | 'pong';
+	| 'departures'
+	| 'clock'
+	| 'text'
+	| 'counter'
+	| 'scroller'
+	| 'poll'
+	| 'chroma'
+	| 'matrix'
+	| 'snake'
+	| 'pong';
 
 /** The chroma show's drum choices — all `chromaDrum` recipes, coarse to fine.
  *  Mono is the newsprint wall; Ultra pays its 81-flap wraps in longer cascades. */
@@ -224,6 +236,186 @@ export const makeCounter: FlapShowFn = (board, { stage }) => {
 	return () => {
 		el?.removeEventListener('click', onClick);
 		board.setOptions({ charset: DEFAULT_CHARSET });
+	};
+};
+
+// --- scroller -----------------------------------------------------------------------
+
+// What the scroller scrolls: a story, for whoever actually reads the board.
+// Every line fits the default 18-wide panel (≤17 characters, rail excluded),
+// and every character rides the Nordic drum.
+const STORY = [
+	'AT THE EDGE',
+	'OF THE CITY,',
+	'WHERE BUSES TURN',
+	'AND NO ONE WAITS,',
+	'STANDS A BOARD',
+	'OF FORTY FLAPS.',
+	'',
+	'THE MALL GOT LED.',
+	'THE STATION TOO.',
+	'SHE WAS NOT.',
+	'',
+	'TOO FAR OUT,',
+	'TOO FEW RIDERS,',
+	'TOO MANY WASPS.',
+	'',
+	'A BOY COMES',
+	'EVERY SUNDAY.',
+	'HE BRUSHES OFF',
+	'THE SPIDERWEBS,',
+	'LIFTS WASP NESTS',
+	'FROM HER FRAME,',
+	'OILS EVERY HINGE.',
+	'',
+	'ONE DUSK HE SAYS:',
+	'I LOVE THE WAY',
+	'YOU FLIP. I LOVE',
+	'THE WAY YOU FLAP.',
+	'',
+	'SHE CAN ANSWER',
+	'ONLY WITH WHAT',
+	'HER DRUMS HOLD.',
+	'ALL NIGHT SHE',
+	'SPINS TIMETABLES',
+	'TILL THEY READ:',
+	'',
+	'00:00 TO ANYWHERE',
+	'WITH YOU, TRACK 1',
+	'',
+	'THE LED CREW CAME',
+	'IN SPRING. THEY',
+	'FOUND BOLT HOLES,',
+	'NO BOARD AT ALL.',
+	'',
+	'BUT IN A BEDROOM',
+	'AT THE EDGE',
+	'OF THE CITY,',
+	'SOMETHING CLACKS',
+	'SOFTLY, EVERY',
+	'TIME THE BOY',
+	'SAYS GOODNIGHT.',
+	'',
+	'(THE END)'
+];
+
+/** A text longer than the board, scrolled with a scrollbar built FROM the panel
+ *  itself — the reason `cellAt` and drum zones exist together. The right-hand
+ *  column rides a five-flap rail drum (arrows, track, thumb), so the thumb
+ *  lands in a flip or two instead of wrapping an alphabet. Tap the arrows to
+ *  turn a page, the rail to jump. The one show that holds still: the text is a
+ *  story, and reading pace belongs to the reader. */
+export const makeScroller: FlapShowFn = (board, { stage }) => {
+	const { cols, rows } = board;
+	board.setOptions({ drums: [{ x: cols - 1, y: 0, cols: 1, rows, charset: ' ▲▼░█' }] });
+	const lines = STORY;
+	const max = Math.max(0, lines.length - rows);
+	const inner = rows - 2; // rail rows between the arrows
+	let top = 0;
+	const railChar = (y: number, thumb: number) => {
+		if (y === 0) return '▲';
+		if (y === rows - 1) return '▼';
+		return y - 1 === thumb ? '█' : '░';
+	};
+	const render = () => {
+		const thumb = inner > 1 ? Math.round((top / Math.max(1, max)) * (inner - 1)) : 0;
+		board.setText(
+			Array.from(
+				{ length: rows },
+				(_, y) => (lines[top + y] ?? '').slice(0, cols - 1).padEnd(cols - 1) + railChar(y, thumb)
+			)
+		);
+	};
+	const jump = (t: number) => {
+		top = Math.max(0, Math.min(max, t));
+		render();
+	};
+	const el = stage();
+	const onClick = (e: MouseEvent) => {
+		const cell = board.cellAt(e.clientX, e.clientY);
+		if (!cell || cell.x !== cols - 1) return;
+		// The arrows page — a board-height of story per tap; the rail jumps.
+		if (cell.y === 0) jump(top - rows);
+		else if (cell.y === rows - 1) jump(top + rows);
+		else if (inner > 1) jump(Math.round(((cell.y - 1) / (inner - 1)) * max));
+	};
+	el?.addEventListener('click', onClick);
+	render();
+	return () => {
+		el?.removeEventListener('click', onClick);
+		board.setOptions({ drums: [] });
+	};
+};
+
+// --- poll ---------------------------------------------------------------------------
+
+// One row per display core; each bar rides a chroma flap of its own colour.
+const POLL = [
+	{ name: 'LED', key: 'l', color: '#5dd39e' },
+	{ name: 'NIXIE', key: 'n', color: '#ff9d47' },
+	{ name: '7SEG', key: 's', color: '#ef5350' },
+	{ name: 'DOTS', key: 'd', color: '#ffe066' },
+	{ name: 'FLAPS', key: 'f', color: '#7ec8ff' }
+] as const;
+
+/** A straw poll across the glowbox family: tap a row to vote for a core. Three
+ *  drum kinds share one board — letters for the names, a five-colour chroma
+ *  drum for the bars, `DRUM_DIGITS` for the tallies — and when a bar hits the
+ *  edge, every bar halves: renormalisation as a full-board cascade. Votes
+ *  trickle in on their own; taps pile on. */
+export const makePoll: FlapShowFn = (board, { stage }) => {
+	const { cols, rows } = board;
+	const C = Math.min(POLL.length, rows);
+	const y0 = rows > C ? 1 : 0; // a spare top row becomes the header
+	const nameW = 6;
+	const countW = 3;
+	const barW = Math.max(1, cols - nameW - countW);
+	board.setOptions({
+		palette: Object.fromEntries(POLL.map((p) => [p.key, p.color])),
+		drums: [
+			{ x: nameW, y: y0, cols: barW, rows: C, charset: ' ' + POLL.map((p) => p.key).join('') },
+			{ x: nameW + barW, y: y0, cols: countW, rows: C, charset: DRUM_DIGITS }
+		]
+	});
+	const total = POLL.slice(0, C).map(() => 1 + Math.floor(Math.random() * 5));
+	const bar = total.map((t) => Math.min(t, barW));
+	let holdUntil = 0;
+	const render = () => {
+		const out = y0 ? [center('TAP A ROW TO VOTE', cols)] : [];
+		for (let i = 0; i < C; i++)
+			out.push(
+				POLL[i].name.padEnd(nameW) +
+					POLL[i].key.repeat(bar[i]).padEnd(barW) +
+					String(Math.min(total[i], 999)).padStart(countW)
+			);
+		board.setText(out);
+	};
+	const vote = (i: number) => {
+		total[i]++;
+		// A bar off the edge renormalises the whole field — every bar halves, and
+		// shrinking on a forward-only drum is the cascade the medium is famous for.
+		if (++bar[i] > barW) for (let j = 0; j < C; j++) bar[j] = Math.ceil(bar[j] / 2);
+		render();
+	};
+	const el = stage();
+	const onClick = (e: MouseEvent) => {
+		const cell = board.cellAt(e.clientX, e.clientY);
+		if (!cell) return;
+		const i = cell.y - y0;
+		if (i < 0 || i >= C) return;
+		holdUntil = Date.now() + 5000;
+		vote(i);
+	};
+	el?.addEventListener('click', onClick);
+	render();
+	const id = setInterval(() => {
+		if (Date.now() < holdUntil) return;
+		vote(Math.floor(Math.random() * C));
+	}, 1300);
+	return () => {
+		clearInterval(id);
+		el?.removeEventListener('click', onClick);
+		board.setOptions({ palette: {}, drums: [] });
 	};
 };
 
@@ -507,6 +699,8 @@ export const FLAP_SHOWS: Record<FlapShow, FlapShowFn> = {
 	clock: makeClock,
 	text: makeText,
 	counter: makeCounter,
+	scroller: makeScroller,
+	poll: makePoll,
 	chroma: makeChroma,
 	matrix: makeMatrix,
 	snake: makeSnake,

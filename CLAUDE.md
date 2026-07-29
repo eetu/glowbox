@@ -124,6 +124,10 @@ on rerun (`npm view` guard); prerelease versions (`-rc.N`) go to the `rc` dist-t
 
 - No database / server API / auth. If a program needs persistence, that's the consuming
   app's job, not the library's.
-- The gallery examples are **attract-mode** (self-playing); no gameplay input is wired
-  (pointer use = drag-to-orbit/zoom). An input/games API in the library is explicitly
-  rejected — see ROADMAP "deliberately not doing".
+- The gallery examples are **attract-mode** (self-playing) — the tappable split-flap
+  shows (counter/scroller/poll) take taps via `cellAt` + a stage click listener,
+  client-side; counter and poll still self-play between taps, and the scroller
+  deliberately holds still (it scrolls a story — reading pace is the reader's). No
+  _gameplay_ input is wired (pointer use = drag-to-orbit/zoom + those taps). An
+  input/games API in the library is explicitly rejected — see ROADMAP "deliberately
+  not doing".
