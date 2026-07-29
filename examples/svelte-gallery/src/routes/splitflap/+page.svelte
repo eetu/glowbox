@@ -19,6 +19,8 @@
 
 	let show = $state<FlapShow>('departures');
 	let chromaKind = $state<ChromaKind>('rich');
+	// The tappable shows (they still self-play; a tap just takes the wheel).
+	let interactive = $derived(show === 'counter' || show === 'scroller' || show === 'poll');
 
 	// Panel resolution (cols × rows), preset-seeded and user-editable — the same
 	// contract as the LED page's resolution section. Chroma re-tiles itself to a
@@ -142,6 +144,8 @@
 					{ value: 'clock', label: 'Clock' },
 					{ value: 'text', label: 'Text' },
 					{ value: 'counter', label: 'Counter' },
+					{ value: 'scroller', label: 'Scroller' },
+					{ value: 'poll', label: 'Poll' },
 					{ value: 'chroma', label: 'Chroma' },
 					{ value: 'matrix', label: 'Matrix' },
 					{ value: 'snake', label: 'Snake' },
@@ -164,7 +168,7 @@
 				/>
 			</label>
 		{/if}
-		<span class="hint">forward-only drums · turn SOUND on</span>
+		<span class="hint">{interactive ? 'tap the board' : 'forward-only drums'} · turn SOUND on</span>
 		<ThemeToggle />
 		<button
 			class="panel-toggle"
@@ -178,7 +182,7 @@
 	</header>
 
 	<div class="stage" style="background: {backdrop}">
-		<div class="board-wrap" class:clickable={show === 'counter'} bind:this={stageWrap}>
+		<div class="board-wrap" class:clickable={interactive} bind:this={stageWrap}>
 			<canvas bind:this={canvas} aria-label="split-flap display"></canvas>
 		</div>
 	</div>

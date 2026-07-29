@@ -4,6 +4,21 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [Unreleased]
+
+### Added
+
+- **Gallery: two interactive split-flap shows** (demo only, no package changes).
+  **Scroller** — a text scrolled by a scrollbar built from the panel itself: the
+  right-hand column rides a five-flap rail drum (`' ▲▼░█'`), taps on the arrows turn
+  a page and taps on the rail jump (`cellAt` hit-testing). No auto-scroll — the text
+  is an
+  easter egg (a small story about a boy and the split-flap board at the edge of the
+  city that never got the LED upgrade), and reading pace belongs to the reader. **Poll** — tap a row to vote for a display core: three
+  drum kinds on one board (letter names, five-colour chroma bars, `DRUM_DIGITS`
+  tallies), and when a bar hits the edge every bar halves — renormalisation as a
+  full-board cascade. Votes trickle in on their own between taps.
+
 ## [1.7.1] — 2026-07-29
 
 ### Added
