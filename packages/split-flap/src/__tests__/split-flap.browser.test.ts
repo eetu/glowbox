@@ -166,6 +166,39 @@ test('multi-row boards address rows independently', () => {
 	canvas.remove();
 });
 
+test('non-finite coordinates are ignored, not thrown (the drum lookup is per cell)', () => {
+	const canvas = mount();
+	const board = createSplitFlap(canvas, { cols: 4, rows: 1, flipMs: 0 })!;
+	board.setText('ABCD');
+	expect(() => board.setChar(NaN, 0, 'X')).not.toThrow();
+	expect(() => board.setChar(0, Infinity, 'X')).not.toThrow();
+	expect(() => board.setLine(NaN, 'XXXX')).not.toThrow();
+	expect(board.getChar(NaN, 0)).toBe(' ');
+	expect(board.getChar(0, -Infinity)).toBe(' ');
+	expect(board.getText()).toEqual(['ABCD']); // untouched
+	board.dispose();
+	canvas.remove();
+});
+
+test('cellAt and cellRect expose the layout maths', () => {
+	const canvas = mount(480, 80); // 6 × 80px cells
+	const board = createSplitFlap(canvas, { cols: 6, rows: 1, flipMs: 0 })!;
+	const r = canvas.getBoundingClientRect();
+	expect(board.cellAt(r.left + 5, r.top + 5)).toEqual({ x: 0, y: 0 });
+	expect(board.cellAt(r.right - 5, r.bottom - 5)).toEqual({ x: 5, y: 0 });
+	expect(board.cellAt(r.left - 5, r.top + 5)).toBeNull(); // off the board
+	const c = board.cellRect(2, 0)!;
+	// The card window sits inside its own cell (the gap is excluded)...
+	expect(c.left).toBeGreaterThan(r.left + 2 * 80);
+	expect(c.left + c.width).toBeLessThan(r.left + 3 * 80);
+	// ...and round-trips: its centre hits the module it belongs to.
+	expect(board.cellAt(c.left + c.width / 2, c.top + c.height / 2)).toEqual({ x: 2, y: 0 });
+	expect(board.cellRect(6, 0)).toBeNull();
+	expect(board.cellRect(NaN, 0)).toBeNull();
+	board.dispose();
+	canvas.remove();
+});
+
 test('sound: true is safe before any user gesture', () => {
 	const canvas = mount();
 	const board = createSplitFlap(canvas, { cols: 4, rows: 1, flipMs: 0, sound: true })!;

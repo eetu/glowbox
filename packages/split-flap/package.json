@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/split-flap",
-	"version": "1.7.0",
+	"version": "1.7.1",
 	"description": "Electromechanical split-flap display component — Solari-style flap cards falling from the drum, forward-only wrap-through cascades, optional card-slap sound, in the glowbox family.",
 	"keywords": [
 		"glowbox",

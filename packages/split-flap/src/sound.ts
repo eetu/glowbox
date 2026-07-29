@@ -67,6 +67,10 @@ let gestureArmed = false;
 // guaranteed-suspended console noise AND a slot against the browser's context
 // cap — rude to a host page already running its own audio. Where the API is
 // missing (old WebKit), err on creating; the resume listener still unlocks.
+// NB for probes: a CDP `evaluate` (Playwright/Puppeteer, the DevTools console)
+// runs with userGesture:true and PERMANENTLY activates the page — an autoplay
+// audit driven that way measures its own gesture and reports a false positive
+// here. Instrument passively (console.log out of the page) instead.
 const pageActivated = (): boolean =>
 	typeof navigator === 'undefined' || (navigator.userActivation?.hasBeenActive ?? true);
 
