@@ -16,7 +16,7 @@ packages/
   nixie/     @glowbox/nixie    — 2D-canvas nixie-tube core + stateless 3D-compositing helpers. Zero deps.
   seven-segment/ @glowbox/seven-segment — 2D-canvas 7-seg core: per-segment fades, ageing→dead segments, LED/VFD styles. Zero deps.
   flip-dot/  @glowbox/flip-dot — 2D-canvas electromechanical board: physical disc/vane flips, scan-wave stagger, ditherFrame, shared-AudioContext solenoid click (createMechSound = split-flap groundwork). Zero deps.
-  split-flap/ @glowbox/split-flap — 2D-canvas Solari board: drum-of-cards model (forward-only wraps), perspective falls, grapheme drums + chroma drums (chromaDrum/paletteFrame/FlapFace), card-slap sound (vendored createMechSound + noise shaping). Zero deps.
+  split-flap/ @glowbox/split-flap — 2D-canvas Solari board: drum-of-cards model (forward-only wraps), perspective falls, grapheme drums + drum zones (per-field drums) + chroma drums (chromaDrum/paletteFrame/FlapFace), card-slap sound (vendored createMechSound + noise shaping). Zero deps.
   crt/       @glowbox/crt      — composable CRT effect over any canvas/element (WebGL pass; curvature, persistence, event forwarding). Zero deps.
   svelte/    @glowbox/svelte   — Svelte 5 <LedGrid> + <NixieTube> + <SevenSegment> + <FlipDots> + <SplitFlap> (ships .svelte source).
   react/     @glowbox/react    — React 18/19 components (dist carries 'use client').
@@ -104,9 +104,10 @@ on rerun (`npm view` guard); prerelease versions (`-rc.N`) go to the `rc` dist-t
 
 ## Status / next
 
-- **1.0.x–1.6.0 shipped** (latest: 1.6.0 on 2026-07-28 — `@glowbox/split-flap`,
-  the fifth and last planned display core) — **ten** packages in lockstep, all
-  live on npm. NOTE for
+- **1.0.x–1.7.0 shipped** (latest: 1.7.0 on 2026-07-29 — split-flap **drum
+  zones** (per-field drums, the departure-board pattern) + the CRT
+  accessibility fix (sources hidden with opacity, not visibility)) — **ten**
+  packages in lockstep, all live on npm. NOTE for
   future new packages: npm needs the package to exist before a **trusted publisher**
   can be configured — first-publish a local `-rc.1` with `npm publish --tag rc
 --otp=…`, configure the publisher, then tag (the rc doesn't trip the idempotency

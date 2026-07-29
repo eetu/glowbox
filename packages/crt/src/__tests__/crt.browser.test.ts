@@ -117,10 +117,14 @@ test('element mode: slaps over a container, composites child canvases, restores 
 	expect(crt).not.toBeNull();
 	if (!crt) return;
 	// Auto-mounted into the container, container promoted to a positioned box,
-	// sources hidden but laid out.
+	// sources hidden but laid out — with opacity, NOT visibility, so a wrapped
+	// display stays in the accessibility tree (its role="img" + live label keep
+	// reading; the aria-hidden output is only the visual duplicate).
 	expect(crt.canvas.parentElement).toBe(box);
 	expect(getComputedStyle(box).position).toBe('relative');
-	expect(left.style.visibility).toBe('hidden');
+	expect(left.style.opacity).toBe('0');
+	expect(getComputedStyle(left).visibility).toBe('visible');
+	expect(crt.canvas.getAttribute('aria-hidden')).toBe('true');
 	crt.resize();
 	await frame();
 	const px = readPixels(crt.canvas);
@@ -145,7 +149,7 @@ test('element mode: slaps over a container, composites child canvases, restores 
 
 	crt.dispose();
 	expect(box.contains(crt.canvas)).toBe(false);
-	expect(left.style.visibility).not.toBe('hidden'); // handed back as found
+	expect(left.style.opacity).not.toBe('0'); // handed back as found
 });
 
 test('orientation survives the no-flip upload path (top stays top), both pipelines', async () => {

@@ -12,8 +12,10 @@
 //
 // The output canvas forwards pointer + wheel events back to the source (opt-out via
 // `events: false`), so drag-orbit/zoom on a wrapped display keep working — the effect
-// is transparent to interaction. The output is `aria-hidden`: it is a visual duplicate;
-// the source keeps the semantics.
+// is transparent to interaction. It is transparent to assistive tech the same way: the
+// output is `aria-hidden` (a visual duplicate), and element mode hides the originals
+// with opacity — never visibility — so a wrapped display's `role="img"` + live label
+// stay in the accessibility tree.
 
 const VERT = `
   attribute vec2 aQuad;
@@ -137,8 +139,10 @@ export interface CrtOptions {
 
 export interface CrtScreen {
 	/** The output canvas. **Element source**: already mounted over the container —
-	 *  nothing to do. **Canvas source**: place it where the screen should appear (the
-	 *  source can sit hidden underneath; keep it laid out so it keeps sizing itself). */
+	 *  nothing to do. **Canvas source**: place it where the screen should appear; the
+	 *  source can sit underneath, occluded or at `opacity: 0` — keep it laid out so it
+	 *  keeps sizing itself, and don't `visibility`/`display`-hide it: the source
+	 *  carries the accessible semantics (this output is `aria-hidden`). */
 	readonly canvas: HTMLCanvasElement;
 	setOptions(patch: Partial<CrtOptions>): void;
 	resize(): void;
@@ -208,9 +212,12 @@ export function createCrtScreen(
 	canvas.style.touchAction = 'none'; // forwarded drags must not fight page scroll
 
 	// --- element-mode source tracking -------------------------------------------
-	// Find the container's canvases, hide them (visibility keeps layout + their own
-	// ResizeObservers alive), and watch for slots being added/removed (a nixie row
-	// rebuilding, a component remounting). Everything undone on dispose.
+	// Find the container's canvases, hide them with opacity (which keeps layout —
+	// their own ResizeObservers stay alive — AND the accessibility tree: the
+	// display cores' `role="img"` + live label stay readable; visibility or
+	// display would strip them, leaving the aria-hidden output as the only copy),
+	// and watch for slots being added/removed (a nixie row rebuilding, a component
+	// remounting). Everything undone on dispose.
 	const hidden = new Map<HTMLCanvasElement, string>();
 	let tracked: HTMLCanvasElement[] = [];
 	const collect = () => {
@@ -220,12 +227,12 @@ export function createCrtScreen(
 		);
 		for (const c of tracked)
 			if (!hidden.has(c)) {
-				hidden.set(c, c.style.visibility);
-				c.style.visibility = 'hidden';
+				hidden.set(c, c.style.opacity);
+				c.style.opacity = '0';
 			}
 		for (const [c, prev] of hidden)
 			if (!tracked.includes(c) && c.isConnected) {
-				c.style.visibility = prev;
+				c.style.opacity = prev;
 				hidden.delete(c);
 			}
 	};
@@ -582,7 +589,7 @@ export function createCrtScreen(
 			for (const type of FORWARD) canvas.removeEventListener(type, onPointer);
 			canvas.removeEventListener('wheel', onWheel);
 			// Element mode: hand the container back exactly as found.
-			for (const [c, prev] of hidden) c.style.visibility = prev;
+			for (const [c, prev] of hidden) c.style.opacity = prev;
 			hidden.clear();
 			if (restorePosition != null) (source as HTMLElement).style.position = restorePosition;
 			canvas.removeEventListener('webglcontextlost', onContextLost);

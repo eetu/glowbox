@@ -27,10 +27,11 @@ Pass a container element and the screen does all the ceremony: mounts its output
 the container (promoting it to `position: relative` only if it was static), finds every
 descendant canvas and **composites them at their layout positions each frame** (slots
 added/removed later are picked up automatically — a rebuilding `createNixieRow` just
-keeps working), hides the originals while keeping them laid out (their own
-ResizeObservers stay alive), and **forwards pointer + wheel events** to the child
-canvas under the cursor — drag-orbit and zoom work straight through the tube.
-`dispose()` hands everything back exactly as found.
+keeps working), hides the originals with `opacity: 0` while keeping them laid out
+(their own ResizeObservers stay alive — and they stay in the accessibility tree, see
+below), and **forwards pointer + wheel events** to the child canvas under the cursor —
+drag-orbit and zoom work straight through the tube. `dispose()` hands everything back
+exactly as found.
 
 Your CSS survives around and behind the tube: **outside the curved face the output is
 transparent** (the container's background, borders, and radius show around the tube),
@@ -60,8 +61,17 @@ All 0..1 knobs, live-updatable via `setOptions`:
 | `pixelRatio`  | `2`          | cap on devicePixelRatio                                                     |
 
 `prefers-reduced-motion` freezes the temporal artifacts (flicker, band, noise
-animation) and disables persistence. The output canvas is `aria-hidden` — it is a
-visual duplicate; your source keeps the accessible semantics.
+animation) and disables persistence.
+
+## Accessibility
+
+The effect is transparent to assistive tech the same way it is to interaction. The
+output canvas is `aria-hidden` — it is a visual duplicate — and **the source keeps
+the accessible semantics**: element mode hides the originals with **opacity, never
+`visibility` or `display`**, so a wrapped glowbox display's `role="img"` and live
+`aria-label` (the shown text) stay in the accessibility tree while the tube shows
+the pixels. In canvas mode the placement is yours — follow the same rule: occlude
+the source or set `opacity: 0`, don't `visibility`/`display`-hide it.
 
 ## Wrapping your own WebGL
 

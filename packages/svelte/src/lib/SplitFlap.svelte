@@ -13,6 +13,7 @@
 		cols,
 		rows,
 		charset,
+		drums,
 		palette,
 		card,
 		ink,
@@ -33,6 +34,8 @@
 		rows?: number;
 		/** The drum: flap sequence in rotation order. */
 		charset?: string;
+		/** Drum zones: rectangles of modules with their own drum (digit fields etc). */
+		drums?: SplitFlapOptions['drums'];
 		/** Per-flap faces: solid paint (chroma flaps) or re-inked glyphs. */
 		palette?: SplitFlapOptions['palette'];
 		card?: SplitFlapOptions['card'];
@@ -66,6 +69,7 @@
 				cols,
 				rows,
 				charset,
+				drums,
 				palette,
 				card,
 				ink,
@@ -106,6 +110,7 @@
 			cols,
 			rows,
 			charset,
+			drums,
 			palette,
 			card,
 			ink,

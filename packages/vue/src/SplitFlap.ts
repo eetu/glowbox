@@ -33,6 +33,8 @@ export const SplitFlap = defineComponent({
 		rows: { type: Number, default: undefined },
 		/** The drum: flap sequence in rotation order. */
 		charset: { type: String, default: undefined },
+		/** Drum zones: rectangles of modules with their own drum (digit fields etc). */
+		drums: { type: Array as PropType<SplitFlapOptions['drums']>, default: undefined },
 		/** Per-flap faces: solid paint (chroma flaps) or re-inked glyphs. */
 		palette: { type: Object as PropType<SplitFlapOptions['palette']>, default: undefined },
 		card: { type: [String, Array] as PropType<SplitFlapOptions['card']>, default: undefined },
@@ -59,6 +61,7 @@ export const SplitFlap = defineComponent({
 			cols: props.cols,
 			rows: props.rows,
 			charset: props.charset,
+			drums: props.drums,
 			palette: props.palette,
 			card: props.card,
 			ink: props.ink,

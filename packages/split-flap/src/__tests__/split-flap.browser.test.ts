@@ -3,6 +3,7 @@
 // ladder is covered in @glowbox/flip-dot, where the file is vendored from.)
 import { expect, test } from 'vitest';
 
+import { DRUM_DIGITS } from '../drum';
 import { createSplitFlap } from '../split-flap';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -115,6 +116,39 @@ test('a chroma drum paints solid-colour flaps, no glyphs', () => {
 	board.setText('RRGG');
 	expect(hasColor(canvas, 0xd6, 0x45, 0x41)).toBe(true);
 	expect(hasColor(canvas, 0x43, 0xa4, 0x57)).toBe(true);
+	board.dispose();
+	canvas.remove();
+});
+
+test('drum zones give fields their own drums', () => {
+	const canvas = mount(480, 160);
+	const board = createSplitFlap(canvas, {
+		cols: 8,
+		rows: 2,
+		flipMs: 0,
+		// A letter board with a 3-module digit field on the top row — the real
+		// boards' track column (zone extent defaults to one row).
+		drums: [{ x: 5, y: 0, cols: 3, charset: ' 0123456789' }]
+	})!;
+	board.setText(['ICE  704', 'ABCDEFGH']);
+	expect(board.getText()).toEqual(['ICE  704', 'ABCDEFGH']);
+	board.setLine(0, 'ABCDEFGH'); // letters can't ride the digit field
+	expect(board.getText()).toEqual(['ABCDE', 'ABCDEFGH']);
+	board.dispose();
+	canvas.remove();
+});
+
+test('setOptions({drums}) re-cards live and clips out-of-range zones', () => {
+	const canvas = mount();
+	const board = createSplitFlap(canvas, { cols: 6, rows: 1, flipMs: 0 })!;
+	board.setText('AB12');
+	board.setOptions({ drums: [{ x: 2, y: 0, cols: 99, charset: DRUM_DIGITS }] });
+	expect(board.getText()).toEqual(['AB12']); // re-carded: every module kept its character
+	board.setText('CDEF56');
+	expect(board.getText()).toEqual(['CD  56']); // E, F fell off the digit field
+	board.setOptions({ drums: [] });
+	board.setText('CDEF56');
+	expect(board.getText()).toEqual(['CDEF56']); // the whole board is letters again
 	board.dispose();
 	canvas.remove();
 });

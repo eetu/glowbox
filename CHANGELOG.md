@@ -4,6 +4,30 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [1.7.0] — 2026-07-29
+
+### Added
+
+- **`@glowbox/split-flap`: drum zones** — `drums: [{ x, y, cols, rows, charset }]`
+  puts different drums at different locations, the way the real boards were built:
+  letter modules for the destination field, dedicated short digit drums for the
+  time and track columns (short drum, short wraps, snappy rollovers). Later zones
+  win overlaps; zones re-card live via `setOptions` and re-clip when the board is
+  re-tiled. `<SplitFlap>` in svelte/react/vue passes `drums` through. The gallery's
+  departures show now runs its time and track fields on dedicated drums — the red-X
+  cancelled flap rides a 12-flap track drum instead of the full alphabet.
+
+### Fixed
+
+- **`@glowbox/crt`: the wrapped display stays accessible.** Element mode used to hide
+  the composited source canvases with `visibility: hidden`, which strips them from the
+  accessibility tree — and since the output canvas is `aria-hidden` (a visual
+  duplicate), a wrapped display vanished from assistive tech entirely, voiding the
+  display cores' `role="img"` + live-label contract. Sources are now hidden with
+  `opacity: 0` (identical layout and visuals; the semantics stay readable), and the
+  contract is documented in the README — including the same rule for canvas-mode
+  placement.
+
 ## [1.6.0] — 2026-07-28
 
 The fifth display core: an **electromechanical split-flap (Solari) display** — the

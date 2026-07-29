@@ -23,6 +23,7 @@ export {
 export { createMechSound, type MechSound, type MechTick } from './sound';
 export {
 	createSplitFlap,
+	type DrumZone,
 	type FlapFace,
 	type SplitFlapBoard,
 	type SplitFlapOptions

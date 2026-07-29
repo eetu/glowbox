@@ -75,19 +75,29 @@ const DESTS = [
 	'IISALMI'
 ];
 
-// ONE special flap, the way the real boards did it (a duplicated red alphabet
-// would double the drum and slow every flip on the board): flap 'x' prints as
-// a red X — the cancelled-platform mark on the track column.
-const DEPARTURE_DRUM = DEFAULT_CHARSET + 'x';
+// The track column's drum: digits plus ONE special flap, the way the real
+// boards did it (a duplicated red alphabet would double the drum and slow
+// every flip): flap 'x' prints as a red X — the cancelled-platform mark.
+const TRACK_DRUM = ' 0123456789x';
 const DEPARTURE_FACES = { x: { glyph: 'X', ink: '#d64541' } };
 
 /** The canonical split-flap scene. Fictional trains depart the top row every few
  *  seconds: the rows shift up and a new service flips in at the bottom — the
- *  full-board cascade that made these things famous. Late trains lose their
- *  platform to a red X — one dedicated flap off the drum (`FlapFace`). */
+ *  full-board cascade that made these things famous. Built the way the real
+ *  boards were: the time and track columns are `drums` zones on dedicated short
+ *  drums, so a minute rollover wraps in a few flips instead of cascading
+ *  through the whole alphabet. Late trains lose their platform to a red X —
+ *  one dedicated flap on the track drum (`FlapFace`). */
 export const makeDepartures: FlapShowFn = (board) => {
 	const { cols, rows } = board;
-	board.setOptions({ charset: DEPARTURE_DRUM, palette: DEPARTURE_FACES });
+	board.setOptions({
+		charset: DEFAULT_CHARSET,
+		palette: DEPARTURE_FACES,
+		drums: [
+			{ x: 0, y: 0, cols: 5, rows, charset: DRUM_DIGITS },
+			{ x: cols - 2, y: 0, cols: 2, rows, charset: TRACK_DRUM }
+		]
+	});
 	const destW = Math.max(4, cols - 8); // 'HH:MM <dest> NN'
 	type Entry = { min: number; dest: string; trk: number; late: boolean };
 	const now = new Date();
@@ -124,7 +134,7 @@ export const makeDepartures: FlapShowFn = (board) => {
 	}, 6500);
 	return () => {
 		clearInterval(id);
-		board.setOptions({ charset: DEFAULT_CHARSET, palette: {} });
+		board.setOptions({ charset: DEFAULT_CHARSET, palette: {}, drums: [] });
 	};
 };
 

@@ -28,6 +28,18 @@ import { type Color, parseColor, type RGB } from './color';
 import { DEFAULT_CHARSET, flapIndex, flapsOf, padCells } from './drum';
 import { createMechSound, type MechSound } from './sound';
 
+/** A rectangle of modules carrying a different drum than the board `charset`. */
+export interface DrumZone {
+	/** Zone origin, in module coordinates. */
+	x: number;
+	y: number;
+	/** Zone extent, in modules (default 1×1). */
+	cols?: number;
+	rows?: number;
+	/** The zone's drum: flap sequence in rotation order. */
+	charset: string;
+}
+
 /** A flap's printed face, when it isn't just the drum grapheme in the board
  *  ink: another glyph, another ink, another card colour — any or all. */
 export interface FlapFace {
@@ -46,6 +58,11 @@ export interface SplitFlapOptions {
 	/** The drum: flap sequence in rotation order (default `DRUM_NORDIC`).
 	 *  Characters not on the drum display as blank. */
 	charset?: string;
+	/** Drum zones: rectangles of modules that carry their own drum instead of
+	 *  the board `charset` — real boards mixed letter modules with dedicated
+	 *  digit modules per field (short drum, short wraps, snappy rollovers).
+	 *  Later zones win where they overlap; clear with `[]`. */
+	drums?: DrumZone[];
 	/** Per-flap faces. A plain colour paints the whole card — a chroma flap, no
 	 *  glyph (pair with `paletteFrame` for rough pictures). A face spec
 	 *  re-prints the flap instead: `glyph` overrides the printed character,
@@ -124,7 +141,8 @@ export function createSplitFlap(
 
 	let cols = Math.max(1, Math.floor(opts.cols ?? 12));
 	let rows = Math.max(1, Math.floor(opts.rows ?? 1));
-	let flaps = flapsOf(opts.charset ?? DEFAULT_CHARSET);
+	let charset = opts.charset ?? DEFAULT_CHARSET;
+	let zones = opts.drums;
 	let palette = opts.palette;
 	let card = parseColor(opts.card ?? '#1b1c1f');
 	let ink = parseColor(opts.ink ?? '#f4f4ef');
@@ -160,6 +178,37 @@ export function createSplitFlap(
 		for (let i = 0; i < n; i++) jit[i] = Math.random();
 	};
 	seedJit();
+
+	// The drum, per module: every module rides the board `charset` unless a
+	// `drums` zone covers it (later zones win overlaps). Same-charset zones share
+	// one flap array; an empty charset is a drum of one blank flap. Re-run on
+	// regrid (the zones re-clip to the new geometry) and on drum patches.
+	let drum: string[][] = [];
+	function assignDrums() {
+		const cache = new Map<string, string[]>();
+		const flapsFor = (cs: string): string[] => {
+			let f = cache.get(cs);
+			if (!f) {
+				f = flapsOf(cs);
+				if (!f.length) f = [' '];
+				cache.set(cs, f);
+			}
+			return f;
+		};
+		drum = new Array<string[]>(n).fill(flapsFor(charset));
+		for (const z of zones ?? []) {
+			const f = flapsFor(z.charset);
+			const x1 = Math.min(cols, Math.floor(z.x) + Math.max(1, Math.floor(z.cols ?? 1)));
+			const y1 = Math.min(rows, Math.floor(z.y) + Math.max(1, Math.floor(z.rows ?? 1)));
+			for (let y = Math.max(0, Math.floor(z.y)); y < y1; y++)
+				for (let x = Math.max(0, Math.floor(z.x)); x < x1; x++) drum[y * cols + x] = f;
+		}
+	}
+	assignDrums();
+	// Zone lists compare by content (like `charset`), so a wrapper re-passing an
+	// equal list every render never interrupts a flight with a re-card.
+	const drumsKey = (zs?: DrumZone[]) =>
+		(zs ?? []).map((z) => `${z.x},${z.y},${z.cols ?? 1},${z.rows ?? 1}:${z.charset}`).join('\n');
 
 	let raf = 0;
 	let lastT = 0;
@@ -467,7 +516,8 @@ export function createSplitFlap(
 			g.textAlign = 'center';
 			g.textBaseline = 'middle';
 			for (let i = 0; i < n; i++) {
-				const ch = flaps[fall[i] > 0.5 ? (idx[i] + 1) % flaps.length : idx[i]];
+				const fl = drum[i];
+				const ch = fl[fall[i] > 0.5 ? (idx[i] + 1) % fl.length : idx[i]];
 				const spec = palette?.[ch];
 				const isPaint = typeof spec === 'string' || Array.isArray(spec);
 				g.fillStyle = rgba(isPaint ? parseColor(spec) : card, 1);
@@ -485,24 +535,26 @@ export function createSplitFlap(
 			}
 			return;
 		}
-		const N = flaps.length;
 		// Pass 1 — every module's resting halves. During a fall the next character's
 		// top half is ALREADY standing behind the dropping card (it came around the
 		// drum with it), and the old bottom half stays until the card lands on it. A
 		// bouncing module lifts its just-landed card, re-revealing the half beneath.
 		for (let i = 0; i < n; i++) {
+			const fl = drum[i];
+			const N = fl.length;
 			const cx = (i % cols) * cellW + cellW / 2;
 			const hy = ((i / cols) | 0) * cellH + hinge;
 			const falling = fall[i] >= 0;
-			const topCh = flaps[falling ? (idx[i] + 1) % N : idx[i]];
+			const topCh = fl[falling ? (idx[i] + 1) % N : idx[i]];
 			// Mid-bounce the lifted card re-reveals the previous stack top beneath it.
-			const botCh = flaps[bounce[i] >= 0 ? (idx[i] - 1 + N) % N : idx[i]];
+			const botCh = fl[bounce[i] >= 0 ? (idx[i] - 1 + N) % N : idx[i]];
 			g.drawImage(face(topCh).top, cx - cardW / 2, hy - split / 2 - halfH, cardW, halfH);
 			g.drawImage(face(botCh).bottom, cx - cardW / 2, hy + split / 2, cardW, halfH);
 		}
 		// Pass 2 — everything in flight, over the resting board (a dropping card is
 		// nearer the viewer than any neighbour's window).
 		for (let i = 0; i < n; i++) {
+			const fl = drum[i];
 			const cx = (i % cols) * cellW + cellW / 2;
 			const hy = ((i / cols) | 0) * cellH + hinge;
 			if (fall[i] >= 0) {
@@ -514,12 +566,12 @@ export function createSplitFlap(
 					g.fillStyle = `rgba(0,0,0,${0.3 * sinT})`;
 					g.fillRect(cx - cardW / 2, hy + split / 2, cardW, halfH);
 				}
-				if (cosT >= 0) flyFace(g, face(flaps[idx[i]]).top, cx, hy, cosT, sinT, true);
-				else flyFace(g, face(flaps[(idx[i] + 1) % N]).bottom, cx, hy, -cosT, sinT, false);
+				if (cosT >= 0) flyFace(g, face(fl[idx[i]]).top, cx, hy, cosT, sinT, true);
+				else flyFace(g, face(fl[(idx[i] + 1) % fl.length]).bottom, cx, hy, -cosT, sinT, false);
 			} else if (bounce[i] >= 0) {
 				// The settle: the landed card kicks up a few degrees and drops back.
 				const phi = (0.12 + 0.1 * jit[i]) * Math.sin(Math.PI * bounce[i]);
-				flyFace(g, face(flaps[idx[i]]).bottom, cx, hy, Math.cos(phi), Math.sin(phi), false);
+				flyFace(g, face(fl[idx[i]]).bottom, cx, hy, Math.cos(phi), Math.sin(phi), false);
 			}
 		}
 		// Pass 3 — the fixed hardware in front of the flaps (shaded only).
@@ -552,7 +604,6 @@ export function createSplitFlap(
 			const dt = Math.min(0.1, (now - lastT) / 1000);
 			lastT = now;
 			slapBudget = Math.min(SLAPS_PER_S, slapBudget + dt * SLAPS_PER_S);
-			const N = flaps.length;
 			let moving = false;
 			let lands = 0;
 			let landSum = 0; // for the average pan of this frame's slaps
@@ -571,7 +622,7 @@ export function createSplitFlap(
 					// Each drum is its own machine — a row spinning together drifts apart.
 					fall[i] += dt / ((flipMs / 1000) * (0.85 + 0.3 * jit[i]));
 					if (fall[i] >= 1) {
-						idx[i] = (idx[i] + 1) % N;
+						idx[i] = (idx[i] + 1) % drum[i].length;
 						lands++;
 						landSum += i % cols;
 						if (idx[i] !== tgt[i]) fall[i] = 0;
@@ -655,7 +706,7 @@ export function createSplitFlap(
 
 	// --- commands ------------------------------------------------------------------
 	function command(i: number, ch: string) {
-		const t = flapIndex(flaps, ch);
+		const t = flapIndex(drum[i], ch);
 		if (t === tgt[i]) return;
 		tgt[i] = t;
 		if (fall[i] < 0 && wait[i] <= 0 && idx[i] !== t) {
@@ -685,7 +736,7 @@ export function createSplitFlap(
 		const out: string[] = [];
 		for (let y = 0; y < rows; y++) {
 			let line = '';
-			for (let x = 0; x < cols; x++) line += flaps[tgt[y * cols + x]];
+			for (let x = 0; x < cols; x++) line += drum[y * cols + x][tgt[y * cols + x]];
 			out.push(line.replace(/\s+$/, ''));
 		}
 		return out;
@@ -744,7 +795,7 @@ export function createSplitFlap(
 			x = Math.floor(x);
 			y = Math.floor(y);
 			if (x < 0 || x >= cols || y < 0 || y >= rows) return ' ';
-			return flaps[tgt[y * cols + x]];
+			return drum[y * cols + x][tgt[y * cols + x]];
 		},
 		getText: getLines,
 		clear() {
@@ -771,21 +822,31 @@ export function createSplitFlap(
 				wait = new Float32Array(n);
 				jit = new Float32Array(n);
 				seedJit();
+				assignDrums(); // the zones re-clip to the new geometry
 				rebake = true;
 				applyAria(); // the re-tiled board reads blank until the next setText
 			}
-			// After regrid, so a combined {cols, rows, charset} patch re-cards the
-			// NEW grid (a re-tiled board has no text to keep anyway).
-			if (patch.charset != null && patch.charset !== flaps.join('')) {
-				// A new drum is a re-carding: the modules come back showing their
-				// current text on the new flap sequence, instantly.
+			// After regrid, so a combined {cols, rows, charset, drums} patch re-cards
+			// the NEW grid (a re-tiled board has no text to keep anyway).
+			let recard = false;
+			if (patch.charset != null && patch.charset !== charset) {
+				charset = patch.charset;
+				recard = true;
+			}
+			if (patch.drums !== undefined && drumsKey(patch.drums) !== drumsKey(zones)) {
+				zones = patch.drums;
+				recard = true;
+			}
+			if (recard) {
+				// A new drum set is a re-carding: the modules come back showing their
+				// current text on the new flap sequences, instantly.
 				const keep = regrid ? [] : getLines();
-				flaps = flapsOf(patch.charset);
+				assignDrums();
 				for (let y = 0; y < rows; y++) {
 					const line = padCells(keep[y] ?? '', cols);
 					for (let x = 0; x < cols; x++) {
 						const i = y * cols + x;
-						tgt[i] = idx[i] = flapIndex(flaps, line[x]);
+						tgt[i] = idx[i] = flapIndex(drum[i], line[x]);
 						fall[i] = bounce[i] = -1;
 						wait[i] = 0;
 					}
