@@ -55,6 +55,27 @@ The drum is a string — index order is flip order, one **grapheme** per flap
 drum, snappy rollovers). Characters not on the drum display as blank; input is
 NFC-normalised and uppercased as a fallback.
 
+**Drum zones** put different drums at different locations — the way the real
+boards were built, letter modules only where letters can appear:
+
+```ts
+const board = createSplitFlap(canvas, {
+	cols: 20,
+	rows: 8,
+	charset: DRUM_NORDIC, // the board drum: destinations
+	drums: [
+		{ x: 0, y: 0, cols: 5, rows: 8, charset: DRUM_DIGITS }, // the time field
+		{ x: 18, y: 0, cols: 2, rows: 8, charset: ' 0123456789' } // the track field
+	]
+});
+```
+
+A zone is a rectangle of modules (`cols`/`rows` default 1×1) carrying its own
+flap sequence; later zones win overlaps, and a zone re-clips if the board is
+re-tiled. The short field drum is the point: a minute rollover on `DRUM_DIGITS`
+wraps in a couple of flips — on the full board drum it would cascade through
+the whole alphabet first.
+
 ## Chroma drums — rough images
 
 Real installations card their drums with solid colours and use a wall of
@@ -86,6 +107,7 @@ flip on the board.
 | ------------ | ---------------------- | ----------------------------------------------------------- |
 | `cols, rows` | `12×1`                 | one destination line; tile bigger boards freely             |
 | `charset`    | `DRUM_NORDIC`          | the drum — flap sequence in rotation order                  |
+| `drums`      | —                      | drum zones: rectangles of modules with their own drum       |
 | `palette`    | —                      | per-flap faces: paint (chroma) or `{ glyph, ink, paint }`   |
 | `card`       | near-black             | flap plastic (any CSS string or `[r,g,b]` 0..1)             |
 | `ink`        | warm white             | the printed characters                                      |
@@ -98,13 +120,40 @@ flip on the board.
 | `pixelRatio` | `2`                    | cap on devicePixelRatio                                     |
 | `label`      | `'split-flap display'` | `aria-label`; the shown text is appended; `''` hides        |
 
-All options update live via `setOptions(patch)` — swapping `charset`/`palette`
-re-cards the modules in place. API: `setText(string | string[])`,
+All options update live via `setOptions(patch)` — swapping
+`charset`/`drums`/`palette` re-cards the modules in place. API: `setText(string | string[])`,
 `setLine(row, text)`, `setChar(x, y, ch)`, `getChar`, `getText()`, `clear()`,
 `resize()`, `snapshot()` (PNG data URL), `dispose()` (hands the canvas back
 clean). The default look is **flat matte** — that's how the boards photograph;
 `shaded: true` adds the full mechanical anatomy, matched against module
 close-ups.
+
+## Clickable modules
+
+The board attaches no pointer handlers — it's a display — but modules tile the
+canvas uniformly, so hit-testing is three lines in the consuming app:
+
+```ts
+canvas.addEventListener('click', (e) => {
+	const r = canvas.getBoundingClientRect();
+	const x = Math.floor(((e.clientX - r.left) / r.width) * board.cols);
+	const y = Math.floor(((e.clientY - r.top) / r.height) * board.rows);
+	board.setChar(x, y, '█'); // yours from here
+});
+```
+
+Pair this with a tiny zone drum (`' ░█'`) and a column of modules becomes a
+working scrollbar or selector — the thumb lands in a flip or two, because the
+whole drum is three flaps.
+
+Accessibility follows the same split. The board exposes itself as an **image**
+(`role="img"`, with the shown text in the label — zone drums included, since
+the label reads what the modules read), never as a widget: a canvas can't be
+focused, arrow-keyed or announced. If you make modules interactive, the
+semantics are yours — layer a real control over or beside the canvas (an
+`<input type="range">` for the scrollbar column, a `<button>` for a tally
+counter) and pass `label: ''` to hide the canvas when the control carries the
+same information.
 
 ## The sound engine
 

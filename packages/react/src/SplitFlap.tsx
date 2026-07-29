@@ -21,6 +21,8 @@ export interface SplitFlapProps {
 	rows?: number;
 	/** The drum: flap sequence in rotation order. */
 	charset?: string;
+	/** Drum zones: rectangles of modules with their own drum (digit fields etc). */
+	drums?: SplitFlapOptions['drums'];
 	/** Per-flap faces: solid paint (chroma flaps) or re-inked glyphs. */
 	palette?: SplitFlapOptions['palette'];
 	card?: SplitFlapOptions['card'];
@@ -56,6 +58,7 @@ export const SplitFlap = forwardRef<SplitFlapBoard | null, SplitFlapProps>(
 			cols,
 			rows,
 			charset,
+			drums,
 			palette,
 			card,
 			ink,
@@ -86,6 +89,7 @@ export const SplitFlap = forwardRef<SplitFlapBoard | null, SplitFlapProps>(
 				cols: p.cols,
 				rows: p.rows,
 				charset: p.charset,
+				drums: p.drums,
 				palette: p.palette,
 				card: p.card,
 				ink: p.ink,
@@ -123,6 +127,7 @@ export const SplitFlap = forwardRef<SplitFlapBoard | null, SplitFlapProps>(
 				cols,
 				rows,
 				charset,
+				drums,
 				palette,
 				card,
 				ink,
@@ -140,6 +145,7 @@ export const SplitFlap = forwardRef<SplitFlapBoard | null, SplitFlapProps>(
 			cols,
 			rows,
 			charset,
+			drums,
 			palette,
 			card,
 			ink,
