@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/seven-segment",
-	"version": "1.6.0",
+	"version": "1.7.0",
 	"description": "Seven-segment display component — per-segment light dynamics, ageing, LED + VFD styles, in the glowbox family.",
 	"keywords": [
 		"glowbox",
