@@ -123,22 +123,23 @@ flip on the board.
 All options update live via `setOptions(patch)` — swapping
 `charset`/`drums`/`palette` re-cards the modules in place. API: `setText(string | string[])`,
 `setLine(row, text)`, `setChar(x, y, ch)`, `getChar`, `getText()`, `clear()`,
-`resize()`, `snapshot()` (PNG data URL), `dispose()` (hands the canvas back
-clean). The default look is **flat matte** — that's how the boards photograph;
+`cellAt(clientX, clientY)` (viewport point → module), `cellRect(x, y)` (module →
+viewport rectangle of its card window), `resize()`, `snapshot()` (PNG data URL),
+`dispose()` (hands the canvas back clean). The default look is **flat matte** — that's how the boards photograph;
 `shaded: true` adds the full mechanical anatomy, matched against module
 close-ups.
 
 ## Clickable modules
 
-The board attaches no pointer handlers — it's a display — but modules tile the
-canvas uniformly, so hit-testing is three lines in the consuming app:
+The board attaches no pointer handlers — it's a display — but it owns the
+layout maths, so it answers the two geometry questions interaction needs:
+`cellAt` maps a pointer event to a module, `cellRect` maps a module back to its
+on-screen card window (for overlays and tooltips):
 
 ```ts
 canvas.addEventListener('click', (e) => {
-	const r = canvas.getBoundingClientRect();
-	const x = Math.floor(((e.clientX - r.left) / r.width) * board.cols);
-	const y = Math.floor(((e.clientY - r.top) / r.height) * board.rows);
-	board.setChar(x, y, '█'); // yours from here
+	const cell = board.cellAt(e.clientX, e.clientY);
+	if (cell) board.setChar(cell.x, cell.y, '█'); // yours from here
 });
 ```
 
@@ -152,8 +153,8 @@ the label reads what the modules read), never as a widget: a canvas can't be
 focused, arrow-keyed or announced. If you make modules interactive, the
 semantics are yours — layer a real control over or beside the canvas (an
 `<input type="range">` for the scrollbar column, a `<button>` for a tally
-counter) and pass `label: ''` to hide the canvas when the control carries the
-same information.
+counter; `cellRect` gives you the exact place to put it) and pass `label: ''`
+to hide the canvas when the control carries the same information.
 
 ## The sound engine
 

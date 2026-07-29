@@ -104,10 +104,10 @@ on rerun (`npm view` guard); prerelease versions (`-rc.N`) go to the `rc` dist-t
 
 ## Status / next
 
-- **1.0.x–1.7.0 shipped** (latest: 1.7.0 on 2026-07-29 — split-flap **drum
-  zones** (per-field drums, the departure-board pattern) + the CRT
-  accessibility fix (sources hidden with opacity, not visibility)) — **ten**
-  packages in lockstep, all live on npm. NOTE for
+- **1.0.x–1.7.1 shipped** (latest: 1.7.1 on 2026-07-29 — split-flap
+  `cellAt`/`cellRect` hit-testing helpers + non-finite coordinate guards;
+  1.7.0 brought **drum zones** (per-field drums) and the CRT accessibility
+  fix) — **ten** packages in lockstep, all live on npm. NOTE for
   future new packages: npm needs the package to exist before a **trusted publisher**
   can be configured — first-publish a local `-rc.1` with `npm publish --tag rc
 --otp=…`, configure the publisher, then tag (the rc doesn't trip the idempotency

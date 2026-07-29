@@ -115,6 +115,18 @@ export interface SplitFlapBoard {
 	getText(): string[];
 	/** All blanks. */
 	clear(): void;
+	/** The module under a viewport point — pass `e.clientX`/`e.clientY` straight
+	 *  from a pointer event. Null outside the board. The library owns the layout
+	 *  maths; consumers own the listeners (and the accessible control — see the
+	 *  README). */
+	cellAt(clientX: number, clientY: number): { x: number; y: number } | null;
+	/** A module's card window in viewport coordinates (gap and fallen stack
+	 *  excluded) — position a DOM overlay (a focusable control, a tooltip) over
+	 *  a module with it. Null out of range. */
+	cellRect(
+		x: number,
+		y: number
+	): { left: number; top: number; width: number; height: number } | null;
 	setOptions(patch: Partial<SplitFlapOptions>): void;
 	resize(): void;
 	snapshot(): string;
@@ -233,6 +245,7 @@ export function createSplitFlap(
 	let split = 0; // the gap at the hinge line where the drum shows through
 	let halfH = 0; // one flap's height about the hinge
 	let hinge = 0; // hinge-line y within the cell (off-centre when shaded)
+	let stackH = 0; // the fallen-stack band under the bottom flap (shaded only)
 	let micro = false; // too small for physics — flat card + glyph, no flight
 	let boardLayer: HTMLCanvasElement | null = null; // wells, behind the cards
 	let hwLayer: HTMLCanvasElement | null = null; // hinge clips, in front of them
@@ -253,7 +266,7 @@ export function createSplitFlap(
 		// Shaded modules reserve a band under the bottom flap for the FALLEN
 		// stack — the ribbed pile of card edges the real modules show. The
 		// hinge rides up with it; flat mode keeps the pair dead-centre.
-		const stackH = shaded ? cellH * 0.1 : 0;
+		stackH = shaded ? cellH * 0.1 : 0;
 		cardH = cellH * (1 - gap) - split - stackH;
 		halfH = cardH / 2;
 		hinge = (cellH - cardH - split - stackH) / 2 + halfH + split / 2;
@@ -776,8 +789,11 @@ export function createSplitFlap(
 			animate();
 		},
 		setLine(row, text) {
+			// Inverted guards so a non-finite coordinate fails them too: NaN slips
+			// through `row < 0 || row >= rows` and lands in the per-module drum
+			// lookup as drum[NaN] — undefined, not a silent no-op.
 			row = Math.floor(row);
-			if (row < 0 || row >= rows) return;
+			if (!(row >= 0 && row < rows)) return;
 			const line = padCells(text, cols);
 			for (let x = 0; x < cols; x++) command(row * cols + x, line[x]);
 			applyAria();
@@ -786,7 +802,7 @@ export function createSplitFlap(
 		setChar(x, y, ch) {
 			x = Math.floor(x);
 			y = Math.floor(y);
-			if (x < 0 || x >= cols || y < 0 || y >= rows) return;
+			if (!(x >= 0 && x < cols) || !(y >= 0 && y < rows)) return;
 			command(y * cols + x, flapsOf(ch)[0] ?? ' ');
 			applyAria();
 			animate();
@@ -794,12 +810,36 @@ export function createSplitFlap(
 		getChar(x, y) {
 			x = Math.floor(x);
 			y = Math.floor(y);
-			if (x < 0 || x >= cols || y < 0 || y >= rows) return ' ';
+			if (!(x >= 0 && x < cols) || !(y >= 0 && y < rows)) return ' ';
 			return drum[y * cols + x][tgt[y * cols + x]];
 		},
 		getText: getLines,
 		clear() {
 			this.setText([]);
+		},
+		cellAt(clientX, clientY) {
+			const r = canvas.getBoundingClientRect();
+			if (!r.width || !r.height) return null;
+			const x = Math.floor(((clientX - r.left) / r.width) * cols);
+			const y = Math.floor(((clientY - r.top) / r.height) * rows);
+			return x >= 0 && x < cols && y >= 0 && y < rows ? { x, y } : null;
+		},
+		cellRect(x, y) {
+			x = Math.floor(x);
+			y = Math.floor(y);
+			if (!(x >= 0 && x < cols) || !(y >= 0 && y < rows)) return null;
+			const r = canvas.getBoundingClientRect();
+			if (!r.width || !r.height || !w || !h) return null;
+			// The baked metrics live in the canvas's CSS space; scale into the live
+			// rect (the two only differ mid-layout or under CSS transforms).
+			const kx = r.width / w;
+			const ky = r.height / h;
+			return {
+				left: r.left + (x * cellW + (cellW - cardW) / 2) * kx,
+				top: r.top + (y * cellH + (cellH - cardH - split - stackH) / 2) * ky,
+				width: cardW * kx,
+				height: (cardH + split) * ky
+			};
 		},
 		setOptions(patch) {
 			let rebake = false;
