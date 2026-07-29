@@ -4,6 +4,31 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [1.7.1] — 2026-07-29
+
+### Added
+
+- **`@glowbox/split-flap`: `cellAt(clientX, clientY)` and `cellRect(x, y)`** — the
+  pointer↔module mapping, owned by the library that owns the layout maths: `cellAt`
+  turns a pointer event into a module coordinate, `cellRect` turns a module back into
+  the viewport rectangle of its card window (gap and fallen stack excluded — the
+  exact place to put a focusable DOM overlay). The README's clickable-modules recipe
+  now uses them.
+
+### Fixed
+
+- **`@glowbox/split-flap`: non-finite coordinates threw in 1.7.0.**
+  `setChar(NaN, 0, ch)` (also `setLine`/`getChar`) slipped past the bounds guards —
+  NaN fails every comparison — and hit the new per-module drum lookup as
+  `drum[NaN]`, a `TypeError` where 1.6.0's board-global drum made the same index
+  harmless. The guards now reject non-finite coordinates explicitly.
+- **Sound note (not a bug):** an "AudioContext opens without a gesture" report
+  against 1.7.0 reproduced identically on 1.6.0 — and only under CDP-driven probes:
+  a Playwright/Puppeteer `evaluate` runs with `userGesture: true`, permanently
+  activating the page, after which booting audio is exactly what the autoplay
+  policy permits. Measured passively, neither version opens a context without a
+  real gesture. Documented at the gesture gate in both vendored sound engines.
+
 ## [1.7.0] — 2026-07-29
 
 ### Added
