@@ -19,6 +19,14 @@ version and are released together.
   tallies), and when a bar hits the edge every bar halves — renormalisation as a
   full-board cascade. Votes trickle in on their own between taps.
 
+### Changed
+
+- **`@glowbox/split-flap`: the slap joined the family voice.** The card slap now
+  speaks the flip-dot's measured solenoid click stretched ~2× — the same kind of
+  mechanism with a longer throw, a falling card against a flicking disc —
+  replacing 1.6.0's papery low-mid recipe, so the mechanical cores sound like
+  siblings the way they render like siblings.
+
 ## [1.7.1] — 2026-07-29
 
 ### Added
