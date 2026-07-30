@@ -4,7 +4,18 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
-## [Unreleased]
+## [1.8.0] — 2026-07-30
+
+The sixth display core: a **glass-tube neon sign** — the first core to arrive
+after the planned five, and the first to clear the wow bar against a rival as
+cheap as CSS `text-shadow`. It wins by refusing to be a glow filter: the
+letterforms are single-stroke centrelines bent into tubes, the glass is visible
+unlit, power-on is an electrode strike rather than a fade, tubes wear out and
+die, and the sign's only sound is its own transformer following the lit glass.
+Sign artwork composes beside and behind the words (SVG paths in, real overlap
+where a front piece cuts the runs behind it), an invented element lets a sign
+live on a pale wall, and the tubes answer taps. Now **eleven** packages in
+lockstep.
 
 ### Added
 
