@@ -62,7 +62,7 @@ torus — `d.torus()` is axis-aligned/single-colour, see the note in `torus.ts`.
    flasher circuit, and real overlap (`opaque` faces cut the rear tubes shy of
    their edge) — inline glyphs were the wrong model; signs put the martini
    glass beside the word and the front die over the rear one. Filed as a
-   2.x-class *idea*, no committed plan: font-free tube script — generating the
+   2.x-class _idea_, no committed plan: font-free tube script — generating the
    connected letterforms procedurally instead of vendoring Hershey data.
    Honest read: that's typeface design wearing a geometry costume; effort
    unknown and probably large, and the vendored faces are good.
