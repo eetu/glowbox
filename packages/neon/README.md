@@ -91,6 +91,11 @@ subpath, `steady: true` wires it past the flasher cam (the diner border that
 stays lit around the blinking word), and `behind` pieces light first under
 `'reveal'`.
 
+Several pieces can be cut from **one drawing**: give them the same
+`frame: [width, height]` (the drawing's design space) and identical placement,
+and they keep their registration — the multi-colour portrait pattern, where
+the hair, the face and the jacket are separate gases in one artwork.
+
 Pieces can **overlap**: mark the front one `opaque: true` and its closed
 subpaths become a solid face that cuts the tubes of everything behind it in
 z-order, ending each rear run shy of the front edge — glass can't hide glass,

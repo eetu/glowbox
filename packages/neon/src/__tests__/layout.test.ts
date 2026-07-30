@@ -230,6 +230,39 @@ test('opaque art: a fully covered tube is dropped; a dived end keeps no electrod
 	expect(run.ends[0].x).toBeCloseTo(minX);
 });
 
+test('art: a shared frame keeps sibling pieces registered', () => {
+	// Two pieces cut from one 100×100 drawing: without `frame` each would scale
+	// to its own bbox; with it, their coordinates stay in the same space.
+	const a: [number, number][][] = [
+		[
+			[0, 0],
+			[10, 10]
+		]
+	];
+	const b: [number, number][][] = [
+		[
+			[90, 90],
+			[100, 100]
+		]
+	];
+	const l = layoutTubes('HI', 'sans', {
+		art: [
+			{ d: a, place: 'behind', size: 1, frame: [100, 100] },
+			{ d: b, place: 'behind', size: 1, frame: [100, 100] }
+		]
+	});
+	const [pa, pb] = [l.sections[0].strokes[0], l.sections[1].strokes[0]];
+	// Frame corners map symmetrically about the shared centre: a's (0,0) and
+	// b's (100,100) must be point reflections through it.
+	const cx = (pa[0][0] + pb[1][0]) / 2;
+	const cy = (pa[0][1] + pb[1][1]) / 2;
+	expect(pa[1][0] + pb[0][0]).toBeCloseTo(2 * cx); // (10,10) vs (90,90) too
+	expect(pa[1][1] + pb[0][1]).toBeCloseTo(2 * cy);
+	// And both pieces share one scale: equal-length segments stay equal.
+	const len = (p: [number, number][]) => Math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1]);
+	expect(len(pa)).toBeCloseTo(len(pb));
+});
+
 test("art: SVG path data accepted; tubes 'path' splits per subpath", () => {
 	const one = layoutTubes('', 'sans', { art: [{ d: 'M0 0L10 0M0 5L10 5' }] });
 	expect(one.sections.length).toBe(1); // whole piece = one tube

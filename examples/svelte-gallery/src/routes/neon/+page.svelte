@@ -122,6 +122,7 @@
 				options={[
 					{ value: 'cocktails', label: 'Cocktails' },
 					{ value: 'dice', label: 'Dice' },
+					{ value: 'rick', label: 'Never gonna' },
 					{ value: 'vacancy', label: 'No vacancy' },
 					{ value: 'open', label: 'Open' },
 					{ value: 'marquee', label: 'Marquee' },

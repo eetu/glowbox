@@ -37,7 +37,11 @@ version and are released together.
   `opaque: true` makes a piece's closed subpaths a solid face that CUTS the
   tubes behind it shy of its edge — glass can't hide glass, so overlap works
   the way a sign maker does it (the classic overlapping dice pair; fully
-  covered tubes disappear, cut ends keep no electrode). `tilt` sets the whole
+  covered tubes disappear, cut ends keep no electrode). A shared `frame` pins
+  several pieces cut from one drawing to the same design space — the
+  multi-colour portrait pattern (the gallery's tribute singer: neon quiff,
+  helium face, argon jacket, gold notes, white mic — never gonna give you up).
+  `tilt` sets the whole
   text block on the rising diagonal of the classic window sign, and `lineOn`
   gives each text line its own switched circuit — the motel sign's NO cuts to
   unlit glass and strikes back in while VACANCY holds. Wrappers ship

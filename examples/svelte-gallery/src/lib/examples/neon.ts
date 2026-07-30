@@ -8,7 +8,7 @@
 import type { GasName, NeonArt, NeonSign, NeonSignOptions } from '@glowbox/neon';
 
 export type NeonShow =
-	'cocktails' | 'dice' | 'vacancy' | 'open' | 'marquee' | 'gastour' | 'tired' | 'text';
+	'cocktails' | 'dice' | 'rick' | 'vacancy' | 'open' | 'marquee' | 'gastour' | 'tired' | 'text';
 
 // Sign artwork, authored in nib (a rounded die body + circle pips per die) and
 // pasted as SVG path data — the `art` pipeline flattens the cubics into tube
@@ -70,6 +70,85 @@ const COCKTAIL_ART: NeonArt[] = [
 	{ d: OLIVES, place: 'behind', size: 0.42, dx: -0.04, dy: -0.5, gas: 'green', opaque: true }
 ];
 
+// The tribute portrait — a certain singer, hand-authored as single-stroke
+// caricature in ONE 220×280 drawing, split into five pieces that keep their
+// registration via the shared `frame`: each part its own glass colour, the
+// mic `opaque` so it cuts the jacket lines behind its head.
+const RICK_FRAME: [number, number] = [220, 280];
+const RICK_HAIR = [
+	// Outer mass: tall, cresting high — the quiff has VOLUME.
+	'M76 96 C68 78 66 54 74 40 C80 24 90 12 104 6 C124 -2 144 6 150 26 C155 44 152 76 146 96',
+	// The fringe — the hair/forehead boundary, rising hard into the front wave.
+	'M78 70 C84 64 90 54 94 42 C102 52 116 56 130 58 C137 59 143 63 146 70',
+	// The comb direction: the swoosh from the wave up into the mass.
+	'M94 42 C100 26 112 16 128 16',
+	'M76 96L77 106',
+	'M146 96L145 106'
+];
+const RICK_FACE = [
+	'M78 92 C80 114 90 132 111 137 C132 132 142 114 144 92',
+	'M74 88 C70 94 72 102 78 104',
+	'M148 88 C152 94 150 102 144 104',
+	'M88 76 C94 71 102 71 107 75',
+	'M115 75 C120 71 128 71 134 76',
+	'M92 86 C97 84 101 84 105 86',
+	'M117 86 C121 84 125 84 130 86',
+	'M112 84 C111 94 109 100 105 104 C108 107 114 107 117 104',
+	'M99 117a12 8 0 1 0 24 0a12 8 0 1 0 -24 0Z'
+];
+const RICK_JACKET = [
+	'M97 137 C96 144 95 150 94 153',
+	'M125 137 C126 144 127 150 128 153',
+	'M94 153 C70 155 48 158 34 166 C26 172 20 184 16 200',
+	'M128 153 C152 155 174 158 188 166 C196 172 202 184 206 200',
+	'M95 154 C102 170 108 186 112 202',
+	'M127 154 C120 170 114 186 110 202',
+	'M112 202 C112 224 114 248 118 272',
+	'M110 202 C110 224 108 248 104 272'
+];
+const RICK_SHIRT = [
+	'M97 140 C104 148 118 148 125 140',
+	'M100 160L122 160',
+	'M103 172L119 172',
+	'M106 184L116 184'
+];
+const RICK_MIC = [
+	'M64 146 C64 135 108 135 108 146 L103 194 C103 202 69 202 69 194 Z',
+	'M67 156L105 156',
+	'M68 168L104 168',
+	'M69 180L103 180',
+	'M86 202L86 278'
+];
+// Floating eighth-notes — he IS singing: one single, one beamed pair.
+const RICK_NOTES = [
+	'M168 60a6 4.5 0 1 0 12 0a6 4.5 0 1 0 -12 0Z',
+	'M180 58L180 30',
+	'M180 30 C186 32 190 38 188 46',
+	'M185 100a5 4 0 1 0 10 0a5 4 0 1 0 -10 0Z',
+	'M195 98L195 74',
+	'M202 94a5 4 0 1 0 10 0a5 4 0 1 0 -10 0Z',
+	'M212 92L212 68',
+	'M195 74L212 68'
+];
+const rickPiece = (d: string[], gas: GasName, extra?: Partial<NeonArt>): NeonArt => ({
+	d,
+	frame: RICK_FRAME,
+	place: 'left',
+	size: 2.4,
+	dx: -0.15,
+	dy: -0.05,
+	gas,
+	...extra
+});
+const RICK_ART: NeonArt[] = [
+	rickPiece(RICK_JACKET, 'argon'),
+	rickPiece(RICK_SHIRT, 'gold'),
+	rickPiece(RICK_FACE, 'helium'),
+	rickPiece(RICK_HAIR, 'neon'), // the ginger quiff in the gas it deserves
+	rickPiece(RICK_NOTES, 'gold'),
+	rickPiece(RICK_MIC, 'co2', { opaque: true }) // the white tube in front
+];
+
 /** Live knobs a show may read (so edits apply without a restart). */
 export interface NeonKnobs {
 	text(): string;
@@ -117,6 +196,21 @@ const makeCocktails: NeonShowFn = (sign) => {
 	return () => {
 		if (t1) clearTimeout(t1);
 		if (t2) clearTimeout(t2);
+		sign.power(true);
+	};
+};
+
+/** The recurring theme: the tribute portrait beside the words, power-cycling
+ *  forever — this sign is never gonna give you up. */
+const makeRick: NeonShowFn = (sign) => {
+	sign.setOptions({ ...BASE, gas: 'rose', tilt: -8, lineSpacing: 1.15, art: RICK_ART });
+	sign.setText('Never gonna\ngive you up');
+	const loop = setInterval(() => {
+		sign.power(false);
+		setTimeout(() => sign.power(true), 1400);
+	}, 9500);
+	return () => {
+		clearInterval(loop);
 		sign.power(true);
 	};
 };
@@ -217,6 +311,7 @@ const makeText: NeonShowFn = (sign, knobs) => {
 export const NEON_SHOWS: Record<NeonShow, NeonShowFn> = {
 	cocktails: makeCocktails,
 	dice: makeDice,
+	rick: makeRick,
 	vacancy: makeVacancy,
 	open: makeOpen,
 	marquee: makeMarquee,
