@@ -41,10 +41,11 @@ costs nothing.
   edge swings toward the viewer and magnifies past the window near edge-on —
   the physical tell a flat scale-y squash can't fake.
 - **The clack.** `sound: true` (or a `0..1` volume) synthesizes the card
-  landing — a papery band-limited thud over a low stack thump, no pitched ping
-  anywhere. Cascades collapse into a budgeted clatter instead of a buzz. Sound
-  starts on the first user gesture (autoplay policy) and the AudioContext is
-  not created until the page has seen one; survives tab hide/restore.
+  landing — the flip-dot's measured solenoid click stretched to the flap's
+  longer throw, so the mechanical cores speak with one family voice. Cascades
+  collapse into a budgeted clatter instead of a buzz. Sound starts on the
+  first user gesture (autoplay policy) and the AudioContext is not created
+  until the page has seen one; survives tab hide/restore.
 
 ## Drums
 
@@ -161,9 +162,9 @@ to hide the canvas when the control carries the same information.
 `createMechSound({ volume })` is exported on its own: a tiny mechanical-tick
 synth over **one shared, refcounted AudioContext**. A tick is a resonant ping +
 a band-shaped noise burst, all knobs per tick (`freq`, `decay`, `noise`,
-`noiseHz`, `noiseLpHz`, `noiseDecay`, `gain`, `pan`, `delay`) — this copy
-extends the flip-dot original with noise shaping, because a card slap is a
-soft band-limited flutter, not a bright click.
+`noiseHz`, `noiseLpHz`, `noiseDecay`, `gain`, `pan`, `delay`). The board's own
+slap is the flip-dot's measured solenoid recipe stretched ~2× — one mechanism
+family, one voice, two throw lengths.
 
 ## Performance
 
