@@ -7,6 +7,11 @@
 // shapeable (`noiseLpHz`, `noiseDecay`): a solenoid click is a bright snap, a
 // card slap a soft band-limited flutter — same transient, different recipe.
 //
+// `createHum` is the CONTINUOUS voice over the same shared engine — the neon
+// transformer's mains hum. Cores that don't re-export it tree-shake it away
+// (`sideEffects: false`); their size-limit budgets double as the guard for that,
+// so a hum change that stops shaking out shows up as a sibling budget trip.
+//
 // One AudioContext for EVERYTHING: browsers cap live contexts (iOS Safari is the
 // tight one), and a dashboard of boards must not burn one each. All channels share
 // a module-level context + noise buffer, refcounted — the last dispose() closes it.
@@ -74,11 +79,20 @@ let gestureArmed = false;
 const pageActivated = (): boolean =>
 	typeof navigator === 'undefined' || (navigator.userActivation?.hasBeenActive ?? true);
 
+// Continuous voices that deferred their build to the first gesture (a tick simply
+// waits for the next tick; a hum would otherwise stay silent forever on a page the
+// user lights before touching).
+const pendingBoots = new Set<() => void>();
+
 const onGesture = () => {
 	// The gesture either unlocks the existing context or is our cue to finally
 	// create it (in-gesture creation starts running everywhere).
 	if (sharedCtx) void sharedCtx.resume().catch(() => undefined);
 	else if (live > 0) engine();
+	for (const boot of [...pendingBoots]) {
+		pendingBoots.delete(boot);
+		boot();
+	}
 	disarmGesture();
 };
 const disarmGesture = () => {
@@ -243,6 +257,171 @@ export function createMechSound(opts: { volume?: number } = {}): MechSound {
 				channels--;
 				if (channels <= 0) {
 					// Last channel out closes the shared context and frees its thread.
+					disarmGesture();
+					document.removeEventListener('visibilitychange', onVisible);
+					removeEventListener('pageshow', onVisible);
+					void sharedCtx?.close().catch(() => undefined);
+					sharedCtx = null;
+					sharedNoise = null;
+				}
+			}
+		}
+	};
+}
+
+// --- the transformer hum ---------------------------------------------------------
+
+export interface HumVoice {
+	/** How much tube is lit, 0..1 (smoothed ~80 ms). Held at 0 the sources tear
+	 *  down after ~2 s — a dark sign costs no audio graph until re-lit. */
+	setLevel(v: number): void;
+	/** Master volume 0..1. */
+	setVolume(v: number): void;
+	/** Release the voice; the shared AudioContext closes with the last channel. */
+	dispose(): void;
+}
+
+// The hum's ceiling relative to ticks — the reference fixture hums well BENEATH
+// its own startup taps; the hum should be felt under the sign, never carry it.
+const HUM_LEVEL = 0.12;
+
+/** Create a continuous transformer-hum voice: magnetostriction sings at TWICE the
+ *  mains frequency, so `base` is that doubled fundamental in Hz (default 100 for
+ *  50 Hz mains; 120 for 60 Hz), plus a couple of harmonics — one detuned a hair so
+ *  the pair beats like real laminations — and a whisper of low-passed sizzle.
+ *  (A fixture-recording tuning pass once boosted the sub-100 Hz body and the
+ *  1–8 kHz noise to match measured spectra — and was rolled back: those bands
+ *  were the RECORDING, room rumble and noise floor, not the fixture. Trust ears
+ *  over FFTs here; the fixture's own startup taps sit clearly ABOVE its hum.)
+ *  Drive it with `setLevel`. Shares the module's refcounted AudioContext, gesture
+ *  unlock and silent-no-op-without-Web-Audio contract with `createMechSound`. */
+export function createHum(opts: { volume?: number; base?: number } = {}): HumVoice {
+	let volume = Math.max(0, Math.min(1, opts.volume ?? 0.5));
+	const base = opts.base ?? 100;
+	let level = 0;
+	let master: GainNode | null = null; // per-voice gain into the shared context
+	let sources: { stop(): void } | null = null;
+	let stopTimer: ReturnType<typeof setTimeout> | null = null;
+	let disposed = false;
+	live++;
+
+	const boot = (): boolean => {
+		if (disposed) return false;
+		if (master) return true;
+		if (!sharedCtx && !pageActivated()) {
+			// Same restraint as a tick — but a hum has no "next tick" to retry on,
+			// so leave a boot behind for the first gesture to run.
+			armGesture();
+			pendingBoots.add(apply);
+			return false;
+		}
+		const ctx = engine();
+		if (!ctx) return false;
+		master = ctx.createGain();
+		master.gain.value = 0;
+		master.connect(ctx.destination);
+		channels++;
+		return true;
+	};
+
+	const start = () => {
+		if (!sharedCtx || !master || sources) return;
+		const ctx = sharedCtx;
+		const stops: (() => void)[] = [];
+		for (const [mult, gain, detune] of [
+			[1, 1, 0],
+			[2, 0.35, 0.7],
+			[3, 0.16, 0]
+		]) {
+			const osc = ctx.createOscillator();
+			osc.type = 'sine';
+			osc.frequency.value = base * mult + detune;
+			const g = ctx.createGain();
+			g.gain.value = gain;
+			osc.connect(g);
+			g.connect(master);
+			osc.start();
+			stops.push(() => {
+				osc.stop();
+				osc.disconnect();
+				g.disconnect();
+			});
+		}
+		// The corona sizzle riding the hum: looped noise through a lowpass, quiet
+		// enough to feel rather than hear.
+		if (sharedNoise) {
+			const src = ctx.createBufferSource();
+			src.buffer = sharedNoise;
+			src.loop = true;
+			const lp = ctx.createBiquadFilter();
+			lp.type = 'lowpass';
+			lp.frequency.value = 320;
+			const g = ctx.createGain();
+			g.gain.value = 0.12;
+			src.connect(lp);
+			lp.connect(g);
+			g.connect(master);
+			src.start();
+			stops.push(() => {
+				src.stop();
+				src.disconnect();
+				lp.disconnect();
+				g.disconnect();
+			});
+		}
+		sources = { stop: () => stops.forEach((s) => s()) };
+	};
+
+	// Push the current level into the graph, building/starting/stopping as needed.
+	const apply = () => {
+		if (disposed) return;
+		if (level > 0) {
+			if (!boot() || !sharedCtx || !master) return;
+			if (sharedCtx.state !== 'running') {
+				void sharedCtx.resume().catch(() => undefined);
+				armGesture();
+			}
+			if (stopTimer) {
+				clearTimeout(stopTimer);
+				stopTimer = null;
+			}
+			start();
+			// Quick enough that a level following a striking sign audibly flutters.
+			master.gain.setTargetAtTime(volume * volume * level * HUM_LEVEL, sharedCtx.currentTime, 0.05);
+		} else if (master && sharedCtx) {
+			master.gain.setTargetAtTime(0, sharedCtx.currentTime, 0.08);
+			// Sustained dark: the sources are the cost — stop them, keep the channel.
+			stopTimer ??= setTimeout(() => {
+				stopTimer = null;
+				sources?.stop();
+				sources = null;
+			}, 2000);
+		}
+	};
+
+	return {
+		setLevel(v) {
+			level = Math.max(0, Math.min(1, v));
+			apply();
+		},
+		setVolume(v) {
+			volume = Math.max(0, Math.min(1, v));
+			apply();
+		},
+		dispose() {
+			if (disposed) return;
+			disposed = true;
+			live--;
+			pendingBoots.delete(apply);
+			if (stopTimer) clearTimeout(stopTimer);
+			sources?.stop();
+			sources = null;
+			if (live <= 0 && !sharedCtx) disarmGesture();
+			if (master) {
+				master.disconnect();
+				master = null;
+				channels--;
+				if (channels <= 0) {
 					disarmGesture();
 					document.removeEventListener('visibilitychange', onVisible);
 					removeEventListener('pageshow', onVisible);

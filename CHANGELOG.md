@@ -8,6 +8,45 @@ version and are released together.
 
 ### Added
 
+- **`@glowbox/neon` — the sixth display core: a glass-tube neon sign.** Text bent
+  into single-stroke tubes (two vendored Hershey faces: cursive `script`, block
+  `sans`, printable ASCII; custom `NeonFont` for logos), rendered as constant-width
+  glass with electrode stubs — and the glass exists as an object: **unlit tubes stay
+  visible** (phosphor coats show their paint), power-on is a **strike sequence**
+  (electrode arcs, partial-ignition pops, overshoot-settle; near-instant off), `age`
+  runs the franchise wear arc at tube granularity (dim → flickering tube → dead
+  glass), `flicker`/`tired` model unstable electrics, and `program` is the flasher
+  cam (`flash`/`chase`/`reveal` — hard rate-capped below ~3 events/s for
+  photosensitivity, degraded to steady under reduced motion). Gas presets pick the
+  fill (`neon`, `argon`, `helium`, `co2`, phosphor `green`/`gold`/`rose`); `color`
+  takes one colour per line. Optional `sound`: the sign's ONE sound is its
+  electricity — **`createHum`**, a continuous transformer hum (mains-doubled
+  fundamental, muted in hidden tabs) whose level follows the lit glass, so a
+  staggered strike flutters it in from silence and a dropout kills it; the only
+  event sound is a subliminal solenoid tick as each ignition takes (flavour,
+  not foley). Added to the shared vendored sound engine and back-ported
+  byte-identical to flip-dot/split-flap (it tree-shakes out of their dists;
+  their size budgets guard that). The pure `layoutTubes` pipeline is exported for 3D
+  consumers. Sign **artwork** rides along: `art` pieces — single-stroke SVG path
+  data (`pathToStrokes` is exported: the full command vocabulary, arcs and compact
+  flags included, flattened adaptively) or polylines — compose against the text
+  block the way sign makers work (`behind`/`left`/`right`/`above`/`below`, sized
+  to the text, tiltable), each its own tube with its own gas/colour that strikes,
+  ages and dies like any section; `steady: true` wires a piece past the flasher
+  cam (the diner border that stays lit around the blinking word), and
+  `opaque: true` makes a piece's closed subpaths a solid face that CUTS the
+  tubes behind it shy of its edge — glass can't hide glass, so overlap works
+  the way a sign maker does it (the classic overlapping dice pair; fully
+  covered tubes disappear, cut ends keep no electrode). `tilt` sets the whole
+  text block on the rising diagonal of the classic window sign, and `lineOn`
+  gives each text line its own switched circuit — the motel sign's NO cuts to
+  unlit glass and strikes back in while VACANCY holds. Wrappers ship
+  `<NeonSign>` in svelte/react/vue; the gallery grows `/neon` (Cocktails
+  power-cycle, nib-authored dice flanking the word, the worn NO / VACANCY, Open
+  in its steady border ring, flash/chase, a gas tour, the tired transformer,
+  free text with the full tinker set). The Hershey acknowledgement ships inside
+  the package (`HERSHEY_LICENSE`, referenced by the face data) and as
+  `LICENSE-hershey`.
 - **Gallery: two interactive split-flap shows** (demo only, no package changes).
   **Scroller** — a text scrolled by a scrollbar built from the panel itself: the
   right-hand column rides a five-flap rail drum (`' ▲▼░█'`), taps on the arrows turn

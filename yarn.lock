@@ -715,6 +715,22 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@glowbox/neon@workspace:^, @glowbox/neon@workspace:packages/neon":
+  version: 0.0.0-use.local
+  resolution: "@glowbox/neon@workspace:packages/neon"
+  dependencies:
+    "@anarkisti/eslint-config": "npm:^1"
+    "@vitest/browser": "npm:^4.1"
+    "@vitest/browser-playwright": "npm:^4.1"
+    eslint: "npm:^10"
+    playwright: "npm:^1.61"
+    typescript: "npm:^6"
+    vite: "npm:^8.1"
+    vite-plugin-dts: "npm:^5"
+    vitest: "npm:^4.1"
+  languageName: unknown
+  linkType: soft
+
 "@glowbox/nixie@workspace:^, @glowbox/nixie@workspace:packages/nixie":
   version: 0.0.0-use.local
   resolution: "@glowbox/nixie@workspace:packages/nixie"
@@ -738,6 +754,7 @@ __metadata:
     "@anarkisti/eslint-config": "npm:^1"
     "@glowbox/flip-dot": "workspace:^"
     "@glowbox/led-grid": "workspace:^"
+    "@glowbox/neon": "workspace:^"
     "@glowbox/nixie": "workspace:^"
     "@glowbox/seven-segment": "workspace:^"
     "@glowbox/split-flap": "workspace:^"
@@ -824,6 +841,7 @@ __metadata:
     "@anarkisti/eslint-config": "npm:^1"
     "@glowbox/flip-dot": "workspace:^"
     "@glowbox/led-grid": "workspace:^"
+    "@glowbox/neon": "workspace:^"
     "@glowbox/nixie": "workspace:^"
     "@glowbox/seven-segment": "workspace:^"
     "@glowbox/split-flap": "workspace:^"
@@ -853,6 +871,7 @@ __metadata:
     "@anarkisti/eslint-config": "npm:^1"
     "@glowbox/flip-dot": "workspace:^"
     "@glowbox/led-grid": "workspace:^"
+    "@glowbox/neon": "workspace:^"
     "@glowbox/nixie": "workspace:^"
     "@glowbox/seven-segment": "workspace:^"
     "@glowbox/split-flap": "workspace:^"

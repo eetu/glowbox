@@ -54,6 +54,7 @@
 				"react-dom",
 				"react/jsx-runtime",
 				"@glowbox/flip-dot",
+				"@glowbox/neon",
 				"@glowbox/split-flap",
 				"@glowbox/led-grid",
 				"@glowbox/nixie",
@@ -68,6 +69,7 @@
 	"dependencies": {
 		"@glowbox/flip-dot": "workspace:^",
 		"@glowbox/led-grid": "workspace:^",
+		"@glowbox/neon": "workspace:^",
 		"@glowbox/nixie": "workspace:^",
 		"@glowbox/seven-segment": "workspace:^",
 		"@glowbox/split-flap": "workspace:^"
