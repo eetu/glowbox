@@ -42,6 +42,8 @@ export const NeonSign = defineComponent({
 		gas: { type: String as PropType<NeonSignOptions['gas']>, default: undefined },
 		/** The wall behind the sign; null = transparent canvas. */
 		wall: { type: [String, Array] as PropType<NeonSignOptions['wall']>, default: undefined },
+		/** Discharge direction: emit (light) or the invented absorb (dark ink). */
+		polarity: { type: String as PropType<NeonSignOptions['polarity']>, default: undefined },
 		// default: undefined (not the Boolean-absent → false cast) so the core's own
 		// defaults apply when the prop is omitted.
 		/** Power — off leaves the unlit glass visible; on re-strikes. */
@@ -85,6 +87,7 @@ export const NeonSign = defineComponent({
 			color: props.color,
 			gas: props.gas,
 			wall: props.wall,
+			polarity: props.polarity,
 			on: props.on,
 			lineOn: props.lineOn,
 			glow: props.glow,

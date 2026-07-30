@@ -30,6 +30,8 @@ export interface NeonSignProps {
 	gas?: NeonSignOptions['gas'];
 	/** The wall behind the sign; null = transparent canvas. */
 	wall?: NeonSignOptions['wall'];
+	/** Discharge direction: 'emit' (light) or the invented 'absorb' (dark ink). */
+	polarity?: NeonSignOptions['polarity'];
 	/** Power — off leaves the unlit glass visible; on re-strikes. */
 	on?: boolean;
 	/** Per-text-line circuits (the motel sign's separately switched NO). */
@@ -82,6 +84,7 @@ export const NeonSign = forwardRef<NeonSignHandle | null, NeonSignProps>(
 			color,
 			gas,
 			wall,
+			polarity,
 			on,
 			lineOn,
 			glow,
@@ -123,6 +126,7 @@ export const NeonSign = forwardRef<NeonSignHandle | null, NeonSignProps>(
 				color: p.color,
 				gas: p.gas,
 				wall: p.wall,
+				polarity: p.polarity,
 				on: p.on,
 				lineOn: p.lineOn,
 				glow: p.glow,
@@ -169,6 +173,7 @@ export const NeonSign = forwardRef<NeonSignHandle | null, NeonSignProps>(
 				color,
 				gas,
 				wall,
+				polarity,
 				on,
 				lineOn,
 				glow,
@@ -196,6 +201,7 @@ export const NeonSign = forwardRef<NeonSignHandle | null, NeonSignProps>(
 			color,
 			gas,
 			wall,
+			polarity,
 			on,
 			lineOn,
 			glow,

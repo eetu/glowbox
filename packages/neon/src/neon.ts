@@ -9,6 +9,9 @@
 //     filled glyph.
 //   • The unlit tube is drawn, always: powered off or dead, the glass still hangs
 //     on the wall (phosphor-coated gases show their paint; clear gases pale glass).
+//   • `polarity: 'absorb'` is the one INVENTED part: an element whose discharge
+//     runs dark, inking a pale wall instead of lighting a dark one — the same
+//     ramp multiplied in rather than added, so neon can live in a light theme.
 //   • A strike is a SEQUENCE, not a fade-in: the electrodes arc while the tube
 //     stays dark, ignition takes with a few partial pops, overshoots white-hot and
 //     settles. Turn-off is near-instant — the discharge just stops.
@@ -63,9 +66,19 @@ export interface NeonSignOptions {
 	/** What's in the glass (default 'neon' — the red-orange): picks the lit
 	 *  colour, the hot-core whiteness and the unlit tint. */
 	gas?: GasName;
-	/** The wall behind the sign (default near-black '#0b0b0e'; null = transparent
-	 *  canvas — compose the sign over your own backdrop). */
+	/** The wall behind the sign (default near-black under `polarity: 'emit'`,
+	 *  near-white under 'absorb'; null = transparent canvas — compose the sign
+	 *  over your own backdrop). */
 	wall?: Color | null;
+	/** Which way the discharge runs (default 'emit' — light, like every real
+	 *  tube). **'absorb' is invented**: an element whose discharge runs DARK, so
+	 *  the tubes ink the wall instead of lighting it — halation, hot core and all,
+	 *  multiplied into the surface rather than added to it. No such gas exists;
+	 *  that's the joke, and it's the honest way to put a neon sign on a pale wall
+	 *  (a bloom cannot read against white — the light-theme answer). Colours still
+	 *  come from `gas`/`color`, darkened into ink: a white tube inverts into a
+	 *  literal black light. */
+	polarity?: 'emit' | 'absorb';
 	/** Power (default true). Off is not blank: the unlit glass stays visible. */
 	on?: boolean;
 	/** Per-text-line circuits (default: all on) — the motel sign's separately
@@ -145,6 +158,7 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [
 	a[2] + (b[2] - a[2]) * t
 ];
 const WHITE: RGB = [1, 1, 1];
+const BLACK: RGB = [0, 0, 0];
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 const fract = (x: number) => x - Math.floor(x);
 
@@ -185,7 +199,12 @@ export function createNeonSign(
 	let art = opts.art;
 	let colorOpt = opts.color ?? undefined;
 	let gas: GasName = opts.gas ?? 'neon';
-	let wall = opts.wall === null ? null : parseColor(opts.wall ?? '#0b0b0e');
+	let polarity = opts.polarity ?? 'emit';
+	// A wall the consumer never named follows the polarity (dark for emitted
+	// light, pale for absorbed); an explicit one is theirs and never moves.
+	const wallExplicit = opts.wall !== undefined;
+	const defaultWall = () => (polarity === 'emit' ? '#0b0b0e' : '#f3f2ef');
+	let wall = opts.wall === null ? null : parseColor(opts.wall ?? defaultWall());
 	let on = opts.on ?? true;
 	let lineOn = opts.lineOn;
 	let glow = clamp01(opts.glow ?? 0.7);
@@ -386,19 +405,32 @@ export function createNeonSign(
 		const compact = capPx < 28;
 		const blur = (f: number) => Math.min(capPx * f * glow, 160);
 
+		// Emitted light ADDS to the wall; absorbed light MULTIPLIES into it — the
+		// same ramp run backwards, so every pass below is polarity-agnostic apart
+		// from where its colours point.
+		const emit = polarity === 'emit';
+		const core = emit ? WHITE : BLACK;
+
 		for (let i = 0; i < n; i++) {
 			const spec = specFor(lay.sections[i]);
 			const p = pathFor(i);
 			const lvl = Math.min(1.15, lit[i]) * worn(i) * dip[i];
+			// The ink an absorbing tube discharges: the gas colour taken down toward
+			// black, so a white tube really does shine black.
+			const gasCol = emit ? spec.color : mix(spec.color, BLACK, 0.5);
 
 			// The glass itself — always there, lit or not. Coated tubes show their
-			// paint; clear ones pale glass with a hint of the gas.
+			// paint; clear ones pale glass with a hint of the gas. On a pale wall the
+			// neutral pass has to darken instead of lighten to read at all.
 			if (!(micro && lvl > 0.5)) {
 				g.shadowBlur = 0;
-				g.strokeStyle = 'rgba(158,163,175,0.10)';
+				g.strokeStyle = emit ? 'rgba(158,163,175,0.10)' : 'rgba(74,76,84,0.13)';
 				g.lineWidth = T * 1.25;
 				g.stroke(p);
-				g.strokeStyle = rgba(spec.unlit, spec.coated ? 0.22 : 0.11);
+				g.strokeStyle = rgba(
+					emit ? spec.unlit : mix(spec.unlit, BLACK, 0.35),
+					spec.coated ? 0.22 : 0.11
+				);
 				g.lineWidth = T * 0.95;
 				g.stroke(p);
 			}
@@ -453,24 +485,27 @@ export function createNeonSign(
 								[0.04, 0.5, 0.5, 0.65],
 								[0.03, 0.55, 0.3, 1]
 							];
-				g.shadowColor = rgba(spec.color, 1);
+				g.shadowColor = rgba(gasCol, 1);
+				if (!emit) g.globalCompositeOperation = 'multiply';
 				for (const [blurF, alpha, lwF, wm] of layers) {
 					const a = wm >= 0.6 ? alpha * lvl * lvl : alpha * lvl;
 					g.shadowBlur = blur(blurF) * Math.min(1, lvl);
-					g.strokeStyle = rgba(wm ? mix(spec.color, WHITE, spec.core * wm) : spec.color, a);
+					g.strokeStyle = rgba(wm ? mix(gasCol, core, spec.core * wm) : gasCol, a);
 					g.lineWidth = T * lwF;
 					g.stroke(p);
 				}
 				g.shadowBlur = 0;
+				g.globalCompositeOperation = 'source-over';
 			}
 
 			// The electrode arc while the tube is still dark: bright sparks at both
 			// ends, jittering frame to frame the way a starting arc does.
 			if (strikeT[i] >= 0 && strikeT[i] < 0.2 && !micro) {
-				g.shadowColor = rgba(spec.color, 1);
+				g.shadowColor = rgba(gasCol, 1);
 				g.shadowBlur = blur(0.2);
+				if (!emit) g.globalCompositeOperation = 'multiply';
 				for (const e of lay.sections[i].ends) {
-					g.fillStyle = rgba(mix(spec.color, WHITE, 0.85), 0.5 + Math.random() * 0.5);
+					g.fillStyle = rgba(mix(gasCol, core, 0.85), 0.5 + Math.random() * 0.5);
 					g.beginPath();
 					g.arc(
 						e.x + (Math.random() - 0.5) * T * 0.5,
@@ -482,6 +517,7 @@ export function createNeonSign(
 					g.fill();
 				}
 				g.shadowBlur = 0;
+				g.globalCompositeOperation = 'source-over';
 			}
 		}
 	}
@@ -827,6 +863,12 @@ export function createNeonSign(
 			}
 			if (patch.wall !== undefined) {
 				wall = patch.wall === null ? null : parseColor(patch.wall);
+				redraw = true;
+			}
+			if (patch.polarity != null && patch.polarity !== polarity) {
+				polarity = patch.polarity;
+				// An unnamed wall follows the flip; the consumer's own never moves.
+				if (!wallExplicit && wall) wall = parseColor(defaultWall());
 				redraw = true;
 			}
 			if (patch.glow != null) {

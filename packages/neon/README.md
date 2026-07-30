@@ -118,6 +118,24 @@ phosphor-coated `'green'` / `'gold'` / `'rose'` (visibly painted even off).
 (the NO / VACANCY pattern) — while the gas keeps shaping the core and the
 unlit glass. Patch `color: null` to go back to the gas.
 
+## The light-theme answer: an element that shines dark
+
+A bloom cannot read against white — which normally means neon signs only live
+on dark walls. So the core ships one **invented** element:
+`polarity: 'absorb'`. Its discharge runs _dark_: the same graduated ramp,
+multiplied into the wall instead of added to it, so the tubes **ink** a pale
+surface — halation, hot core, arcing electrodes and all, just inverted.
+
+```ts
+createNeonSign(canvas, { text: 'dice', polarity: 'absorb' }); // wall defaults pale
+```
+
+Gas colours still apply, taken down toward black as ink — so a `co2` white
+tube inverts into a literal black light. An unnamed `wall` follows the
+polarity (near-black when emitting, near-white when absorbing); a wall you
+set is yours and never moves. Pair it with your app's theme and the sign
+belongs in both.
+
 ## Programs — the flasher cam
 
 `program` is sign **hardware**, not content: `'steady'`, `'flash'` (the whole
@@ -136,7 +154,8 @@ to steady, snaps strikes, and disables flicker/tired.
 | `art`           | —             | single-stroke pieces behind/beside the text (see Artwork)     |
 | `gas`           | `'neon'`      | what's in the glass (colour, hot core, dead-glass tint)       |
 | `color`         | —             | override: one colour or one per line; `null` clears           |
-| `wall`          | near-black    | behind the sign; `null` = transparent canvas                  |
+| `wall`          | per polarity  | behind the sign; `null` = transparent canvas                  |
+| `polarity`      | `'emit'`      | `'absorb'` = the invented dark discharge (light-theme signs)  |
 | `on`            | `true`        | off is not blank — the unlit glass stays visible              |
 | `lineOn`        | all on        | per-line circuits (the motel sign's separately switched NO)   |
 | `glow`          | `0.7`         | halation strength                                             |

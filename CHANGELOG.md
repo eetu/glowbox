@@ -37,7 +37,12 @@ version and are released together.
   `opaque: true` makes a piece's closed subpaths a solid face that CUTS the
   tubes behind it shy of its edge — glass can't hide glass, so overlap works
   the way a sign maker does it (the classic overlapping dice pair; fully
-  covered tubes disappear, cut ends keep no electrode). A shared `frame` pins
+  covered tubes disappear, cut ends keep no electrode). **`polarity: 'absorb'`
+  is the one invented element**: a discharge that runs DARK, multiplying the
+  same ramp into a pale wall instead of adding it to a dark one — because a
+  bloom cannot read against white, and a sign should belong in a light theme
+  too (gas colours darken into ink, so a white tube inverts into a literal
+  black light; an unnamed `wall` follows the polarity). A shared `frame` pins
   several pieces cut from one drawing to the same design space — the
   multi-colour portrait pattern (the gallery's tribute singer: neon quiff,
   helium face, argon jacket, gold notes, white mic — never gonna give you up).

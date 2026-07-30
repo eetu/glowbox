@@ -144,6 +144,23 @@ test("lineOn cuts one line's circuit to unlit glass and strikes it back", () => 
 	expect(energy(canvas, 0, 0.45)).toBeGreaterThan(both * 0.6); // strikeMs 0 → back instantly
 });
 
+test("polarity 'absorb' inverts the discharge: the lit sign DARKENS its wall", () => {
+	// The invented element — tubes that ink a pale wall instead of lighting a
+	// dark one, so a sign can live in a light theme.
+	const { canvas, sign } = mount({ text: 'DAY', font: 'sans', strikeMs: 0 });
+	const emitLit = energy(canvas); // default: light tubes on the dark default wall
+	sign.setOptions({ polarity: 'absorb' });
+	const absorbLit = energy(canvas);
+	// The unnamed wall followed the flip to pale, so the frame got much brighter…
+	expect(absorbLit).toBeGreaterThan(emitLit * 2);
+	// …and now switching the tubes OFF must brighten it further: lit glass is the
+	// darkest thing on an absorbing sign.
+	sign.power(false);
+	expect(energy(canvas)).toBeGreaterThan(absorbLit);
+	sign.power(true);
+	expect(energy(canvas)).toBeCloseTo(absorbLit, -3);
+});
+
 test('art pieces flank the text and carry their own colours', () => {
 	const box = 'M0 0L40 0 40 40 0 40Z';
 	const { canvas } = mount({

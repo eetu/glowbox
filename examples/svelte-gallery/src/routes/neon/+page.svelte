@@ -25,6 +25,18 @@
 	let speed = $state(1);
 	let wallColor = $state('#0b0b0e');
 	let backdrop = $state('#0a0a0e');
+	// The invented element: tubes that ink a pale wall instead of lighting a dark
+	// one. Flipping it drags the scene colours along — dark ink on a dark wall is
+	// invisible, and that trap isn't worth making the visitor discover.
+	let polarity = $state<'emit' | 'absorb'>('emit');
+	let lastPolarity = 'emit';
+	$effect(() => {
+		if (polarity === lastPolarity) return;
+		lastPolarity = polarity;
+		const pale = polarity === 'absorb';
+		wallColor = pale ? '#f3f2ef' : '#0b0b0e';
+		backdrop = pale ? '#e9e8e3' : '#0a0a0e';
+	});
 	let crtOn = $state(false);
 	let panelOpen = $state(false);
 	const onKeydown = (e: KeyboardEvent) => {
@@ -53,6 +65,7 @@
 				strikeMs,
 				speed,
 				wall: wallColor,
+				polarity,
 				sound: soundOn ? volume : 0
 			}))
 		);
@@ -68,6 +81,7 @@
 			strikeMs,
 			speed,
 			wall: wallColor,
+			polarity,
 			sound: soundOn ? volume : 0
 		});
 	});
@@ -263,6 +277,17 @@
 
 		<section>
 			<h2>scene</h2>
+			<div class="row">
+				<span class="rlabel">tubes</span>
+				<Segmented
+					bind:value={polarity}
+					ariaLabel="polarity"
+					options={[
+						{ value: 'emit', label: 'Shine' },
+						{ value: 'absorb', label: 'Ink' }
+					]}
+				/>
+			</div>
 			<div class="row">
 				<span class="rlabel">wall</span>
 				<input type="color" bind:value={wallColor} aria-label="wall colour" />
