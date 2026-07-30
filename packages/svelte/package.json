@@ -51,7 +51,7 @@
 		{
 			"name": "shipped files (no bundle — components ship as .svelte source)",
 			"path": "dist/**/*.{js,svelte}",
-			"limit": "6.5 kB"
+			"limit": "8 kB"
 		}
 	],
 	"peerDependencies": {
@@ -60,6 +60,7 @@
 	"dependencies": {
 		"@glowbox/flip-dot": "workspace:^",
 		"@glowbox/led-grid": "workspace:^",
+		"@glowbox/neon": "workspace:^",
 		"@glowbox/nixie": "workspace:^",
 		"@glowbox/seven-segment": "workspace:^",
 		"@glowbox/split-flap": "workspace:^"

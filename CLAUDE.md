@@ -1,8 +1,8 @@
 # glowbox — repo overview
 
-Glowing retro **display components** shipped as installable npm packages: five
+Glowing retro **display components** shipped as installable npm packages: six
 framework-agnostic rendering cores (a 3D WebGL LED grid + 2D-canvas nixie tube,
-seven-segment, flip-dot and split-flap displays), thin Svelte/React/Vue wrappers over all, and
+seven-segment, flip-dot, split-flap and neon-sign displays), thin Svelte/React/Vue wrappers over all, and
 content helpers — developed in a
 Yarn-workspaces monorepo with a runnable demo SPA. Part of eetu's homebrew family
 (Svelte, halo-design, ts-style) — but it is a **library**, not a self-hosted app:
@@ -17,13 +17,14 @@ packages/
   seven-segment/ @glowbox/seven-segment — 2D-canvas 7-seg core: per-segment fades, ageing→dead segments, LED/VFD styles. Zero deps.
   flip-dot/  @glowbox/flip-dot — 2D-canvas electromechanical board: physical disc/vane flips, scan-wave stagger, ditherFrame, shared-AudioContext solenoid click (createMechSound = split-flap groundwork). Zero deps.
   split-flap/ @glowbox/split-flap — 2D-canvas Solari board: drum-of-cards model (forward-only wraps), perspective falls, grapheme drums + drum zones (per-field drums) + chroma drums (chromaDrum/paletteFrame/FlapFace), card-slap sound (vendored createMechSound + noise shaping). Zero deps.
+  neon/      @glowbox/neon     — 2D-canvas glass-tube neon sign: single-stroke tube letterforms (vendored Hershey script+sans faces, custom NeonFont escape hatch), sign art (SVG path data → tubes via pathToStrokes, placed behind/beside the text, own gas/colour + flasher circuit, `opaque` faces cut rear tubes for real overlap), visible unlit glass, electrode strike sequences, wear arc, rate-capped flasher programs, transformer hum (createHum in the vendored sound engine; Hershey ack ships as HERSHEY_LICENSE + LICENSE-hershey). Zero deps.
   crt/       @glowbox/crt      — composable CRT effect over any canvas/element (WebGL pass; curvature, persistence, event forwarding). Zero deps.
-  svelte/    @glowbox/svelte   — Svelte 5 <LedGrid> + <NixieTube> + <SevenSegment> + <FlipDots> + <SplitFlap> (ships .svelte source).
+  svelte/    @glowbox/svelte   — Svelte 5 <LedGrid> + <NixieTube> + <SevenSegment> + <FlipDots> + <SplitFlap> + <NeonSign> (ships .svelte source).
   react/     @glowbox/react    — React 18/19 components (dist carries 'use client').
   vue/       @glowbox/vue      — Vue 3 render-function components.
   extras/    @glowbox/extras   — GIF/image players + text helper over the draw API (bundles gifuct-js).
 examples/
-  svelte-gallery/              — SvelteKit SPA demo (LED programs + /nixie + /seven + /flipdot + /splitflap) → GitHub Pages.
+  svelte-gallery/              — SvelteKit SPA demo (LED programs + /nixie + /seven + /flipdot + /splitflap + /neon) → GitHub Pages.
 scripts/
   publish-smoke.mjs            — publish-integrity smoke test (see Testing).
 docs/ROADMAP.md                — direction (strategic bets; 1.1/1.2 themes shipped).
@@ -107,7 +108,9 @@ on rerun (`npm view` guard); prerelease versions (`-rc.N`) go to the `rc` dist-t
 - **1.0.x–1.7.1 shipped** (latest: 1.7.1 on 2026-07-29 — split-flap
   `cellAt`/`cellRect` hit-testing helpers + non-finite coordinate guards;
   1.7.0 brought **drum zones** (per-field drums) and the CRT accessibility
-  fix) — **ten** packages in lockstep, all live on npm. NOTE for
+  fix) — **eleven** packages in lockstep: ten live on npm, plus
+  **`@glowbox/neon` in-tree awaiting its first release (1.8.0)** — its first
+  publish needs the new-package flow in the NOTE below. NOTE for
   future new packages: npm needs the package to exist before a **trusted publisher**
   can be configured — first-publish a local `-rc.1` with `npm publish --tag rc
 --otp=…`, configure the publisher, then tag (the rc doesn't trip the idempotency
@@ -117,8 +120,10 @@ on rerun (`npm view` guard); prerelease versions (`-rc.N`) go to the `rc` dist-t
   happened this way), and mind that the rc briefly holds the `latest` dist-tag
   until the stable ships.
 - **Direction:** see `docs/ROADMAP.md` — the strategic bets: `@glowbox/bridge`
-  (WLED/DDP hardware streaming; the planned display cores are all shipped — a new
-  one must clear the wow-over-trivial-alternative bar), trigger-based WebGL2 renderer (the only 2.0).
+  (WLED/DDP hardware streaming), trigger-based WebGL2 renderer (the only 2.0). The
+  planned cores all shipped; **neon** was the first post-plan core to clear the
+  wow-over-trivial-alternative bar (the glass simulation, not a text-shadow) — the
+  bar stands for any next one.
 
 ## Out of scope
 

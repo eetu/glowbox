@@ -1,0 +1,207 @@
+# @glowbox/neon
+
+A **glass-tube neon sign component** — a sibling rendering core to
+**[@glowbox/nixie](https://www.npmjs.com/package/@glowbox/nixie)**,
+**[@glowbox/led-grid](https://www.npmjs.com/package/@glowbox/led-grid)**,
+**[@glowbox/seven-segment](https://www.npmjs.com/package/@glowbox/seven-segment)**,
+**[@glowbox/flip-dot](https://www.npmjs.com/package/@glowbox/flip-dot)** and
+**[@glowbox/split-flap](https://www.npmjs.com/package/@glowbox/split-flap)**.
+CSS `text-shadow` puts a glow on any font for free; this gives you the
+**glass**: tubes bent from single-stroke letterforms that exist as objects —
+visible unlit, struck alive through arcing electrodes, ageing until a section
+dies — with an optional transformer hum. Zero runtime deps.
+
+```sh
+yarn add @glowbox/neon
+```
+
+```ts
+import { createNeonSign } from '@glowbox/neon';
+
+const sign = createNeonSign(canvas, { text: 'Cocktails', gas: 'rose', sound: true });
+sign?.power(false); // dark glass on the wall
+sign?.power(true); // …and the strike sequence
+```
+
+Give it a canvas; it owns the 2D render, the strike/flicker animation, resize,
+and the render loop — which runs **only while something is in flight**; a
+resting sign, lit or dark, costs nothing.
+
+## What a text-shadow can't do
+
+- **Real tube geometry.** Letterforms are **stroked centrelines** — the path
+  the glass bender follows — from vendored Hershey single-stroke faces, corner-
+  rounded into bends, one constant-width tube per section with an electrode
+  stub at each free end. Categorically different from glowing filled Helvetica.
+- **The unlit tube is drawn, always.** Powered off or dead, the glass still
+  hangs on the wall: phosphor-coated fills show their paint, clear gases pale
+  glass. A text-shadow at 0 opacity is nothing.
+- **A strike is a sequence, not a fade-in.** The electrodes arc while the tube
+  stays dark, ignition takes with a few partial pops, overshoots white-hot and
+  settles; sections stagger like independently-warming tubes ('reveal' walks
+  them in order). Turn-off is near-instant — the discharge just stops.
+- **The wear arc.** `age` applies deterministic per-tube dimming; past ~0.7 the
+  most-worn section starts flickering, from ~0.95 it is dead glass while the
+  runner-up takes over — the MOT L sign, at tube granularity.
+- **The transformer.** `sound: true` hums at twice the mains frequency (level
+  tracking how much tube is lit — it dies with a dropout) with a crackle as
+  ignition takes. `tired: true` is the failing transformer: hard whole-sign
+  dropouts, staggered re-strikes.
+
+## Letterforms
+
+Two faces are vendored as packed single-stroke data (a few kB total):
+**`'script'`** (Hershey Script — connected cursive, the classic window sign;
+one tube runs a whole word) and **`'sans'`** (Hershey Simplex — block channel
+letters, one tube per glyph). Coverage is **printable ASCII**; anything else is
+skipped with one dev warning. Emoji/CJK are out of scope.
+
+The `font` option also takes a custom **`NeonFont`** — a glyph table of
+centreline polylines (y-down, baseline 0) with `capHeight`/`ascent`/`descent`.
+A one-glyph face whose strokes are your logo works.
+
+The Hershey Fonts were originally created by Dr. A. V. Hershey while working
+at the U. S. National Bureau of Standards; the format of the font data was
+originally created by James Hurt (Cognition, Inc.). The acknowledgement ships
+inside the package as the `HERSHEY_LICENSE` export (referenced by the face
+data, so bundlers keep it) and as `LICENSE-hershey`; full terms there.
+
+## Artwork
+
+Real signs put the martini glass beside the word, not in it. `art` composes
+single-stroke pieces against the text block:
+
+```ts
+createNeonSign(canvas, {
+	text: 'dice',
+	gas: 'co2',
+	art: [
+		{ d: DIE_LEFT, place: 'left', rotate: -12, color: '#ff3355' },
+		{ d: DIE_RIGHT, place: 'right', rotate: 9, color: '#7cd5ff' }
+	]
+});
+```
+
+`d` is SVG path data (a `d` string or several — author in any vector editor)
+or centreline polylines. `place` anchors the piece `behind` the text or beside
+it (`left`/`right`/`above`/`below`); `size` scales it against the text block's
+height, `dx`/`dy` nudge, `rotate` tilts. Each piece is its own tube — its own
+`gas`/`color`, its own strike, wear and death; `tubes: 'path'` splits it per
+subpath, `steady: true` wires it past the flasher cam (the diner border that
+stays lit around the blinking word), and `behind` pieces light first under
+`'reveal'`.
+
+Pieces can **overlap**: mark the front one `opaque: true` and its closed
+subpaths become a solid face that cuts the tubes of everything behind it in
+z-order, ending each rear run shy of the front edge — glass can't hide glass,
+so the sign maker ends the run. Cut ends read as the tube diving behind (no
+electrode stub); a fully covered tube disappears. That's the classic
+overlapping dice pair: rear die first in the list, front die `opaque`.
+
+Author **centrelines**: a filled icon's outline strokes as a double-walled
+silhouette. Put the bends in the path itself — text corners are auto-rounded,
+art is not. `pathToStrokes(d)` is exported on its own (pure, node-safe) for
+custom-font glyphs and 3D consumers.
+
+## Gas & colour
+
+`gas` picks what's in the glass — it sets the lit colour, how white-hot the
+core runs, and what the dead glass looks like: `'neon'` (the red-orange the
+medium is named for), `'argon'` (pale blue), `'helium'`, `'co2'`, and the
+phosphor-coated `'green'` / `'gold'` / `'rose'` (visibly painted even off).
+`color` overrides the lit colour — a single colour or **one per text line**
+(the NO / VACANCY pattern) — while the gas keeps shaping the core and the
+unlit glass. Patch `color: null` to go back to the gas.
+
+## Programs — the flasher cam
+
+`program` is sign **hardware**, not content: `'steady'`, `'flash'` (the whole
+sign), `'chase'` (a dark slot running the sections), `'reveal'` (sequential
+strike on power-on/setText). `speed` multiplies the cam rate, but every
+program is **hard-capped below ~3 events/s** — a photosensitivity guard the
+speed knob cannot defeat — and `prefers-reduced-motion` degrades every program
+to steady, snaps strikes, and disables flicker/tired.
+
+## Options
+
+| option          | default       | notes                                                         |
+| --------------- | ------------- | ------------------------------------------------------------- |
+| `text`          | `''`          | `'\n'` splits lines                                           |
+| `font`          | `'script'`    | `'script'` \| `'sans'` \| custom `NeonFont`                   |
+| `art`           | —             | single-stroke pieces behind/beside the text (see Artwork)     |
+| `gas`           | `'neon'`      | what's in the glass (colour, hot core, dead-glass tint)       |
+| `color`         | —             | override: one colour or one per line; `null` clears           |
+| `wall`          | near-black    | behind the sign; `null` = transparent canvas                  |
+| `on`            | `true`        | off is not blank — the unlit glass stays visible              |
+| `lineOn`        | all on        | per-line circuits (the motel sign's separately switched NO)   |
+| `glow`          | `0.7`         | halation strength                                             |
+| `age`           | `0`           | wear 0..1: dimming → flickering tube → dead glass             |
+| `flicker`       | `0`           | electrical instability: sparse scheduled dips                 |
+| `tired`         | `false`       | failing transformer: whole-sign dropouts + re-strikes         |
+| `program`       | `'steady'`    | the flasher cam (rate-capped)                                 |
+| `speed`         | `1`           | cam rate multiplier (the cap always wins)                     |
+| `tubes`         | `'auto'`      | sectioning: script→word, sans→glyph; or `glyph`/`word`/`line` |
+| `align`         | `'center'`    | per-line alignment                                            |
+| `lineSpacing`   | `1.1`         | baseline advance × the face's ascent+descent                  |
+| `letterSpacing` | `0`           | extra tracking (fraction of cap height); breaks script joins  |
+| `tilt`          | `0`           | text block tilt, degrees (negative rises left-to-right)       |
+| `padding`       | `0.08`        | canvas margin fraction                                        |
+| `strikeMs`      | `900`         | one tube's strike (0 = instant; forced by reduced motion)     |
+| `sound`         | off           | `true` (= 0.5) or `0..1` — the hum that follows the glass     |
+| `mains`         | `50`          | 50/60 Hz — the hum's fundamental is twice this                |
+| `pixelRatio`    | `2`           | cap on devicePixelRatio                                       |
+| `label`         | `'neon sign'` | `aria-label`; the shown text is appended; `''` hides          |
+
+All options update live via `setOptions(patch)`. API: `setText(text)` (a
+change **re-glasses and strikes on**), `power(on)` (the wall switch),
+`resize()`, `snapshot()` (PNG data URL), `dispose()` (hands the canvas back
+clean). A sign is created lit — no boot animation; the strike show is opt-in
+via `power()` cycling, `setText`, or `program: 'reveal'`.
+
+## Tube sections
+
+A **section** is the unit that strikes, flickers, ages and dies together — one
+electrode pair. `'auto'` matches the faces' physical reality: script words are
+one continuously-bent tube, sans letters are individual channel tubes.
+`tubes: 'line'` gives one tube per text line (per-line colours pair well).
+Grouping is behavioural, not geometric — script glyphs join approximately at
+the baseline, the way real signs carry blockout breaks.
+
+## The sound engine
+
+The sign's voice is **its electricity**. The transformer hum's level follows
+the lit glass, so a staggered strike flutters it in from silence as the tubes
+pop through their ignition flickers, wear dips duck it, and a dropout kills it
+dead — the only event sound is a subliminal solenoid tick as each tube's
+starter engages and its ignition takes (flavour, not foley). The voice is
+**`createHum({ volume, base })`**, exported on its own: a continuous synth
+over the shared, refcounted AudioContext (the mains-doubled fundamental plus
+detuned harmonics and a whisper of low-passed sizzle), driven by
+`setLevel(0..1)`. Held at 0 it tears its sources down; hidden tabs mute it.
+`createMechSound` (the mechanical cores' tick synth) rides along in the same
+vendored engine. Sound starts on the first user gesture — nothing to wire up.
+
+## For 3D consumers
+
+The text→tube pipeline is pure and exported: `layoutTubes(text, font, opts)`
+returns the corner-rounded centreline polylines + electrode ends per section
+in sign units (y-down, baseline 0) — extrude them into real tube geometry on
+your side, the way nixie's `nixieCathodes` tells the same story. Runs in bare
+node.
+
+## Performance
+
+Path2D per section, built lazily and cached until the text/font changes;
+passes are stroked with `shadowBlur` capped and an LOD that drops halation and
+electrodes below ~28 px cap height. A sign is typically 5–30 sections — the
+render loop stops the moment the last transient settles.
+
+---
+
+Framework wrappers ship `<NeonSign>` alongside the other cores:
+**[@glowbox/svelte](https://www.npmjs.com/package/@glowbox/svelte)** ·
+**[@glowbox/react](https://www.npmjs.com/package/@glowbox/react)** ·
+**[@glowbox/vue](https://www.npmjs.com/package/@glowbox/vue)**. Pairs with
+**[@glowbox/crt](https://www.npmjs.com/package/@glowbox/crt)**. Live demo:
+<https://eetu.github.io/glowbox/neon> — turn the sound on, and let the
+Cocktails show power-cycle once.

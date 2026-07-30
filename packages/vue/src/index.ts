@@ -1,7 +1,8 @@
 // @glowbox/vue — glowbox components for Vue 3:
-//   import { LedGrid, NixieTube, SevenSegment, FlipDots, SplitFlap } from "@glowbox/vue";
+//   import { LedGrid, NixieTube, SevenSegment, FlipDots, SplitFlap, NeonSign } from "@glowbox/vue";
 export { FlipDots } from './FlipDots';
 export { LedGrid } from './LedGrid';
+export { NeonSign } from './NeonSign';
 export { NixieTube } from './NixieTube';
 export { SevenSegment } from './SevenSegment';
 export { SplitFlap } from './SplitFlap';
@@ -17,6 +18,13 @@ export type {
 	FlipDotStagger
 } from '@glowbox/flip-dot';
 export type * from '@glowbox/led-grid';
+export type {
+	GasName,
+	NeonFont,
+	NeonProgram,
+	NeonSign as NeonSignHandle,
+	NeonSignOptions
+} from '@glowbox/neon';
 export type { NixieOptions, NixieStyle, NixieTube as NixieTubeHandle } from '@glowbox/nixie';
 export type {
 	SevenSegmentDisplay,

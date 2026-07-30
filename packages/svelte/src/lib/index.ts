@@ -1,7 +1,8 @@
 // @glowbox/svelte — glowbox components for Svelte 5:
-//   import { LedGrid, NixieTube, SevenSegment, FlipDots, SplitFlap } from "@glowbox/svelte";
+//   import { LedGrid, NixieTube, SevenSegment, FlipDots, SplitFlap, NeonSign } from "@glowbox/svelte";
 export { default as FlipDots } from './FlipDots.svelte';
 export { default as LedGrid } from './LedGrid.svelte';
+export { default as NeonSign } from './NeonSign.svelte';
 export { default as NixieTube } from './NixieTube.svelte';
 export { default as SevenSegment } from './SevenSegment.svelte';
 export { default as SplitFlap } from './SplitFlap.svelte';
@@ -17,6 +18,13 @@ export type {
 	FlipDotStagger
 } from '@glowbox/flip-dot';
 export type * from '@glowbox/led-grid';
+export type {
+	GasName,
+	NeonFont,
+	NeonProgram,
+	NeonSign as NeonSignHandle,
+	NeonSignOptions
+} from '@glowbox/neon';
 export type { NixieOptions, NixieStyle, NixieTube as NixieTubeHandle } from '@glowbox/nixie';
 export type {
 	SevenSegmentDisplay,

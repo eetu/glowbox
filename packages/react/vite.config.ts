@@ -28,6 +28,7 @@ export default defineConfig({
 				'react-dom',
 				'react/jsx-runtime',
 				'@glowbox/flip-dot',
+				'@glowbox/neon',
 				'@glowbox/split-flap',
 				'@glowbox/led-grid',
 				'@glowbox/nixie',
@@ -42,6 +43,7 @@ export default defineConfig({
 		// Resolve the sibling cores from source at test time (no prior build needed).
 		alias: {
 			'@glowbox/flip-dot': resolve(import.meta.dirname, '../flip-dot/src/index.ts'),
+			'@glowbox/neon': resolve(import.meta.dirname, '../neon/src/index.ts'),
 			'@glowbox/split-flap': resolve(import.meta.dirname, '../split-flap/src/index.ts'),
 			'@glowbox/led-grid': coreSrc,
 			'@glowbox/nixie': nixieSrc,

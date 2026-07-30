@@ -37,7 +37,7 @@ jobs:
         # All six publish in lockstep — a stale version field in ANY package must block
         # the whole release, not publish silently under the wrong tag.
         run: |
-          for pkg in led-grid nixie seven-segment flip-dot split-flap crt svelte react vue extras; do
+          for pkg in led-grid nixie seven-segment flip-dot split-flap neon crt svelte react vue extras; do
             v="v$(node -p "require('./packages/$pkg/package.json').version")"
             if [ "$v" != "${{ github.ref_name }}" ]; then
               echo "@glowbox/$pkg is $v but the tag is ${{ github.ref_name }}"
@@ -68,7 +68,7 @@ jobs:
           if [[ "$VERSION" == *-* ]]; then TAG=rc; else TAG=latest; fi
           # led-grid first so dependents resolve. `npm view` guard makes reruns idempotent
           # (npm has no --tolerate-republish; republishing a version is a hard 403).
-          for pkg in led-grid nixie seven-segment flip-dot split-flap crt svelte react vue extras; do
+          for pkg in led-grid nixie seven-segment flip-dot split-flap neon crt svelte react vue extras; do
             name="@glowbox/$pkg"
             if npm view "$name@$VERSION" version >/dev/null 2>&1; then
               echo "$name@$VERSION already published — skipping"

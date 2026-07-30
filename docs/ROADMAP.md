@@ -51,6 +51,21 @@ torus — `d.torus()` is axis-aligned/single-colour, see the note in `torus.ts`.
    1.6.0** — the drum-of-cards model (forward-only wrap-through cascades), gravity
    falls with true perspective, grapheme drums, chroma drums (a wall of modules as
    a low-res image display) and the papery card slap; last of the planned cores.
+   **Neon sign LANDED post-1.7.1 (ships as 1.8.0)** — the first unplanned core to
+   clear the bar (the trivial alternative is CSS `text-shadow`, so the core is the
+   GLASS, not a glow filter): single-stroke tube letterforms from vendored Hershey
+   faces, visible unlit glass, electrode strike sequences, the wear arc at tube
+   granularity, rate-capped flasher programs, the transformer hum (`createHum`
+   joined the shared vendored sound engine). The logo escape hatch shipped with
+   it after all: `art` pieces (SVG path data → tubes via `pathToStrokes`)
+   composed behind/beside the text with their own gas/colour, their own
+   flasher circuit, and real overlap (`opaque` faces cut the rear tubes shy of
+   their edge) — inline glyphs were the wrong model; signs put the martini
+   glass beside the word and the front die over the rear one. Filed as a
+   2.x-class *idea*, no committed plan: font-free tube script — generating the
+   connected letterforms procedurally instead of vendoring Hershey data.
+   Honest read: that's typeface design wearing a geometry costume; effort
+   unknown and probably large, and the vendored faces are good.
    The bar for every core: real wow
    beyond the trivial alternative, or it doesn't ship. Nixie proved the pattern:
    standalone 2D core + wrapper components + a demo page; the 1.0.1 decoupling made
