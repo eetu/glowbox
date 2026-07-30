@@ -51,6 +51,11 @@ export interface NeonArt {
 	/** Sectioning: the whole piece as one tube (default — it strikes, ages and
 	 *  dies together) or one tube per subpath. */
 	tubes?: 'piece' | 'path';
+	/** Treat the piece's coordinates as living in this shared design frame
+	 *  ([width, height], origin 0,0) instead of its own bounding box — so several
+	 *  pieces cut from ONE drawing (the hair, the face, the jacket, each its own
+	 *  colour) keep their registration when given identical placement. */
+	frame?: [number, number];
 	/** Wired past the flasher cam: the piece holds steady while 'flash'/'chase'
 	 *  cycle the rest — the diner border that stays lit around the blinking word
 	 *  (default false). */
@@ -362,6 +367,14 @@ export function layoutTubes(
 				lov = Math.min(lov, y);
 				hiv = Math.max(hiv, y);
 			}
+		if (a.frame) {
+			// A shared design frame overrides the piece's own bbox, so sibling
+			// pieces cut from one drawing keep their registration.
+			lo = 0;
+			lov = 0;
+			hi = Math.max(1e-6, a.frame[0]);
+			hiv = Math.max(1e-6, a.frame[1]);
+		}
 		const place = a.place ?? 'behind';
 		const size =
 			a.size ?? (place === 'behind' ? 1.5 : place === 'left' || place === 'right' ? 1 : 0.7);
