@@ -95,7 +95,11 @@ torus — `d.torus()` is axis-aligned/single-colour, see the note in `torus.ts`.
   CI minutes and flake.
 - **Input/games API in the library** — a playable Pac-Man is great _gallery_ content
   someday; keyboard handling belongs to the consuming app (display-only stays the
-  contract).
+  contract). The cores DO answer geometry and own their own physics, which is not
+  the same thing: split-flap's `cellAt`/`cellRect` and neon's `sectionAt` map a
+  pointer onto a module/tube, and neon's `jolt()` applies a disturbance the core
+  already models (it owns what an unstable tube looks like; the app owns when).
+  No core attaches a listener — that's the line.
 - **Web-component wrapper** — deferred, not rejected: the vanilla core is already a
   5-line embed; revisit if plain-HTML/Astro demand shows up.
 - **Nixie letters** (decimal point only), **GIF loop-count fidelity / streaming**,

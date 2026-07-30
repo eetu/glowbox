@@ -410,6 +410,27 @@ export function createNeonSign(
 		return overrideSpec(c, base);
 	}
 
+	// Absorbing tubes are composited ONCE per frame, not once per pass. A blend
+	// mode on a blurred stroke is a slow path in every browser — 300+ of them per
+	// frame took a heavy sign to ~5 fps — so the ink accumulates on this layer with
+	// plain source-over and lands as a single `multiply`. Allocated only when a
+	// sign actually has an absorbing section.
+	let ink: HTMLCanvasElement | null = null;
+	function inkCanvas(): CanvasRenderingContext2D | null {
+		if (!ink) ink = document.createElement('canvas');
+		if (ink.width !== canvas.width || ink.height !== canvas.height) {
+			ink.width = canvas.width;
+			ink.height = canvas.height;
+		}
+		const ig = ink.getContext('2d');
+		if (!ig) return null;
+		ig.setTransform(1, 0, 0, 1, 0, 0);
+		ig.clearRect(0, 0, ink.width, ink.height);
+		ig.lineJoin = 'round';
+		ig.lineCap = 'round';
+		return ig;
+	}
+
 	function draw() {
 		if (!w || !h) return;
 		const g = ctx!;
@@ -449,11 +470,28 @@ export function createNeonSign(
 			: polarity !== 'emit';
 
 		// Level of detail from the rendered cap height (css px): tiny signs drop the
-		// halation stack and hardware the way nixie's micro tubes do.
+		// halation stack and hardware the way nixie's micro tubes do. A CROWDED sign
+		// steps down too — the full ramp is 7 blurred strokes per tube, so past a
+		// couple of dozen tubes the frame budget matters more than the last two
+		// passes nobody can see.
 		const capPx = 21 * s;
 		const micro = capPx < 13;
-		const compact = capPx < 28;
+		const compact = capPx < 28 || n > 24;
 		const blur = (f: number) => Math.min(capPx * f * glow, 160);
+
+		// Set up the ink layer only if something on this sign absorbs.
+		let anyAbsorb = false;
+		for (const sec of lay.sections)
+			if (((sec.art != null ? art?.[sec.art]?.polarity : undefined) ?? polarity) === 'absorb') {
+				anyAbsorb = true;
+				break;
+			}
+		const ig = anyAbsorb ? inkCanvas() : null;
+		if (ig) {
+			ig.scale(dpr, dpr);
+			ig.translate(tx, ty);
+			ig.scale(s, s);
+		}
 
 		for (let i = 0; i < n; i++) {
 			const sec = lay.sections[i];
@@ -546,40 +584,52 @@ export function createNeonSign(
 								[0.04, 0.5, 0.5, 0.65],
 								[0.03, 0.55, 0.3, 1]
 							];
-				g.shadowColor = rgba(gasCol, 1);
-				if (!emit) g.globalCompositeOperation = 'multiply';
+				// Emitted light goes straight on the wall; absorbed light accumulates
+				// on the ink layer and is multiplied in once, after the loop.
+				const t = emit || !ig ? g : ig;
+				// Accumulating on a layer and multiplying once is lighter than
+				// multiplying every pass in turn, so the ink gets a nudge back to the
+				// density the per-pass version had.
+				const density = emit ? 1 : 1.35;
+				t.shadowColor = rgba(gasCol, 1);
 				for (const [blurF, alpha, lwF, wm] of layers) {
-					const a = wm >= 0.6 ? alpha * lvl * lvl : alpha * lvl;
-					g.shadowBlur = blur(blurF) * Math.min(1, lvl);
-					g.strokeStyle = rgba(wm ? mix(gasCol, core, spec.core * wm) : gasCol, a);
-					g.lineWidth = T * lwF;
-					g.stroke(p);
+					const a = (wm >= 0.6 ? alpha * lvl * lvl : alpha * lvl) * density;
+					t.shadowBlur = blur(blurF) * Math.min(1, lvl);
+					t.strokeStyle = rgba(wm ? mix(gasCol, core, spec.core * wm) : gasCol, a);
+					t.lineWidth = T * lwF;
+					t.stroke(p);
 				}
-				g.shadowBlur = 0;
-				g.globalCompositeOperation = 'source-over';
+				t.shadowBlur = 0;
 			}
 
 			// The electrode arc while the tube is still dark: bright sparks at both
 			// ends, jittering frame to frame the way a starting arc does.
 			if (strikeT[i] >= 0 && strikeT[i] < 0.2 && !micro) {
-				g.shadowColor = rgba(gasCol, 1);
-				g.shadowBlur = blur(0.2);
-				if (!emit) g.globalCompositeOperation = 'multiply';
+				const t = emit || !ig ? g : ig;
+				t.shadowColor = rgba(gasCol, 1);
+				t.shadowBlur = blur(0.2);
 				for (const e of lay.sections[i].ends) {
-					g.fillStyle = rgba(mix(gasCol, core, 0.85), 0.5 + Math.random() * 0.5);
-					g.beginPath();
-					g.arc(
+					t.fillStyle = rgba(mix(gasCol, core, 0.85), 0.5 + Math.random() * 0.5);
+					t.beginPath();
+					t.arc(
 						e.x + (Math.random() - 0.5) * T * 0.5,
 						e.y + (Math.random() - 0.5) * T * 0.5,
 						T * (0.3 + Math.random() * 0.25),
 						0,
 						Math.PI * 2
 					);
-					g.fill();
+					t.fill();
 				}
-				g.shadowBlur = 0;
-				g.globalCompositeOperation = 'source-over';
+				t.shadowBlur = 0;
 			}
+		}
+
+		// The ink lands in one blend: all absorbed light at once.
+		if (ig && ink) {
+			g.setTransform(1, 0, 0, 1, 0, 0);
+			g.globalCompositeOperation = 'multiply';
+			g.drawImage(ink, 0, 0);
+			g.globalCompositeOperation = 'source-over';
 		}
 	}
 

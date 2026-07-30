@@ -45,6 +45,12 @@ version and are released together.
   black light; an unnamed `wall` follows the polarity) — and it is settable
   **per art piece**, so white dice can shine black beside lettering that still
   shines gold: it's the element that runs dark, not the circuit.
+  Absorbed light composites **once per frame on its own layer** rather than
+  per pass — a blend mode on a blurred stroke is a slow path everywhere, and
+  300 of them took a heavy sign to ~5 fps; the ink is now as cheap as the glow
+  (measured 212 ms → 16.8 ms per frame). A crowded sign (past ~24 tubes) also
+  steps down to the compact 4-pass ramp, which took the same sign's worst frame
+  from 68 ms to 42 ms.
   **`sectionAt(clientX, clientY)` + `jolt(section?)`** make the tubes tappable
   on the split-flap contract — the library answers the geometry and owns what a
   disturbed tube does (dip, eased recovery, a stutter back through the ignition
