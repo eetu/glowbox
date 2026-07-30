@@ -119,6 +119,8 @@ const RICK_MIC = [
 	'M69 180L103 180',
 	'M86 202L86 278'
 ];
+// The badge ring that makes it a SIGN — enclosing the portrait, under the words.
+const RICK_RING = 'M-42 138a152 152 0 1 0 304 0a152 152 0 1 0 -304 0Z';
 // Floating eighth-notes — he IS singing: one single, one beamed pair.
 const RICK_NOTES = [
 	'M168 60a6 4.5 0 1 0 12 0a6 4.5 0 1 0 -12 0Z',
@@ -130,17 +132,19 @@ const RICK_NOTES = [
 	'M212 92L212 68',
 	'M195 74L212 68'
 ];
+// The badge composition: portrait + ring centred BEHIND the words, so the
+// lyrics lie over him the way a real sign layers its script over the figure.
 const rickPiece = (d: string[], gas: GasName, extra?: Partial<NeonArt>): NeonArt => ({
 	d,
 	frame: RICK_FRAME,
-	place: 'left',
-	size: 2.4,
-	dx: -0.15,
-	dy: -0.05,
+	place: 'behind',
+	size: 2.2,
+	dy: -0.36,
 	gas,
 	...extra
 });
 const RICK_ART: NeonArt[] = [
+	rickPiece([RICK_RING], 'gold'),
 	rickPiece(RICK_JACKET, 'argon'),
 	rickPiece(RICK_SHIRT, 'gold'),
 	rickPiece(RICK_FACE, 'helium'),
