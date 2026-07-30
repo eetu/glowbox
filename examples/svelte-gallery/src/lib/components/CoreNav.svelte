@@ -6,6 +6,21 @@
 	import { resolve } from '$app/paths';
 
 	let { core }: { core: 'led' | 'nixie' | 'seven' | 'flipdot' | 'splitflap' | 'neon' } = $props();
+
+	// On a phone the strip scrolls, so the tab you're on can start off-screen —
+	// centre it once mounted. Set `scrollLeft` rather than calling
+	// scrollIntoView: that scrolls every scrollable ANCESTOR too, which drags the
+	// wordmark off the side of the header.
+	let strip = $state<HTMLElement>();
+	$effect(() => {
+		const active = strip?.querySelector<HTMLElement>('.core.active');
+		if (!strip || !active) return;
+		// Rect-relative, not offsetLeft: offsetLeft is measured from the offset
+		// PARENT, which isn't this strip.
+		const s = strip.getBoundingClientRect();
+		const a = active.getBoundingClientRect();
+		strip.scrollLeft += a.left - s.left - (s.width - a.width) / 2;
+	});
 	const tabs = [
 		{ id: 'led', label: 'LED grid', path: '/' },
 		{ id: 'nixie', label: 'Nixie', path: '/nixie' },
@@ -18,7 +33,7 @@
 
 <div class="corenav">
 	<a class="brand" href={resolve('/')}>glowbox<span class="accent">.</span></a>
-	<nav class="cores" aria-label="rendering core">
+	<nav class="cores" aria-label="rendering core" bind:this={strip}>
 		{#each tabs as t (t.id)}
 			<a
 				class="core"
@@ -70,6 +85,13 @@
 		border: 1px solid var(--halo-border);
 		border-radius: var(--halo-radius);
 		background: var(--halo-bg-main);
+		/* Six cores no longer fit a phone header: scroll the strip instead of
+		   clipping the last tab off the screen edge. */
+		overflow-x: auto;
+		scrollbar-width: none;
+	}
+	.cores::-webkit-scrollbar {
+		display: none;
 	}
 	.core {
 		padding: 4px 10px;
@@ -112,6 +134,16 @@
 	@media (max-width: 720px) {
 		.corenav {
 			gap: 6px;
+			min-width: 0;
+			flex: 1 1 auto;
+		}
+		/* Both the cluster AND the strip must be allowed to shrink below their
+		   content width — otherwise the header row overflows the viewport, the
+		   DOCUMENT scrolls sideways, and the wordmark gets pushed off-screen when
+		   the active tab is scrolled into view. */
+		.cores {
+			min-width: 0;
+			flex: 1 1 auto;
 		}
 		.brand {
 			font-size: 16px;
