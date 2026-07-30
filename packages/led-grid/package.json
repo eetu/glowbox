@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/led-grid",
-	"version": "1.7.1",
+	"version": "1.8.0",
 	"description": "Framework-agnostic 3D LED-grid display — a tiny WebGL voxel canvas you draw on.",
 	"keywords": [
 		"glowbox",
