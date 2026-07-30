@@ -48,6 +48,11 @@ export interface NeonArt {
 	 *  per-line colour arrays never bleed onto art). */
 	gas?: GasName;
 	color?: Color;
+	/** The piece's own discharge direction, overriding the sign's: a white tube
+	 *  can shine BLACK ('absorb') on a pale wall while the lettering beside it
+	 *  still shines its colour ('emit') — one sign, mixed polarity, because it's
+	 *  the ELEMENT that runs dark, not the whole circuit. */
+	polarity?: 'emit' | 'absorb';
 	/** Sectioning: the whole piece as one tube (default — it strikes, ages and
 	 *  dies together) or one tube per subpath. */
 	tubes?: 'piece' | 'path';

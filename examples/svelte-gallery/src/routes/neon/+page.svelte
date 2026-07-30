@@ -25,6 +25,18 @@
 	let speed = $state(1);
 	let wallColor = $state('#0b0b0e');
 	let backdrop = $state('#0a0a0e');
+	// The invented element: tubes that ink a pale wall instead of lighting a dark
+	// one. Flipping it drags the scene colours along — dark ink on a dark wall is
+	// invisible, and that trap isn't worth making the visitor discover.
+	let polarity = $state<'emit' | 'absorb'>('emit');
+	let lastPolarity = 'emit';
+	$effect(() => {
+		if (polarity === lastPolarity) return;
+		lastPolarity = polarity;
+		const pale = polarity === 'absorb';
+		wallColor = pale ? '#f3f2ef' : '#0b0b0e';
+		backdrop = pale ? '#e9e8e3' : '#0a0a0e';
+	});
 	let crtOn = $state(false);
 	let panelOpen = $state(false);
 	const onKeydown = (e: KeyboardEvent) => {
@@ -53,6 +65,7 @@
 				strikeMs,
 				speed,
 				wall: wallColor,
+				polarity,
 				sound: soundOn ? volume : 0
 			}))
 		);
@@ -68,6 +81,7 @@
 			strikeMs,
 			speed,
 			wall: wallColor,
+			polarity,
 			sound: soundOn ? volume : 0
 		});
 	});
@@ -95,6 +109,15 @@
 			program: tinkerProgram
 		});
 	});
+
+	// Tap a tube to rap the glass. The sign attaches nothing itself — it answers
+	// `sectionAt`, the page owns the listener (the split-flap contract).
+	function rap(e: PointerEvent) {
+		const s = sign;
+		if (!s) return;
+		const tube = s.sectionAt(e.clientX, e.clientY);
+		if (tube != null) s.jolt(tube);
+	}
 
 	// The composable @glowbox/crt layer over the whole sign.
 	let stageWrap = $state<HTMLDivElement>();
@@ -132,7 +155,7 @@
 				]}
 			/>
 		</label>
-		<span class="hint">the glass is the point · turn SOUND on</span>
+		<span class="hint">tap a tube · turn SOUND on</span>
 		<ThemeToggle />
 		<button
 			class="panel-toggle"
@@ -146,7 +169,9 @@
 	</header>
 
 	<div class="stage" style="background: {backdrop}">
-		<div class="sign-wrap" bind:this={stageWrap}>
+		<!-- Presentational wrapper: rapping the glass is decoration, not an action;
+		     the canvas keeps the sign's own role="img" + label. -->
+		<div class="sign-wrap" bind:this={stageWrap} role="presentation" onpointerdown={rap}>
 			<canvas bind:this={canvas} aria-label="neon sign"></canvas>
 		</div>
 	</div>
@@ -264,6 +289,17 @@
 		<section>
 			<h2>scene</h2>
 			<div class="row">
+				<span class="rlabel">tubes</span>
+				<Segmented
+					bind:value={polarity}
+					ariaLabel="polarity"
+					options={[
+						{ value: 'emit', label: 'Shine' },
+						{ value: 'absorb', label: 'Ink' }
+					]}
+				/>
+			</div>
+			<div class="row">
 				<span class="rlabel">wall</span>
 				<input type="color" bind:value={wallColor} aria-label="wall colour" />
 			</div>
@@ -332,6 +368,7 @@
 	}
 	.sign-wrap {
 		width: min(100%, 900px);
+		cursor: pointer;
 	}
 	.sign-wrap canvas {
 		display: block;

@@ -18,9 +18,12 @@
 		color,
 		gas,
 		wall,
+		polarity,
 		on,
 		lineOn,
 		glow,
+		glass,
+		electrode,
 		age,
 		flicker,
 		tired,
@@ -51,11 +54,17 @@
 		gas?: NeonSignOptions['gas'];
 		/** The wall behind the sign; null = transparent canvas. */
 		wall?: NeonSignOptions['wall'];
+		/** Discharge direction: 'emit' (light) or the invented 'absorb' (dark ink). */
+		polarity?: NeonSignOptions['polarity'];
 		/** Power — off leaves the unlit glass visible; on re-strikes. */
 		on?: boolean;
 		/** Per-text-line circuits (the motel sign's separately switched NO). */
 		lineOn?: boolean[];
 		glow?: number;
+		/** The unlit tube itself. */
+		glass?: NeonSignOptions['glass'];
+		/** The electrode caps — metal, not light. */
+		electrode?: NeonSignOptions['electrode'];
 		/** Wear 0..1: dimming → a flickering tube → dead glass (the MOT L arc). */
 		age?: number;
 		/** Electrical instability 0..1: sparse dips and re-strike blips. */
@@ -102,9 +111,12 @@
 				color,
 				gas,
 				wall,
+				polarity,
 				on,
 				lineOn,
 				glow,
+				glass,
+				electrode,
 				age,
 				flicker,
 				tired,
@@ -149,9 +161,12 @@
 			color,
 			gas,
 			wall,
+			polarity,
 			on,
 			lineOn,
 			glow,
+			glass,
+			electrode,
 			age,
 			flicker,
 			tired,

@@ -9,6 +9,9 @@
 //     filled glyph.
 //   • The unlit tube is drawn, always: powered off or dead, the glass still hangs
 //     on the wall (phosphor-coated gases show their paint; clear gases pale glass).
+//   • `polarity: 'absorb'` is the one INVENTED part: an element whose discharge
+//     runs dark, inking a pale wall instead of lighting a dark one — the same
+//     ramp multiplied in rather than added, so neon can live in a light theme.
 //   • A strike is a SEQUENCE, not a fade-in: the electrodes arc while the tube
 //     stays dark, ignition takes with a few partial pops, overshoots white-hot and
 //     settles. Turn-off is near-instant — the discharge just stops.
@@ -63,9 +66,19 @@ export interface NeonSignOptions {
 	/** What's in the glass (default 'neon' — the red-orange): picks the lit
 	 *  colour, the hot-core whiteness and the unlit tint. */
 	gas?: GasName;
-	/** The wall behind the sign (default near-black '#0b0b0e'; null = transparent
-	 *  canvas — compose the sign over your own backdrop). */
+	/** The wall behind the sign (default near-black under `polarity: 'emit'`,
+	 *  near-white under 'absorb'; null = transparent canvas — compose the sign
+	 *  over your own backdrop). */
 	wall?: Color | null;
+	/** Which way the discharge runs (default 'emit' — light, like every real
+	 *  tube). **'absorb' is invented**: an element whose discharge runs DARK, so
+	 *  the tubes ink the wall instead of lighting it — halation, hot core and all,
+	 *  multiplied into the surface rather than added to it. No such gas exists;
+	 *  that's the joke, and it's the honest way to put a neon sign on a pale wall
+	 *  (a bloom cannot read against white — the light-theme answer). Colours still
+	 *  come from `gas`/`color`, darkened into ink: a white tube inverts into a
+	 *  literal black light. */
+	polarity?: 'emit' | 'absorb';
 	/** Power (default true). Off is not blank: the unlit glass stays visible. */
 	on?: boolean;
 	/** Per-text-line circuits (default: all on) — the motel sign's separately
@@ -74,6 +87,14 @@ export interface NeonSignOptions {
 	lineOn?: boolean[];
 	/** Glow strength 0..1 (default 0.7). */
 	glow?: number;
+	/** The unlit tube itself — the glass you see with the power off. Defaults to a
+	 *  neutral grey picked to contrast with the `wall` (light glass on a dark wall,
+	 *  darker glass on a pale one); the gas still tints it on top. */
+	glass?: Color;
+	/** The electrode caps at each tube end — metal, not light. Also defaults
+	 *  against the `wall`: near-black on a dark wall, mid-grey on a pale one,
+	 *  where near-black specks read as dirt rather than hardware. */
+	electrode?: Color;
 	/** Wear 0..1 (default 0): deterministic per-tube dimming; past ~0.7 the
 	 *  most-worn tube starts flickering, from ~0.95 it is dead glass while the
 	 *  runner-up takes over the flickering. */
@@ -130,6 +151,17 @@ export interface NeonSign {
 	/** The wall switch: off leaves the unlit glass visible; on re-strikes every
 	 *  section ('reveal' strikes them in order). */
 	power(on: boolean): void;
+	/** Rap the glass: a lit tube stutters — a hard dip and, half the time, a
+	 *  re-strike blip through its ignition pops, exactly what `flicker`
+	 *  schedules on its own. Pass a section index (from `sectionAt`) or nothing
+	 *  for a whole-sign shudder; dark and dead glass ignore it. Reduced motion
+	 *  gets the dip without the stutter. */
+	jolt(section?: number): void;
+	/** Which tube sits under a viewport point — pass `e.clientX`/`e.clientY`
+	 *  straight from a pointer event; null if the tap missed the glass. The
+	 *  library owns the tube maths; consumers own the listeners (the sign
+	 *  attaches none — it's a display). */
+	sectionAt(clientX: number, clientY: number): number | null;
 	setOptions(patch: Partial<NeonSignOptions>): void;
 	resize(): void;
 	snapshot(): string;
@@ -145,6 +177,17 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [
 	a[2] + (b[2] - a[2]) * t
 ];
 const WHITE: RGB = [1, 1, 1];
+const BLACK: RGB = [0, 0, 0];
+// Squared distance from a point to a segment — the hit-test's inner loop.
+const segDist2 = (px: number, py: number, a: [number, number], b: [number, number]): number => {
+	const dx = b[0] - a[0];
+	const dy = b[1] - a[1];
+	const len = dx * dx + dy * dy;
+	const t = len > 0 ? Math.max(0, Math.min(1, ((px - a[0]) * dx + (py - a[1]) * dy) / len)) : 0;
+	const ex = a[0] + t * dx - px;
+	const ey = a[1] + t * dy - py;
+	return ex * ex + ey * ey;
+};
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 const fract = (x: number) => x - Math.floor(x);
 
@@ -185,10 +228,17 @@ export function createNeonSign(
 	let art = opts.art;
 	let colorOpt = opts.color ?? undefined;
 	let gas: GasName = opts.gas ?? 'neon';
-	let wall = opts.wall === null ? null : parseColor(opts.wall ?? '#0b0b0e');
+	let polarity = opts.polarity ?? 'emit';
+	// A wall the consumer never named follows the polarity (dark for emitted
+	// light, pale for absorbed); an explicit one is theirs and never moves.
+	const wallExplicit = opts.wall !== undefined;
+	const defaultWall = () => (polarity === 'emit' ? '#0b0b0e' : '#f3f2ef');
+	let wall = opts.wall === null ? null : parseColor(opts.wall ?? defaultWall());
 	let on = opts.on ?? true;
 	let lineOn = opts.lineOn;
 	let glow = clamp01(opts.glow ?? 0.7);
+	let glassCol = opts.glass != null ? parseColor(opts.glass) : null;
+	let elecCol = opts.electrode != null ? parseColor(opts.electrode) : null;
 	let age = clamp01(opts.age ?? 0);
 	let flicker = clamp01(opts.flicker ?? 0);
 	let tired = opts.tired ?? false;
@@ -313,6 +363,11 @@ export function createNeonSign(
 	const onVis = () => pushHum();
 
 	// --- rendering -------------------------------------------------------------------
+	// The last frame's fit transform (sign units → canvas CSS px), kept so a tap
+	// can be mapped back onto the glass.
+	let fitS = 0;
+	let fitTx = 0;
+	let fitTy = 0;
 	const pathFor = (i: number): Path2D => {
 		let p = paths[i];
 		if (!p) {
@@ -355,6 +410,27 @@ export function createNeonSign(
 		return overrideSpec(c, base);
 	}
 
+	// Absorbing tubes are composited ONCE per frame, not once per pass. A blend
+	// mode on a blurred stroke is a slow path in every browser — 300+ of them per
+	// frame took a heavy sign to ~5 fps — so the ink accumulates on this layer with
+	// plain source-over and lands as a single `multiply`. Allocated only when a
+	// sign actually has an absorbing section.
+	let ink: HTMLCanvasElement | null = null;
+	function inkCanvas(): CanvasRenderingContext2D | null {
+		if (!ink) ink = document.createElement('canvas');
+		if (ink.width !== canvas.width || ink.height !== canvas.height) {
+			ink.width = canvas.width;
+			ink.height = canvas.height;
+		}
+		const ig = ink.getContext('2d');
+		if (!ig) return null;
+		ig.setTransform(1, 0, 0, 1, 0, 0);
+		ig.clearRect(0, 0, ink.width, ink.height);
+		ig.lineJoin = 'round';
+		ig.lineCap = 'round';
+		return ig;
+	}
+
 	function draw() {
 		if (!w || !h) return;
 		const g = ctx!;
@@ -374,48 +450,103 @@ export function createNeonSign(
 		const availW = Math.max(1, w * (1 - 2 * padding));
 		const availH = Math.max(1, h * (1 - 2 * padding));
 		const s = Math.min(availW / Math.max(1e-6, lay.width), availH / Math.max(1e-6, lay.height));
-		g.translate((w - lay.width * s) / 2 - lay.left * s, (h - lay.height * s) / 2 - lay.top * s);
+		const tx = (w - lay.width * s) / 2 - lay.left * s;
+		const ty = (h - lay.height * s) / 2 - lay.top * s;
+		// Remember the fit — `sectionAt` inverts exactly this to hit-test taps.
+		fitS = s;
+		fitTx = tx;
+		fitTy = ty;
+		g.translate(tx, ty);
 		g.scale(s, s);
 		g.lineJoin = 'round';
 		g.lineCap = 'round';
 
+		// The non-luminous parts read against the WALL, not against the polarity:
+		// glass and metal are just objects on a surface, so what they need is
+		// contrast with it. (The light itself still inverts per element.) With a
+		// transparent canvas there's no wall to measure — fall back to the polarity.
+		const paleWall = wall
+			? 0.2126 * wall[0] + 0.7152 * wall[1] + 0.0722 * wall[2] > 0.5
+			: polarity !== 'emit';
+
 		// Level of detail from the rendered cap height (css px): tiny signs drop the
-		// halation stack and hardware the way nixie's micro tubes do.
+		// halation stack and hardware the way nixie's micro tubes do. A CROWDED sign
+		// steps down too — the full ramp is 7 blurred strokes per tube, so past a
+		// couple of dozen tubes the frame budget matters more than the last two
+		// passes nobody can see.
 		const capPx = 21 * s;
 		const micro = capPx < 13;
-		const compact = capPx < 28;
+		const compact = capPx < 28 || n > 24;
 		const blur = (f: number) => Math.min(capPx * f * glow, 160);
 
+		// Set up the ink layer only if something on this sign absorbs.
+		let anyAbsorb = false;
+		for (const sec of lay.sections)
+			if (((sec.art != null ? art?.[sec.art]?.polarity : undefined) ?? polarity) === 'absorb') {
+				anyAbsorb = true;
+				break;
+			}
+		const ig = anyAbsorb ? inkCanvas() : null;
+		if (ig) {
+			ig.scale(dpr, dpr);
+			ig.translate(tx, ty);
+			ig.scale(s, s);
+		}
+
 		for (let i = 0; i < n; i++) {
-			const spec = specFor(lay.sections[i]);
+			const sec = lay.sections[i];
+			const spec = specFor(sec);
 			const p = pathFor(i);
 			const lvl = Math.min(1.15, lit[i]) * worn(i) * dip[i];
+			// Emitted light ADDS to the wall; absorbed light MULTIPLIES into it — the
+			// same ramp run backwards. Per SECTION, not per sign: the element runs
+			// dark, not the circuit, so white dice can shine black beside lettering
+			// that still shines gold.
+			const emit =
+				((sec.art != null ? art?.[sec.art]?.polarity : undefined) ?? polarity) === 'emit';
+			const core = emit ? WHITE : BLACK;
+			// The ink an absorbing tube discharges: the gas colour taken down toward
+			// black, so a white tube really does shine black.
+			const gasCol = emit ? spec.color : mix(spec.color, BLACK, 0.5);
 
 			// The glass itself — always there, lit or not. Coated tubes show their
-			// paint; clear ones pale glass with a hint of the gas.
+			// paint; clear ones pale glass with a hint of the gas. On a pale wall the
+			// neutral pass has to darken instead of lighten to read at all.
 			if (!(micro && lvl > 0.5)) {
 				g.shadowBlur = 0;
-				g.strokeStyle = 'rgba(158,163,175,0.10)';
+				g.strokeStyle = rgba(
+					glassCol ?? (paleWall ? [0.29, 0.3, 0.33] : [0.62, 0.64, 0.69]),
+					paleWall ? 0.13 : 0.1
+				);
 				g.lineWidth = T * 1.25;
 				g.stroke(p);
-				g.strokeStyle = rgba(spec.unlit, spec.coated ? 0.22 : 0.11);
+				g.strokeStyle = rgba(
+					emit ? spec.unlit : mix(spec.unlit, BLACK, 0.35),
+					spec.coated ? 0.22 : 0.11
+				);
 				g.lineWidth = T * 0.95;
 				g.stroke(p);
 			}
 
-			// Electrode stubs: dark glass + a metal ferrule dot at each free end.
+			// Electrode stubs: the metal cap + its ferrule dot at each free end. On a
+			// pale wall these are the darkest marks on the sign, so absorbing tubes
+			// default to mid-grey hardware — near-black specks read as dirt.
 			if (!compact) {
 				g.shadowBlur = 0;
+				const metal = elecCol ?? (paleWall ? [0.55, 0.56, 0.59] : [0.18, 0.18, 0.21]);
+				// The ferrule catches the light: brighter on a dark wall, shadowed on a
+				// pale one — either way it separates from the cap.
+				const ferrule = mix(metal, paleWall ? BLACK : WHITE, 0.35);
 				for (const e of lay.sections[i].ends) {
 					const ex = e.x + e.dx * T * 1.1;
 					const ey = e.y + e.dy * T * 1.1;
-					g.strokeStyle = 'rgba(46,47,54,0.9)';
+					g.strokeStyle = rgba(metal, 0.9);
 					g.lineWidth = T * 0.8;
 					g.beginPath();
 					g.moveTo(e.x, e.y);
 					g.lineTo(ex, ey);
 					g.stroke();
-					g.fillStyle = 'rgba(126,128,138,0.8)';
+					g.fillStyle = rgba(ferrule, 0.8);
 					g.beginPath();
 					g.arc(ex + e.dx * T * 0.3, ey + e.dy * T * 0.3, T * 0.32, 0, Math.PI * 2);
 					g.fill();
@@ -453,36 +584,52 @@ export function createNeonSign(
 								[0.04, 0.5, 0.5, 0.65],
 								[0.03, 0.55, 0.3, 1]
 							];
-				g.shadowColor = rgba(spec.color, 1);
+				// Emitted light goes straight on the wall; absorbed light accumulates
+				// on the ink layer and is multiplied in once, after the loop.
+				const t = emit || !ig ? g : ig;
+				// Accumulating on a layer and multiplying once is lighter than
+				// multiplying every pass in turn, so the ink gets a nudge back to the
+				// density the per-pass version had.
+				const density = emit ? 1 : 1.35;
+				t.shadowColor = rgba(gasCol, 1);
 				for (const [blurF, alpha, lwF, wm] of layers) {
-					const a = wm >= 0.6 ? alpha * lvl * lvl : alpha * lvl;
-					g.shadowBlur = blur(blurF) * Math.min(1, lvl);
-					g.strokeStyle = rgba(wm ? mix(spec.color, WHITE, spec.core * wm) : spec.color, a);
-					g.lineWidth = T * lwF;
-					g.stroke(p);
+					const a = (wm >= 0.6 ? alpha * lvl * lvl : alpha * lvl) * density;
+					t.shadowBlur = blur(blurF) * Math.min(1, lvl);
+					t.strokeStyle = rgba(wm ? mix(gasCol, core, spec.core * wm) : gasCol, a);
+					t.lineWidth = T * lwF;
+					t.stroke(p);
 				}
-				g.shadowBlur = 0;
+				t.shadowBlur = 0;
 			}
 
 			// The electrode arc while the tube is still dark: bright sparks at both
 			// ends, jittering frame to frame the way a starting arc does.
 			if (strikeT[i] >= 0 && strikeT[i] < 0.2 && !micro) {
-				g.shadowColor = rgba(spec.color, 1);
-				g.shadowBlur = blur(0.2);
+				const t = emit || !ig ? g : ig;
+				t.shadowColor = rgba(gasCol, 1);
+				t.shadowBlur = blur(0.2);
 				for (const e of lay.sections[i].ends) {
-					g.fillStyle = rgba(mix(spec.color, WHITE, 0.85), 0.5 + Math.random() * 0.5);
-					g.beginPath();
-					g.arc(
+					t.fillStyle = rgba(mix(gasCol, core, 0.85), 0.5 + Math.random() * 0.5);
+					t.beginPath();
+					t.arc(
 						e.x + (Math.random() - 0.5) * T * 0.5,
 						e.y + (Math.random() - 0.5) * T * 0.5,
 						T * (0.3 + Math.random() * 0.25),
 						0,
 						Math.PI * 2
 					);
-					g.fill();
+					t.fill();
 				}
-				g.shadowBlur = 0;
+				t.shadowBlur = 0;
 			}
+		}
+
+		// The ink lands in one blend: all absorbed light at once.
+		if (ig && ink) {
+			g.setTransform(1, 0, 0, 1, 0, 0);
+			g.globalCompositeOperation = 'multiply';
+			g.drawImage(ink, 0, 0);
+			g.globalCompositeOperation = 'source-over';
 		}
 	}
 
@@ -762,6 +909,55 @@ export function createNeonSign(
 			else snapAll();
 			syncAll();
 		},
+		jolt(section) {
+			// A disturbance applied to the model, not a canned effect: the core owns
+			// what an unstable tube looks like (dip depth, eased recovery, the
+			// re-strike through its ignition pops, the hum ducking with it) exactly
+			// as the `flicker` scheduler does — the consumer owns when it happens.
+			if (n === 0) return;
+			const hit = section == null ? -1 : Math.floor(section);
+			const targets = hit >= 0 && hit < n ? [hit] : Array.from({ length: n }, (_, i) => i);
+			let struck = false;
+			for (const i of targets) {
+				if (lit[i] <= 0.5 || isDead(i)) continue; // dark and dead glass can't flicker
+				dip[i] = 0.05 + Math.random() * 0.25;
+				// Half the time it stutters back through the ignition pops instead of
+				// just dipping. Reduced motion gets the dip alone.
+				if (!reduced && strikeMs > 0 && Math.random() < 0.5) {
+					strikeT[i] = 0.3;
+					wait[i] = 0;
+				}
+				struck = true;
+			}
+			if (struck) {
+				tick(0.08);
+				animate();
+			}
+		},
+		sectionAt(clientX, clientY) {
+			if (n === 0 || !w || !h || !(fitS > 0)) return null;
+			const r = canvas.getBoundingClientRect();
+			if (!r.width || !r.height) return null;
+			// Viewport → canvas CSS px → sign units: the inverse of the fit transform
+			// the last frame drew with.
+			const x = (((clientX - r.left) / r.width) * w - fitTx) / fitS;
+			const y = (((clientY - r.top) / r.height) * h - fitTy) / fitS;
+			const tol = T * 2.5; // a fingertip's worth of glass around the centreline
+			let best: number | null = null;
+			let bestD = tol * tol;
+			for (let i = 0; i < n; i++) {
+				for (const stroke of lay.sections[i].strokes) {
+					for (let k = 1; k < stroke.length; k++) {
+						const d = segDist2(x, y, stroke[k - 1], stroke[k]);
+						if (d < bestD) {
+							bestD = d;
+							best = i;
+						}
+					}
+				}
+			}
+			return best;
+		},
 		power(v) {
 			if (v === on) return;
 			on = v;
@@ -829,8 +1025,22 @@ export function createNeonSign(
 				wall = patch.wall === null ? null : parseColor(patch.wall);
 				redraw = true;
 			}
+			if (patch.polarity != null && patch.polarity !== polarity) {
+				polarity = patch.polarity;
+				// An unnamed wall follows the flip; the consumer's own never moves.
+				if (!wallExplicit && wall) wall = parseColor(defaultWall());
+				redraw = true;
+			}
 			if (patch.glow != null) {
 				glow = clamp01(patch.glow);
+				redraw = true;
+			}
+			if (patch.glass !== undefined) {
+				glassCol = patch.glass != null ? parseColor(patch.glass) : null;
+				redraw = true;
+			}
+			if (patch.electrode !== undefined) {
+				elecCol = patch.electrode != null ? parseColor(patch.electrode) : null;
 				redraw = true;
 			}
 			if (patch.age != null) {

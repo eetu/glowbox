@@ -29,19 +29,19 @@ a gas tour, the tired transformer — on `/neon`.
 
 ## Packages
 
-| package                                            | install                           | what it is                                                             |
-| -------------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------- |
-| [`@glowbox/led-grid`](packages/led-grid)           | `yarn add @glowbox/led-grid`      | plain-TS WebGL display + voxel API (zero deps)                         |
-| [`@glowbox/nixie`](packages/nixie)                 | `yarn add @glowbox/nixie`         | nixie-tube display core: glowing vector numerals (2D canvas)           |
-| [`@glowbox/seven-segment`](packages/seven-segment) | `yarn add @glowbox/seven-segment` | seven-segment display core: per-segment dynamics, ageing, LED/VFD      |
-| [`@glowbox/flip-dot`](packages/flip-dot)           | `yarn add @glowbox/flip-dot`      | flip-dot board core: physical disc flips, dithering, solenoid click    |
-| [`@glowbox/split-flap`](packages/split-flap)       | `yarn add @glowbox/split-flap`    | split-flap (Solari) core: drum cascades, chroma image drums, card slap |
-| [`@glowbox/neon`](packages/neon)                   | `yarn add @glowbox/neon`          | neon-sign core: glass tubes, strike sequences, wear, transformer hum   |
-| [`@glowbox/crt`](packages/crt)                     | `yarn add @glowbox/crt`           | composable CRT screen over any canvas: curvature, phosphor persistence |
-| [`@glowbox/svelte`](packages/svelte)               | `yarn add @glowbox/svelte`        | Svelte 5 components, one per core (`<LedGrid>` … `<NeonSign>`)         |
-| [`@glowbox/react`](packages/react)                 | `yarn add @glowbox/react`         | React components: the same six (`^18 \|\| ^19`)                        |
-| [`@glowbox/vue`](packages/vue)                     | `yarn add @glowbox/vue`           | Vue 3 components: the same six                                         |
-| [`@glowbox/extras`](packages/extras)               | `yarn add @glowbox/extras`        | content: GIF/image players, 5×7 LED font text + scroller               |
+| package                                            | install                           | what it is                                                                |
+| -------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------- |
+| [`@glowbox/led-grid`](packages/led-grid)           | `yarn add @glowbox/led-grid`      | plain-TS WebGL display + voxel API (zero deps)                            |
+| [`@glowbox/nixie`](packages/nixie)                 | `yarn add @glowbox/nixie`         | nixie-tube display core: glowing vector numerals (2D canvas)              |
+| [`@glowbox/seven-segment`](packages/seven-segment) | `yarn add @glowbox/seven-segment` | seven-segment display core: per-segment dynamics, ageing, LED/VFD         |
+| [`@glowbox/flip-dot`](packages/flip-dot)           | `yarn add @glowbox/flip-dot`      | flip-dot board core: physical disc flips, dithering, solenoid click       |
+| [`@glowbox/split-flap`](packages/split-flap)       | `yarn add @glowbox/split-flap`    | split-flap (Solari) core: drum cascades, chroma image drums, card slap    |
+| [`@glowbox/neon`](packages/neon)                   | `yarn add @glowbox/neon`          | neon-sign core: glass tubes, strike sequences, wear, hum, light-theme ink |
+| [`@glowbox/crt`](packages/crt)                     | `yarn add @glowbox/crt`           | composable CRT screen over any canvas: curvature, phosphor persistence    |
+| [`@glowbox/svelte`](packages/svelte)               | `yarn add @glowbox/svelte`        | Svelte 5 components, one per core (`<LedGrid>` … `<NeonSign>`)            |
+| [`@glowbox/react`](packages/react)                 | `yarn add @glowbox/react`         | React components: the same six (`^18 \|\| ^19`)                           |
+| [`@glowbox/vue`](packages/vue)                     | `yarn add @glowbox/vue`           | Vue 3 components: the same six                                            |
+| [`@glowbox/extras`](packages/extras)               | `yarn add @glowbox/extras`        | content: GIF/image players, 5×7 LED font text + scroller                  |
 
 Six rendering cores — the 3D LED grid (`@glowbox/led-grid`), the nixie tube
 (`@glowbox/nixie`), the seven-segment display (`@glowbox/seven-segment`), the

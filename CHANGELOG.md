@@ -37,7 +37,25 @@ version and are released together.
   `opaque: true` makes a piece's closed subpaths a solid face that CUTS the
   tubes behind it shy of its edge — glass can't hide glass, so overlap works
   the way a sign maker does it (the classic overlapping dice pair; fully
-  covered tubes disappear, cut ends keep no electrode). A shared `frame` pins
+  covered tubes disappear, cut ends keep no electrode). **`polarity: 'absorb'`
+  is the one invented element**: a discharge that runs DARK, multiplying the
+  same ramp into a pale wall instead of adding it to a dark one — because a
+  bloom cannot read against white, and a sign should belong in a light theme
+  too (gas colours darken into ink, so a white tube inverts into a literal
+  black light; an unnamed `wall` follows the polarity) — and it is settable
+  **per art piece**, so white dice can shine black beside lettering that still
+  shines gold: it's the element that runs dark, not the circuit.
+  Absorbed light composites **once per frame on its own layer** rather than
+  per pass — a blend mode on a blurred stroke is a slow path everywhere, and
+  300 of them took a heavy sign to ~5 fps; the ink is now as cheap as the glow
+  (measured 212 ms → 16.8 ms per frame). A crowded sign (past ~24 tubes) also
+  steps down to the compact 4-pass ramp, which took the same sign's worst frame
+  from 68 ms to 42 ms.
+  **`sectionAt(clientX, clientY)` + `jolt(section?)`** make the tubes tappable
+  on the split-flap contract — the library answers the geometry and owns what a
+  disturbed tube does (dip, eased recovery, a stutter back through the ignition
+  pops, reduced-motion policy); the consumer owns the listeners, and the sign
+  attaches none. A shared `frame` pins
   several pieces cut from one drawing to the same design space — the
   multi-colour portrait pattern (the gallery's tribute singer: neon quiff,
   helium face, argon jacket, gold notes, white mic — never gonna give you up).
