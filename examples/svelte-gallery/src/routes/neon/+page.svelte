@@ -29,6 +29,10 @@
 	// one. Flipping it drags the scene colours along — dark ink on a dark wall is
 	// invisible, and that trap isn't worth making the visitor discover.
 	let polarity = $state<'emit' | 'absorb'>('emit');
+	// On a phone the sign is bound by canvas width, so the 8% margin is the
+	// difference between a small sign and a legible one.
+	// (The gallery is ssr: false, so matchMedia is safe here.)
+	const padding = matchMedia('(max-width: 720px)').matches ? 0.04 : 0.08;
 	let lastPolarity = 'emit';
 	$effect(() => {
 		if (polarity === lastPolarity) return;
@@ -64,6 +68,7 @@
 				glow,
 				strikeMs,
 				speed,
+				padding,
 				wall: wallColor,
 				polarity,
 				sound: soundOn ? volume : 0
@@ -464,7 +469,7 @@
 
 	@media (max-width: 720px) {
 		.app {
-			grid-template-columns: 1fr;
+			grid-template-columns: minmax(0, 1fr);
 			grid-template-areas:
 				'header'
 				'stage';
@@ -473,6 +478,20 @@
 			flex-wrap: wrap;
 			gap: 6px 8px;
 			padding: 8px 12px;
+		}
+		/* A phone screen is tall and narrow: a 2:1 canvas floating in the middle
+		   reads as a small letterboxed strip. Let the wall fill the stage instead —
+		   the sign still fits by width, but it sits on a wall, not in a band. */
+		.stage {
+			padding: 6px;
+		}
+		.sign-wrap {
+			width: 100%;
+			height: 100%;
+		}
+		.sign-wrap canvas {
+			height: 100%;
+			aspect-ratio: auto;
 		}
 		.hint {
 			display: none;
