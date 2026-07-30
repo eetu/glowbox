@@ -277,9 +277,19 @@ export function createNeonSign(
 	// starter engages and its ignition takes — the family's mechanical accent,
 	// at a level that reads as texture on the hum, never as an effect.
 	let snd: MechSound | null = null;
+	// The family click: the flip-dot's measured solenoid recipe — the same voice
+	// the split-flap speaks stretched to its longer throw — here at subliminal
+	// gain, so all three cores are audibly siblings.
 	const tick = (gain: number) => {
 		if (volume <= 0) return;
-		(snd ??= createMechSound({ volume })).tick({ decay: 0.008, noise: 0.5, gain });
+		const j = Math.random();
+		(snd ??= createMechSound({ volume })).tick({
+			freq: 6300 + j * 4200,
+			decay: 0.004 + j * 0.012,
+			noise: 0.9,
+			noiseHz: 5200,
+			gain: gain * (0.5 + 0.5 * j)
+		});
 	};
 	let hum: HumVoice | null = null;
 	const humVoice = (): HumVoice | null => {
