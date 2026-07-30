@@ -132,9 +132,18 @@ createNeonSign(canvas, { text: 'dice', polarity: 'absorb' }); // wall defaults p
 
 Gas colours still apply, taken down toward black as ink — so a `co2` white
 tube inverts into a literal black light. An unnamed `wall` follows the
-polarity (near-black when emitting, near-white when absorbing); a wall you
-set is yours and never moves. Pair it with your app's theme and the sign
-belongs in both.
+polarity (near-black when emitting, near-white when absorbing). The
+non-luminous parts key off the **wall** rather than the polarity, because glass
+and metal are just objects on a surface and what they need is contrast with it:
+`glass` (the unlit tube) and `electrode` (the metal end caps) default light on a
+dark wall and dark on a pale one — near-black specks on white read as dirt, not
+hardware — and both take your own colour when you want one. Pair it with your
+app's theme and the sign belongs in both.
+
+Polarity is settable **per art piece** too, which is usually what a mixed sign
+wants: white dice can shine _black_ on a pale card while the gold lettering
+beside them still shines gold — it's the element that runs dark, not the
+circuit.
 
 ## Programs — the flasher cam
 
@@ -147,37 +156,40 @@ to steady, snaps strikes, and disables flicker/tired.
 
 ## Options
 
-| option          | default       | notes                                                         |
-| --------------- | ------------- | ------------------------------------------------------------- |
-| `text`          | `''`          | `'\n'` splits lines                                           |
-| `font`          | `'script'`    | `'script'` \| `'sans'` \| custom `NeonFont`                   |
-| `art`           | —             | single-stroke pieces behind/beside the text (see Artwork)     |
-| `gas`           | `'neon'`      | what's in the glass (colour, hot core, dead-glass tint)       |
-| `color`         | —             | override: one colour or one per line; `null` clears           |
-| `wall`          | per polarity  | behind the sign; `null` = transparent canvas                  |
-| `polarity`      | `'emit'`      | `'absorb'` = the invented dark discharge (light-theme signs)  |
-| `on`            | `true`        | off is not blank — the unlit glass stays visible              |
-| `lineOn`        | all on        | per-line circuits (the motel sign's separately switched NO)   |
-| `glow`          | `0.7`         | halation strength                                             |
-| `age`           | `0`           | wear 0..1: dimming → flickering tube → dead glass             |
-| `flicker`       | `0`           | electrical instability: sparse scheduled dips                 |
-| `tired`         | `false`       | failing transformer: whole-sign dropouts + re-strikes         |
-| `program`       | `'steady'`    | the flasher cam (rate-capped)                                 |
-| `speed`         | `1`           | cam rate multiplier (the cap always wins)                     |
-| `tubes`         | `'auto'`      | sectioning: script→word, sans→glyph; or `glyph`/`word`/`line` |
-| `align`         | `'center'`    | per-line alignment                                            |
-| `lineSpacing`   | `1.1`         | baseline advance × the face's ascent+descent                  |
-| `letterSpacing` | `0`           | extra tracking (fraction of cap height); breaks script joins  |
-| `tilt`          | `0`           | text block tilt, degrees (negative rises left-to-right)       |
-| `padding`       | `0.08`        | canvas margin fraction                                        |
-| `strikeMs`      | `900`         | one tube's strike (0 = instant; forced by reduced motion)     |
-| `sound`         | off           | `true` (= 0.5) or `0..1` — the hum that follows the glass     |
-| `mains`         | `50`          | 50/60 Hz — the hum's fundamental is twice this                |
-| `pixelRatio`    | `2`           | cap on devicePixelRatio                                       |
-| `label`         | `'neon sign'` | `aria-label`; the shown text is appended; `''` hides          |
+| option          | default       | notes                                                                 |
+| --------------- | ------------- | --------------------------------------------------------------------- |
+| `text`          | `''`          | `'\n'` splits lines                                                   |
+| `font`          | `'script'`    | `'script'` \| `'sans'` \| custom `NeonFont`                           |
+| `art`           | —             | single-stroke pieces behind/beside the text (see Artwork)             |
+| `gas`           | `'neon'`      | what's in the glass (colour, hot core, dead-glass tint)               |
+| `color`         | —             | override: one colour or one per line; `null` clears                   |
+| `wall`          | per polarity  | behind the sign; `null` = transparent canvas                          |
+| `polarity`      | `'emit'`      | `'absorb'` = the invented dark discharge (light-theme signs)          |
+| `on`            | `true`        | off is not blank — the unlit glass stays visible                      |
+| `lineOn`        | all on        | per-line circuits (the motel sign's separately switched NO)           |
+| `glow`          | `0.7`         | halation strength                                                     |
+| `glass`         | vs the wall   | the unlit tube (the gas still tints it)                               |
+| `electrode`     | vs the wall   | the metal end caps: near-black on a dark wall, mid-grey on a pale one |
+| `age`           | `0`           | wear 0..1: dimming → flickering tube → dead glass                     |
+| `flicker`       | `0`           | electrical instability: sparse scheduled dips                         |
+| `tired`         | `false`       | failing transformer: whole-sign dropouts + re-strikes                 |
+| `program`       | `'steady'`    | the flasher cam (rate-capped)                                         |
+| `speed`         | `1`           | cam rate multiplier (the cap always wins)                             |
+| `tubes`         | `'auto'`      | sectioning: script→word, sans→glyph; or `glyph`/`word`/`line`         |
+| `align`         | `'center'`    | per-line alignment                                                    |
+| `lineSpacing`   | `1.1`         | baseline advance × the face's ascent+descent                          |
+| `letterSpacing` | `0`           | extra tracking (fraction of cap height); breaks script joins          |
+| `tilt`          | `0`           | text block tilt, degrees (negative rises left-to-right)               |
+| `padding`       | `0.08`        | canvas margin fraction                                                |
+| `strikeMs`      | `900`         | one tube's strike (0 = instant; forced by reduced motion)             |
+| `sound`         | off           | `true` (= 0.5) or `0..1` — the hum that follows the glass             |
+| `mains`         | `50`          | 50/60 Hz — the hum's fundamental is twice this                        |
+| `pixelRatio`    | `2`           | cap on devicePixelRatio                                               |
+| `label`         | `'neon sign'` | `aria-label`; the shown text is appended; `''` hides                  |
 
 All options update live via `setOptions(patch)`. API: `setText(text)` (a
 change **re-glasses and strikes on**), `power(on)` (the wall switch),
+`jolt(section?)` + `sectionAt(clientX, clientY)` (see Tappable tubes),
 `resize()`, `snapshot()` (PNG data URL), `dispose()` (hands the canvas back
 clean). A sign is created lit — no boot animation; the strike show is opt-in
 via `power()` cycling, `setText`, or `program: 'reveal'`.
@@ -204,6 +216,31 @@ detuned harmonics and a whisper of low-passed sizzle), driven by
 `setLevel(0..1)`. Held at 0 it tears its sources down; hidden tabs mute it.
 `createMechSound` (the mechanical cores' tick synth) rides along in the same
 vendored engine. Sound starts on the first user gesture — nothing to wire up.
+
+## Tappable tubes
+
+The sign attaches **no** pointer handlers — it's a display. It answers the
+geometry question instead, and owns what a disturbed tube does; you own when
+that happens:
+
+```ts
+canvas.addEventListener('pointerdown', (e) => {
+	const tube = sign.sectionAt(e.clientX, e.clientY); // null if the tap missed
+	if (tube != null) sign.jolt(tube); // that tube stutters
+});
+```
+
+`jolt(section?)` is a physical event on the model, not a canned effect: the
+core supplies the dip, the eased recovery, the stutter back through the
+ignition pops, the hum ducking with it, and the reduced-motion policy — the
+same behaviour `flicker` schedules on its own. Omit the index for a whole-sign
+shudder; dark and dead glass ignore it. _Effects_ stay yours: "flicker the die
+that lost", "pulse twice on a six" is app logic composed from `jolt`,
+`power` and `setText`.
+
+Accessibility follows split-flap's split: the canvas is an **image**
+(`role="img"`), never a widget. If tapping does something meaningful in your
+app, the semantics are yours — put a real control over or beside the sign.
 
 ## For 3D consumers
 

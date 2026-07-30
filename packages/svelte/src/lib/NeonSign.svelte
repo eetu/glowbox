@@ -22,6 +22,8 @@
 		on,
 		lineOn,
 		glow,
+		glass,
+		electrode,
 		age,
 		flicker,
 		tired,
@@ -59,6 +61,10 @@
 		/** Per-text-line circuits (the motel sign's separately switched NO). */
 		lineOn?: boolean[];
 		glow?: number;
+		/** The unlit tube itself. */
+		glass?: NeonSignOptions['glass'];
+		/** The electrode caps — metal, not light. */
+		electrode?: NeonSignOptions['electrode'];
 		/** Wear 0..1: dimming → a flickering tube → dead glass (the MOT L arc). */
 		age?: number;
 		/** Electrical instability 0..1: sparse dips and re-strike blips. */
@@ -109,6 +115,8 @@
 				on,
 				lineOn,
 				glow,
+				glass,
+				electrode,
 				age,
 				flicker,
 				tired,
@@ -157,6 +165,8 @@
 			on,
 			lineOn,
 			glow,
+			glass,
+			electrode,
 			age,
 			flicker,
 			tired,

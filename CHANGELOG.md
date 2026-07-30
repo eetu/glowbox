@@ -42,7 +42,14 @@ version and are released together.
   same ramp into a pale wall instead of adding it to a dark one — because a
   bloom cannot read against white, and a sign should belong in a light theme
   too (gas colours darken into ink, so a white tube inverts into a literal
-  black light; an unnamed `wall` follows the polarity). A shared `frame` pins
+  black light; an unnamed `wall` follows the polarity) — and it is settable
+  **per art piece**, so white dice can shine black beside lettering that still
+  shines gold: it's the element that runs dark, not the circuit.
+  **`sectionAt(clientX, clientY)` + `jolt(section?)`** make the tubes tappable
+  on the split-flap contract — the library answers the geometry and owns what a
+  disturbed tube does (dip, eased recovery, a stutter back through the ignition
+  pops, reduced-motion policy); the consumer owns the listeners, and the sign
+  attaches none. A shared `frame` pins
   several pieces cut from one drawing to the same design space — the
   multi-colour portrait pattern (the gallery's tribute singer: neon quiff,
   helium face, argon jacket, gold notes, white mic — never gonna give you up).

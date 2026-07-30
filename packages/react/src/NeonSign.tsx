@@ -37,6 +37,10 @@ export interface NeonSignProps {
 	/** Per-text-line circuits (the motel sign's separately switched NO). */
 	lineOn?: boolean[];
 	glow?: number;
+	/** The unlit tube itself. */
+	glass?: NeonSignOptions['glass'];
+	/** The electrode caps — metal, not light. */
+	electrode?: NeonSignOptions['electrode'];
 	/** Wear 0..1: dimming → a flickering tube → dead glass (the MOT L arc). */
 	age?: number;
 	/** Electrical instability 0..1: sparse dips and re-strike blips. */
@@ -88,6 +92,8 @@ export const NeonSign = forwardRef<NeonSignHandle | null, NeonSignProps>(
 			on,
 			lineOn,
 			glow,
+			glass,
+			electrode,
 			age,
 			flicker,
 			tired,
@@ -130,6 +136,8 @@ export const NeonSign = forwardRef<NeonSignHandle | null, NeonSignProps>(
 				on: p.on,
 				lineOn: p.lineOn,
 				glow: p.glow,
+				glass: p.glass,
+				electrode: p.electrode,
 				age: p.age,
 				flicker: p.flicker,
 				tired: p.tired,
@@ -177,6 +185,8 @@ export const NeonSign = forwardRef<NeonSignHandle | null, NeonSignProps>(
 				on,
 				lineOn,
 				glow,
+				glass,
+				electrode,
 				age,
 				flicker,
 				tired,
@@ -205,6 +215,8 @@ export const NeonSign = forwardRef<NeonSignHandle | null, NeonSignProps>(
 			on,
 			lineOn,
 			glow,
+			glass,
+			electrode,
 			age,
 			flicker,
 			tired,

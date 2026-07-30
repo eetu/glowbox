@@ -51,6 +51,13 @@ export const NeonSign = defineComponent({
 		/** Per-text-line circuits (the motel sign's separately switched NO). */
 		lineOn: { type: Array as PropType<boolean[]>, default: undefined },
 		glow: { type: Number, default: undefined },
+		/** The unlit tube itself. */
+		glass: { type: [String, Array] as PropType<NeonSignOptions['glass']>, default: undefined },
+		/** The electrode caps — metal, not light. */
+		electrode: {
+			type: [String, Array] as PropType<NeonSignOptions['electrode']>,
+			default: undefined
+		},
 		/** Wear 0..1: dimming → a flickering tube → dead glass (the MOT L arc). */
 		age: { type: Number, default: undefined },
 		/** Electrical instability 0..1: sparse dips and re-strike blips. */
@@ -91,6 +98,8 @@ export const NeonSign = defineComponent({
 			on: props.on,
 			lineOn: props.lineOn,
 			glow: props.glow,
+			glass: props.glass,
+			electrode: props.electrode,
 			age: props.age,
 			flicker: props.flicker,
 			tired: props.tired,

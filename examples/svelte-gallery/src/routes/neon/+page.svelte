@@ -110,6 +110,15 @@
 		});
 	});
 
+	// Tap a tube to rap the glass. The sign attaches nothing itself — it answers
+	// `sectionAt`, the page owns the listener (the split-flap contract).
+	function rap(e: PointerEvent) {
+		const s = sign;
+		if (!s) return;
+		const tube = s.sectionAt(e.clientX, e.clientY);
+		if (tube != null) s.jolt(tube);
+	}
+
 	// The composable @glowbox/crt layer over the whole sign.
 	let stageWrap = $state<HTMLDivElement>();
 	$effect(() => {
@@ -146,7 +155,7 @@
 				]}
 			/>
 		</label>
-		<span class="hint">the glass is the point · turn SOUND on</span>
+		<span class="hint">tap a tube · turn SOUND on</span>
 		<ThemeToggle />
 		<button
 			class="panel-toggle"
@@ -160,7 +169,9 @@
 	</header>
 
 	<div class="stage" style="background: {backdrop}">
-		<div class="sign-wrap" bind:this={stageWrap}>
+		<!-- Presentational wrapper: rapping the glass is decoration, not an action;
+		     the canvas keeps the sign's own role="img" + label. -->
+		<div class="sign-wrap" bind:this={stageWrap} role="presentation" onpointerdown={rap}>
 			<canvas bind:this={canvas} aria-label="neon sign"></canvas>
 		</div>
 	</div>
@@ -357,6 +368,7 @@
 	}
 	.sign-wrap {
 		width: min(100%, 900px);
+		cursor: pointer;
 	}
 	.sign-wrap canvas {
 		display: block;
