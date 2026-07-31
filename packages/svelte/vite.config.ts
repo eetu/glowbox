@@ -16,7 +16,8 @@ export default defineConfig({
 			'@glowbox/split-flap': resolve(import.meta.dirname, '../split-flap/src/index.ts'),
 			'@glowbox/led-grid': resolve(import.meta.dirname, '../led-grid/src/index.ts'),
 			'@glowbox/nixie': resolve(import.meta.dirname, '../nixie/src/index.ts'),
-			'@glowbox/seven-segment': resolve(import.meta.dirname, '../seven-segment/src/index.ts')
+			'@glowbox/seven-segment': resolve(import.meta.dirname, '../seven-segment/src/index.ts'),
+			'@glowbox/vfd': resolve(import.meta.dirname, '../vfd/src/index.ts')
 		}
 	},
 	test: {

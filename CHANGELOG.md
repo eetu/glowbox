@@ -4,6 +4,169 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [Unreleased]
+
+The seventh display core: a **vacuum-fluorescent display panel** — the front of a
+90s mini-system, and the first _heterogeneous_ core in the family. Every one before
+it renders an array of identical modules or a block of text, where a stereo faceplate
+is a zoo of unlike parts sharing one vacuum envelope. Laying those parts out is not
+why it exists — a div grid does that. The envelope is: phosphor that keeps glowing
+after the drive stops, one multiplex with a real dimmer, a power-on self-test that
+lights the whole inventory, a tinted window that hides the undriven anodes, and two
+ways to fail. Now **twelve** packages in lockstep.
+
+### Added
+
+- **`@glowbox/vfd` — the seventh display core: a VFD panel.** Declare the hardware
+  once as a design `frame` plus a `layout` of elements, then drive it by name with
+  `set`/`light`/`bars`/`dots`. The element kinds: **`digits`** character cells in `'7seg'`,
+  `'14seg'`, `'16seg'` (starburst geometry from one hexagonal-bar primitive, so diagonals
+  cost no extra code; numerals authored off the seven-segment strokes, so a frequency reads
+  identically in every mode) or `'matrix'` 5×7; **`legend`** a screen-printed word —
+  **one anode, one wire**, lit as a unit, because that is physically what DOLBY NR is —
+  with `printed: true` for the silkscreen twin that is never wired; **`bars`** a
+  spectrum/VU grid with `peakHold` caps that fall on their own (a cap is not extra
+  hardware: it is the top block staying driven while the body drops away) and an optional
+  `wedge` ramp; **`icon`** from plain SVG **fill** data — neon needed centrelines because a
+  tube is a stroke, but a VFD anode is a printed patch, so editor output works as-is and
+  holes fill correctly; **`scale`** a tuning dial of discrete cursor blocks, because nothing
+  in a vacuum envelope slides; **`dots`** a raw dot grid (below); and **`rule`** silkscreen
+  furniture.
+- **The envelope, which is the point.** `persistence` gives every anode a brightness
+  integrator with fast attack and slow release — the **smear** as an analyser bar falls,
+  which no font, filter or CSS transition can reproduce. `brightness` is the **DIMMER**
+  button off the front of a receiver: the whole face at once, non-linearly, with 0 as
+  DISPLAY OFF (not blank — the undriven phosphor and the silkscreen are still behind the
+  glass). `filament` draws the hot wires in front of **everything** and `grid` the control
+  mesh **continuous across the panel** rather than per digit, because there is one envelope.
+  `selfTest()` lights every anode for ~1 s then settles — it exists only because the panel
+  knows its complete inventory. `filter` is the tinted window, applied as a single multiply
+  pass so it is never folded into an anode fill twice; it crushes the undriven-anode ghosts,
+  which is why the things were fitted (`filter: 'none'` shows a filterless panel). `zones`
+  adds windows over **regions** of that glass — the amber band across a level meter, the red
+  rectangle a RECORD block needs to be visible at all. A zone belongs to the **panel**, not
+  to an element, because that is what it is: plastic over a rectangle, tinting whatever sits
+  behind it. `age` runs the franchise wear arc at anode granularity (dim → sparse flicker →
+  dead) **plus** the failure that belongs to vacuum fluorescence: past ~0.6 a multiplex grid
+  weakens and a **vertical band** of the panel reads dimmer, cutting across whichever
+  elements sit in it.
+- **One flat anode inventory.** `compilePanel` is exported and pure — it compiles every
+  element kind down to a single list of anodes (a fixed patch of phosphor with an integer
+  address and a grid column), which is what lets persistence, the dimmer, the self-test,
+  wear and the grid banding each be one uniform pass over one `Float32Array` instead of a
+  renderer per kind. Also the seam for a 3D consumer: extrude the polygons, drive them with
+  `driveElement`.
+- **A `dots` element kind** — a raw `cols` × `rows` grid of individually addressable dots,
+  driven with `panel.dots(name, bitmap)` (a row-major array or an `(x, y)` function; row 0
+  is the top, because what you feed it is an image). This is the graphic half of a panel, and
+  it exists because a character-addressed field structurally cannot do two things these
+  displays really did: play an **animation**, and scroll text **smoothly by dot column**
+  rather than jumping a whole character — which, under persistence, reads as two glyphs
+  stacked rather than as motion. Values are 0..1 and fractional values are honest: a
+  multiplexed anode dims by duty cycle, so greyscale maps straight on with no dithering.
+  Every dot is an anode, so a 120 × 7 ticker is 840 of them.
+- **`blank(name)` — stop driving an element.** Not the same as writing it zeros: a `bars`
+  element with `peakHold` remembers its caps, and a cap resting on the floor row it never
+  falls below is a lit line across the element for good. A panel whose window has more than
+  one job — an analyser field that becomes a graphic display on the DISPLAY button, which is
+  what these units did — needs the driver it switched away from to stop, memory and all.
+  `fallPeaks` accordingly leaves a cap of -1 (a band with no cap) alone rather than resting
+  it on row 0. A blanked `scale` shows no cursor rather than one parked at zero: a dial with
+  nothing tuned in is an empty scale.
+- **The decimal point takes no cell.** In every segment mode `.` and `:` ride the cell
+  before them instead of consuming one, the way a driver chip wired its point and colon
+  anodes — which is why `'FM 98.50'` fits eight cells. A `'matrix'` cell draws its own `.`
+  as a glyph, so there it takes a cell like anything else.
+- **Geometry, not events.** `elementAt(clientX, clientY)` names the element under a point
+  and `elementRect(name)` gives its extent in CSS pixels; the core attaches no listeners,
+  matching split-flap's `cellAt` and neon's `sectionAt`. Elements made only of silkscreen
+  are skipped, so a `rule` box around a zone never swallows the taps meant for what is
+  inside it. Both answer from where the anodes actually ARE rather than from the declared
+  box, which matters for `icon`s placed through a shared design `frame`: their path
+  coordinates are frame coordinates, so they have no meaningful box of their own.
+- **`<VfdPanel>`** in `@glowbox/svelte`, `@glowbox/react` and `@glowbox/vue` — declare
+  `frame`/`layout`, then drive content either declaratively through `values` (keyed by
+  element name; the value's own type picks `set`/`light`/`bars`) or imperatively through
+  the handle, which is what an analyser at frame rate wants. Each wrapper syncs the
+  hardware on its own effect/watcher, separate from the appearance patch, so a slider tick
+  can never cost a re-compile.
+- **A `/vfd` gallery route** — two pieces of glass in one chassis, sharing one set of
+  envelope options so a single dimmer press or filter swap reaches both, and one scene
+  clock so they cannot disagree about what the unit is doing:
+  - the **faceplate**: segment character field, word annunciators, a tuning dial whose
+    ticks and 88/98/108 are silkscreen while the cursor is the anode (how a receiver did
+    it — a scale never changes, so nothing wired thirty anodes for one), the transport
+    mechanisms, and a dot-matrix ticker that crawls by column;
+  - the **analyser strip**, one window with three jobs picked by source: a 20-band spectrum
+    with peak caps, a graphic EQ curve laid over its top with the active preset named
+    alongside (morphing between FLAT/ROCK/JAZZ/POP/VOCAL), and a 4:3 **graphic display**
+    playing a frame animation dot by dot. That swap is the DISPLAY button, and sharing a
+    field is why it is a mode rather than a fourth window: a 4:3 grid centred in the strip
+    spends no anodes on the dark bands a full-width one would letterbox with, so the
+    picture gets more rows for fewer of them.
+
+  It runs attract-mode across four sources: tuner sweeping presets with ST/MONO following
+  the lock, CD counting tracks with the disc turning and the counter alternating elapsed
+  against remaining (which is what REMAIN is for), a tape deck moving through PLAY, PAUSE
+  and RECORD, and the graphic display. All four glyph repertoires are demonstrable — a
+  control swaps the main field between 7-, 14-, 16-segment and 5×7 — and the chassis has a
+  working three-position DIMMER, a power switch, and a tap readout wired through
+  `elementAt`.
+
+- **The transport animations are the honest ones.** A reel is not a rotating shape: it is a
+  ring of separate dash anodes with the lit run crawling around it, which is how Technics
+  drew it, and the tape is a dashed run between the hubs travelling the way it is being
+  spooled — counterclockwise reels, because a wheel turning clockwise has its lowest point
+  moving left. RECORD is a lit block with the letters knocked **out** of it, punched by
+  winding rather than drawn as glyphs, under its own window in the glass: the green filter
+  cannot pass red, so the panel carries an amber strip over that rectangle exactly as the
+  real glass did. Pause **freezes** the mechanism rather than blanking it — the crawl runs
+  on an accumulated phase, so it stops where it was instead of snapping to frame zero.
+- **Frame animations fall out of `icon` for free.** Several icons in one box with exactly one
+  driven is how the glass actually did rotation: it carried a few fixed alternate anodes and
+  the driver lit them in turn.
+- **The glow is not `shadowBlur`.** It is the most expensive thing a 2D canvas does, and one
+  gaussian per lit anode does not scale — a dot-matrix strip took the demo faceplate to
+  5 fps. Batching per element helps the call count but not the cost, because a gaussian
+  prices roughly area × radius and the area is the same either way. So every lit anode is
+  drawn flat into a small offscreen canvas and composited back **upscaled** — the sampler's
+  own filtering is the blur, done once for the whole envelope in two taps instead of
+  hundreds of gaussians. With per-element colour caching (which had been allocating an
+  object and re-parsing a colour ~1500 times a frame), the benchmark's worst case went from
+  17–26 fps to 40–63 depending on anode count, and the demo from 5 fps to vsync. Small dots
+  read better for it too, since a per-anode bloom had been smearing neighbours together.
+- **`scripts/bench-vfd.mjs`** — the house manual-benchmark pattern for this core: frame
+  throughput on the built package, vsync uncapped, one scenario per cost being priced. It
+  recorded one negative result worth keeping: caching the static ghost/silkscreen layers to
+  an offscreen is _slower_ than re-filling them, because those fills are at alpha 0.014 and
+  nearly free while a full-canvas blit is a million pixels every frame. They are
+  deliberately inline.
+
+### Notes
+
+- **Names are the wiring**, so a duplicate or empty one **throws** rather than leaving the
+  second element quietly undriveable; driving an element through the wrong call (`bars()` on
+  a `digits` field) **warns** rather than landing in a state field that element's driver
+  never reads; `bars`/`dots` **copy** their input, so an array reused for the next frame
+  cannot retroactively change the display (a function handed to `dots` is kept and sampled
+  per frame — that is its purpose); and the hardware lives in **`setLayout(layout, frame?)`**
+  rather than `setOptions`, because the one expensive call on the handle should not be
+  reachable by re-sending an option bag.
+- **`persistence` defaults low — 0.05, about 37 ms.** It is a stylized control, not a
+  physical one: real ZnO:Zn decays in microseconds, so no receiver smeared much, and what
+  everyone remembers is the multiplex refresh plus their own eye — a few tens of
+  milliseconds. Turned up it is still the thing the core exists to be able to do at all;
+  past ~0.45 a character field ghosts into its previous value.
+- **No sound module.** The first core in the family without one, deliberately: a VFD
+  has no voice, and the muting relay's clunk belongs to the receiver rather than to
+  the display.
+- **No invented element for the light theme.** Neon needed `polarity: 'absorb'`
+  because a bloom cannot read against white; a VFD was always a dark rectangle
+  screwed into a chassis, so `bezel` (the faceplate, or `null` for a transparent
+  canvas) is the whole answer.
+- `@glowbox/seven-segment`'s `style: 'vfd'` is untouched — a single digit in a VFD
+  material is still a legitimate small thing, and the panel is a different object.
+
 ## [1.8.0] — 2026-07-30
 
 The sixth display core: a **glass-tube neon sign** — the first core to arrive

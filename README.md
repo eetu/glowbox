@@ -7,11 +7,13 @@
 
 Glowing retro **display components**: a generic **3D LED-grid display** — an
 nx×ny×nz lattice of glowing "LEDs" you draw on like a tiny 3D canvas, rendered
-in WebGL and orbitable (auto-spin + drag + zoom) — plus five 2D-canvas cores:
+in WebGL and orbitable (auto-spin + drag + zoom) — plus six 2D-canvas cores:
 a **nixie tube**, a **seven-segment digit**, an **electromechanical flip-dot
 board** (discs physically rotate, and click), a **split-flap (Solari)
-display** (flap cards fall from a drum, and clack), and a **neon sign** (text
-bent into glass tubes that strike, flicker, hum and age). All ship as
+display** (flap cards fall from a drum, and clack), a **neon sign** (text
+bent into glass tubes that strike, flicker, hum and age), and a **vacuum-
+fluorescent panel** (a whole stereo faceplate in one envelope, phosphor
+smear and dimmer included). All ship as
 **framework-agnostic cores** plus thin framework wrappers you install into any
 SPA.
 
@@ -25,7 +27,9 @@ nixie-tube clock — flat 2D tubes or a 3D wire-cathode-in-glass scene — on th
 a solenoid rattle on `/flipdot`, a split-flap departures board — with chroma
 image drums, matrix rain, snake and pong — on `/splitflap`, and a neon sign —
 cursive glass power-cycling through its strike sequence, a worn NO / VACANCY,
-a gas tour, the tired transformer — on `/neon`.
+a gas tour, the tired transformer — on `/neon`, and a mini-system VFD
+faceplate — tuner, CD and tape cycling behind a green filter, with a real
+DIMMER and a spectrum analyser that smears — on `/vfd`.
 
 ## Packages
 
@@ -37,19 +41,21 @@ a gas tour, the tired transformer — on `/neon`.
 | [`@glowbox/flip-dot`](packages/flip-dot)           | `yarn add @glowbox/flip-dot`      | flip-dot board core: physical disc flips, dithering, solenoid click       |
 | [`@glowbox/split-flap`](packages/split-flap)       | `yarn add @glowbox/split-flap`    | split-flap (Solari) core: drum cascades, chroma image drums, card slap    |
 | [`@glowbox/neon`](packages/neon)                   | `yarn add @glowbox/neon`          | neon-sign core: glass tubes, strike sequences, wear, hum, light-theme ink |
+| [`@glowbox/vfd`](packages/vfd)                     | `yarn add @glowbox/vfd`           | VFD panel core: a stereo faceplate in one envelope, persistence, dimmer   |
 | [`@glowbox/crt`](packages/crt)                     | `yarn add @glowbox/crt`           | composable CRT screen over any canvas: curvature, phosphor persistence    |
-| [`@glowbox/svelte`](packages/svelte)               | `yarn add @glowbox/svelte`        | Svelte 5 components, one per core (`<LedGrid>` … `<NeonSign>`)            |
-| [`@glowbox/react`](packages/react)                 | `yarn add @glowbox/react`         | React components: the same six (`^18 \|\| ^19`)                           |
-| [`@glowbox/vue`](packages/vue)                     | `yarn add @glowbox/vue`           | Vue 3 components: the same six                                            |
+| [`@glowbox/svelte`](packages/svelte)               | `yarn add @glowbox/svelte`        | Svelte 5 components, one per core (`<LedGrid>` … `<VfdPanel>`)            |
+| [`@glowbox/react`](packages/react)                 | `yarn add @glowbox/react`         | React components: the same seven (`^18 \|\| ^19`)                         |
+| [`@glowbox/vue`](packages/vue)                     | `yarn add @glowbox/vue`           | Vue 3 components: the same seven                                          |
 | [`@glowbox/extras`](packages/extras)               | `yarn add @glowbox/extras`        | content: GIF/image players, 5×7 LED font text + scroller                  |
 
-Six rendering cores — the 3D LED grid (`@glowbox/led-grid`), the nixie tube
+Seven rendering cores — the 3D LED grid (`@glowbox/led-grid`), the nixie tube
 (`@glowbox/nixie`), the seven-segment display (`@glowbox/seven-segment`), the
 flip-dot board (`@glowbox/flip-dot`), the split-flap display
-(`@glowbox/split-flap`) and the neon sign (`@glowbox/neon`) — and each
-framework package (`svelte`/`react`/`vue`) ships a thin component for **all of
-them** (`<LedGrid>` + `<NixieTube>` + `<SevenSegment>` + `<FlipDots>` +
-`<SplitFlap>` + `<NeonSign>`).
+(`@glowbox/split-flap`), the neon sign (`@glowbox/neon`) and the VFD panel
+(`@glowbox/vfd`) — and each framework package (`svelte`/`react`/`vue`) ships a
+thin component for **all of them** (`<LedGrid>` + `<NixieTube>` +
+`<SevenSegment>` + `<FlipDots>` + `<SplitFlap>` + `<NeonSign>` +
+`<VfdPanel>`).
 `@glowbox/extras` layers content (GIF/image animation, text, audio bands) on the core's
 draw API, and `@glowbox/crt` is the first _effects layer_ — slap a curved phosphor
 screen over any of them (or any canvas at all).
@@ -112,8 +118,9 @@ packages/seven-segment   @glowbox/seven-segment — seven-segment rendering core
 packages/flip-dot        @glowbox/flip-dot  — flip-dot board rendering core (2D canvas)
 packages/split-flap      @glowbox/split-flap — split-flap rendering core (2D canvas)
 packages/neon            @glowbox/neon      — neon-sign rendering core (2D canvas)
+packages/vfd             @glowbox/vfd       — VFD panel rendering core (2D canvas)
 packages/crt             @glowbox/crt       — composable CRT screen effect (WebGL pass)
-examples/svelte-gallery  the demo SPA (LED gallery + nixie/seven/flipdot/splitflap/neon) → GitHub Pages
+examples/svelte-gallery  the demo SPA (LED gallery + nixie/seven/flipdot/splitflap/neon/vfd) → GitHub Pages
 ```
 
 ```sh
@@ -131,7 +138,7 @@ their own `build`/`test`.
 
 ## Publishing
 
-All ten packages publish to the public npm registry under the `@glowbox` scope. Tag
+All twelve packages publish to the public npm registry under the `@glowbox` scope. Tag
 a release (`vX.Y.Z`) and the `release` workflow publishes each via **npm trusted
 publishing (OIDC)** with provenance — no `NPM_TOKEN` secret (the cores first, then
 the wrappers + extras). Each package needs a trusted publisher configured on npm.

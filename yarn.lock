@@ -758,6 +758,7 @@ __metadata:
     "@glowbox/nixie": "workspace:^"
     "@glowbox/seven-segment": "workspace:^"
     "@glowbox/split-flap": "workspace:^"
+    "@glowbox/vfd": "workspace:^"
     "@types/react": "npm:^19"
     "@types/react-dom": "npm:^19"
     "@vitejs/plugin-react": "npm:^5"
@@ -845,6 +846,7 @@ __metadata:
     "@glowbox/nixie": "workspace:^"
     "@glowbox/seven-segment": "workspace:^"
     "@glowbox/split-flap": "workspace:^"
+    "@glowbox/vfd": "workspace:^"
     "@size-limit/file": "npm:^13"
     "@sveltejs/package": "npm:^2.5"
     "@sveltejs/vite-plugin-svelte": "npm:^7"
@@ -864,6 +866,22 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@glowbox/vfd@workspace:^, @glowbox/vfd@workspace:packages/vfd":
+  version: 0.0.0-use.local
+  resolution: "@glowbox/vfd@workspace:packages/vfd"
+  dependencies:
+    "@anarkisti/eslint-config": "npm:^1"
+    "@vitest/browser": "npm:^4.1"
+    "@vitest/browser-playwright": "npm:^4.1"
+    eslint: "npm:^10"
+    playwright: "npm:^1.61"
+    typescript: "npm:^6"
+    vite: "npm:^8.1"
+    vite-plugin-dts: "npm:^5"
+    vitest: "npm:^4.1"
+  languageName: unknown
+  linkType: soft
+
 "@glowbox/vue@workspace:packages/vue":
   version: 0.0.0-use.local
   resolution: "@glowbox/vue@workspace:packages/vue"
@@ -875,6 +893,7 @@ __metadata:
     "@glowbox/nixie": "workspace:^"
     "@glowbox/seven-segment": "workspace:^"
     "@glowbox/split-flap": "workspace:^"
+    "@glowbox/vfd": "workspace:^"
     "@vitest/browser": "npm:^4.1"
     "@vitest/browser-playwright": "npm:^4.1"
     "@vue/compiler-dom": "npm:^3.5"

@@ -47,7 +47,7 @@
 	},
 	"size-limit": [
 		{
-			"name": "esm (own code; react + core external)",
+			"name": "esm (own code; react + cores external)",
 			"path": "dist/index.js",
 			"ignore": [
 				"react",
@@ -58,9 +58,10 @@
 				"@glowbox/split-flap",
 				"@glowbox/led-grid",
 				"@glowbox/nixie",
-				"@glowbox/seven-segment"
+				"@glowbox/seven-segment",
+				"@glowbox/vfd"
 			],
-			"limit": "2 kB"
+			"limit": "2.5 kB"
 		}
 	],
 	"peerDependencies": {
@@ -72,7 +73,8 @@
 		"@glowbox/neon": "workspace:^",
 		"@glowbox/nixie": "workspace:^",
 		"@glowbox/seven-segment": "workspace:^",
-		"@glowbox/split-flap": "workspace:^"
+		"@glowbox/split-flap": "workspace:^",
+		"@glowbox/vfd": "workspace:^"
 	},
 	"devDependencies": {
 		"@anarkisti/eslint-config": "^1",

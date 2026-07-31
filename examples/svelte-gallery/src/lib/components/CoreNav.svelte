@@ -5,7 +5,8 @@
 	// siblings of one app rather than separate pages.
 	import { resolve } from '$app/paths';
 
-	let { core }: { core: 'led' | 'nixie' | 'seven' | 'flipdot' | 'splitflap' | 'neon' } = $props();
+	let { core }: { core: 'led' | 'nixie' | 'seven' | 'flipdot' | 'splitflap' | 'neon' | 'vfd' } =
+		$props();
 
 	// On a phone the strip scrolls, so the tab you're on can start off-screen —
 	// centre it once mounted. Set `scrollLeft` rather than calling
@@ -27,7 +28,8 @@
 		{ id: 'seven', label: '7-seg', path: '/seven' },
 		{ id: 'flipdot', label: 'Flip-dot', path: '/flipdot' },
 		{ id: 'splitflap', label: 'Split-flap', path: '/splitflap' },
-		{ id: 'neon', label: 'Neon', path: '/neon' }
+		{ id: 'neon', label: 'Neon', path: '/neon' },
+		{ id: 'vfd', label: 'VFD', path: '/vfd' }
 	] as const;
 </script>
 
@@ -85,7 +87,7 @@
 		border: 1px solid var(--halo-border);
 		border-radius: var(--halo-radius);
 		background: var(--halo-bg-main);
-		/* Six cores no longer fit a phone header: scroll the strip instead of
+		/* Seven cores no longer fit a phone header: scroll the strip instead of
 		   clipping the last tab off the screen edge. */
 		overflow-x: auto;
 		scrollbar-width: none;
