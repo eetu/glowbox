@@ -39,6 +39,7 @@ const config = {
 			'@glowbox/flip-dot': '../../packages/flip-dot/src/index.ts',
 			'@glowbox/split-flap': '../../packages/split-flap/src/index.ts',
 			'@glowbox/neon': '../../packages/neon/src/index.ts',
+			'@glowbox/vfd': '../../packages/vfd/src/index.ts',
 			'@glowbox/crt': '../../packages/crt/src/index.ts'
 		}
 	}

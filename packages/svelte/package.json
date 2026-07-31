@@ -51,7 +51,7 @@
 		{
 			"name": "shipped files (no bundle — components ship as .svelte source)",
 			"path": "dist/**/*.{js,svelte}",
-			"limit": "8 kB"
+			"limit": "10 kB"
 		}
 	],
 	"peerDependencies": {
@@ -63,7 +63,8 @@
 		"@glowbox/neon": "workspace:^",
 		"@glowbox/nixie": "workspace:^",
 		"@glowbox/seven-segment": "workspace:^",
-		"@glowbox/split-flap": "workspace:^"
+		"@glowbox/split-flap": "workspace:^",
+		"@glowbox/vfd": "workspace:^"
 	},
 	"devDependencies": {
 		"@anarkisti/eslint-config": "^1",

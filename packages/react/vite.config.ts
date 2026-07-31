@@ -32,7 +32,8 @@ export default defineConfig({
 				'@glowbox/split-flap',
 				'@glowbox/led-grid',
 				'@glowbox/nixie',
-				'@glowbox/seven-segment'
+				'@glowbox/seven-segment',
+				'@glowbox/vfd'
 			],
 			// React Server Components (Next.js App Router) treat library modules as server
 			// code unless marked: these components are client-only (canvas + effects).
@@ -47,7 +48,8 @@ export default defineConfig({
 			'@glowbox/split-flap': resolve(import.meta.dirname, '../split-flap/src/index.ts'),
 			'@glowbox/led-grid': coreSrc,
 			'@glowbox/nixie': nixieSrc,
-			'@glowbox/seven-segment': sevenSrc
+			'@glowbox/seven-segment': sevenSrc,
+			'@glowbox/vfd': resolve(import.meta.dirname, '../vfd/src/index.ts')
 		},
 		include: ['src/**/*.browser.test.tsx'],
 		browser: {

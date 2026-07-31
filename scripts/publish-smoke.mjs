@@ -26,6 +26,7 @@ const PACKAGES = [
 	'flip-dot',
 	'split-flap',
 	'neon',
+	'vfd',
 	'crt',
 	'svelte',
 	'react',
@@ -111,11 +112,12 @@ import { createSevenSegment, segmentGeometry, type SevenSegmentOptions } from '@
 import { createFlipDots, createMechSound, ditherFrame, type FlipDotsOptions } from '@glowbox/flip-dot';
 import { chromaDrum, createSplitFlap, DRUM_DIGITS, paletteFrame, type SplitFlapOptions } from '@glowbox/split-flap';
 import { createHum, createNeonSign, HERSHEY_LICENSE, layoutTubes, type NeonSignOptions } from '@glowbox/neon';
+import { compilePanel, createVfdPanel, layCells, type VfdElement, type VfdPanelOptions } from '@glowbox/vfd';
 import { createCrtScreen, type CrtOptions } from '@glowbox/crt';
 import { makeGifPlayer, text } from '@glowbox/extras';
-import { FlipDots as SvelteFlipDots, LedGrid as SvelteLedGrid, NeonSign as SvelteNeonSign, NixieTube as SvelteNixieTube, SevenSegment as SvelteSevenSegment, SplitFlap as SvelteSplitFlap } from '@glowbox/svelte';
-import { FlipDots as ReactFlipDots, LedGrid as ReactLedGrid, NeonSign as ReactNeonSign, NixieTube as ReactNixieTube, SevenSegment as ReactSevenSegment, SplitFlap as ReactSplitFlap } from '@glowbox/react';
-import { FlipDots as VueFlipDots, LedGrid as VueLedGrid, NeonSign as VueNeonSign, NixieTube as VueNixieTube, SevenSegment as VueSevenSegment, SplitFlap as VueSplitFlap } from '@glowbox/vue';
+import { FlipDots as SvelteFlipDots, LedGrid as SvelteLedGrid, NeonSign as SvelteNeonSign, NixieTube as SvelteNixieTube, SevenSegment as SvelteSevenSegment, SplitFlap as SvelteSplitFlap, VfdPanel as SvelteVfdPanel } from '@glowbox/svelte';
+import { FlipDots as ReactFlipDots, LedGrid as ReactLedGrid, NeonSign as ReactNeonSign, NixieTube as ReactNixieTube, SevenSegment as ReactSevenSegment, SplitFlap as ReactSplitFlap, VfdPanel as ReactVfdPanel } from '@glowbox/react';
+import { FlipDots as VueFlipDots, LedGrid as VueLedGrid, NeonSign as VueNeonSign, NixieTube as VueNixieTube, SevenSegment as VueSevenSegment, SplitFlap as VueSplitFlap, VfdPanel as VueVfdPanel } from '@glowbox/vue';
 
 const g = createVoxelGrid(4, 4, 4);
 g.plot(1, 2, 3, [1, 0.5, 0]);
@@ -135,6 +137,17 @@ const neonOpts: NeonSignOptions = {
 };
 const neonLay = layoutTubes('HI', 'sans');
 const neonAck: string = HERSHEY_LICENSE;
+const vfdLayout: VfdElement[] = [
+	{ kind: 'digits', name: 'main', chars: 8, glyphs: '14seg', x: 8, y: 6, w: 150, h: 26 },
+	{ kind: 'legend', name: 'db', text: '-30dB', printed: true, x: 170, y: 16, w: 30, h: 8 },
+	{ kind: 'bars', name: 'spec', bands: 12, rows: 8, peakHold: true, x: 196, y: 6, w: 110, h: 34 },
+	{ kind: 'icon', name: 'play', d: 'M0 0 L10 5 L0 10 Z', x: 300, y: 44, w: 10, h: 10 },
+	{ kind: 'scale', name: 'tune', ticks: 9, steps: 20, x: 8, y: 50, w: 150, h: 10 },
+	{ kind: 'dots', name: 'screen', cols: 24, rows: 8, x: 170, y: 44, w: 60, h: 20 }
+];
+const vfdOpts: VfdPanelOptions = { frame: [320, 64], layout: vfdLayout, phosphor: 'zn-o', filter: 'green' };
+const vfdPanel = compilePanel([320, 64], vfdLayout);
+const vfdCells = layCells('FM 98.50', 8, 'left', true);
 const crtOpts: CrtOptions = { persistence: 0.5, events: true };
 export const used = [
 	createLedDisplay,
@@ -147,6 +160,7 @@ export const used = [
 	createSplitFlap,
 	createNeonSign,
 	createHum,
+	createVfdPanel,
 	createCrtScreen,
 	makeGifPlayer,
 	text,
@@ -156,18 +170,21 @@ export const used = [
 	SvelteFlipDots,
 	SvelteSplitFlap,
 	SvelteNeonSign,
+	SvelteVfdPanel,
 	ReactLedGrid,
 	ReactNixieTube,
 	ReactSevenSegment,
 	ReactFlipDots,
 	ReactSplitFlap,
 	ReactNeonSign,
+	ReactVfdPanel,
 	VueLedGrid,
 	VueNixieTube,
 	VueSevenSegment,
 	VueFlipDots,
 	VueSplitFlap,
 	VueNeonSign,
+	VueVfdPanel,
 	opts,
 	segOpts,
 	dotOpts,
@@ -177,6 +194,9 @@ export const used = [
 	neonOpts,
 	neonLay,
 	neonAck,
+	vfdOpts,
+	vfdPanel,
+	vfdCells,
 	crtOpts
 ] as const;
 export type D = LedDisplay;
@@ -220,6 +240,7 @@ export type D = LedDisplay;
 		"@glowbox/flip-dot": "/node_modules/@glowbox/flip-dot/dist/index.js",
 		"@glowbox/split-flap": "/node_modules/@glowbox/split-flap/dist/index.js",
 		"@glowbox/neon": "/node_modules/@glowbox/neon/dist/index.js",
+		"@glowbox/vfd": "/node_modules/@glowbox/vfd/dist/index.js",
 		"@glowbox/crt": "/node_modules/@glowbox/crt/dist/index.js",
 		"@glowbox/extras": "/node_modules/@glowbox/extras/dist/index.js"
 	}
@@ -231,6 +252,7 @@ export type D = LedDisplay;
 <canvas id="f" style="width:280px;height:140px"></canvas>
 <canvas id="sf" style="width:280px;height:40px"></canvas>
 <canvas id="ne" style="width:280px;height:100px"></canvas>
+<canvas id="vf" style="width:320px;height:64px"></canvas>
 <script type="module">
 	import { createLedDisplay } from '@glowbox/led-grid';
 	import { createNixieTube } from '@glowbox/nixie';
@@ -238,6 +260,7 @@ export type D = LedDisplay;
 	import { createFlipDots, ditherFrame } from '@glowbox/flip-dot';
 	import { createSplitFlap } from '@glowbox/split-flap';
 	import { createNeonSign } from '@glowbox/neon';
+	import { createVfdPanel } from '@glowbox/vfd';
 	import { createCrtScreen } from '@glowbox/crt';
 	import { text } from '@glowbox/extras';
 	const d = createLedDisplay(document.getElementById('g'), {
@@ -260,6 +283,22 @@ export type D = LedDisplay;
 	sf.setText('GLOWBOX');
 	const ne = createNeonSign(document.getElementById('ne'), { text: 'Glow', strikeMs: 0 });
 	if (!ne) throw new Error('createNeonSign returned null');
+	const vf = createVfdPanel(document.getElementById('vf'), {
+		frame: [320, 64],
+		selfTest: false,
+		persistence: 0,
+		layout: [
+			{ kind: 'digits', name: 'main', chars: 8, glyphs: '14seg', x: 8, y: 6, w: 150, h: 26 },
+			{ kind: 'legend', name: 'st', text: 'ST', x: 170, y: 4, w: 14, h: 8 },
+			{ kind: 'bars', name: 'spec', bands: 12, rows: 8, x: 196, y: 6, w: 110, h: 34 },
+			{ kind: 'dots', name: 'screen', cols: 24, rows: 8, x: 8, y: 40, w: 60, h: 20 }
+		]
+	});
+	if (!vf) throw new Error('createVfdPanel returned null');
+	vf.set('main', 'FM 98.50');
+	vf.light('st', true);
+	vf.bars('spec', [0.2, 0.4, 0.6, 0.8, 1, 0.8, 0.6, 0.4, 0.2, 0.5, 0.7, 0.3]);
+	vf.dots('screen', (x, y) => ((x + y) % 3 === 0 ? 1 : 0.2));
 	const crt = createCrtScreen(document.getElementById('n'));
 	if (!crt) throw new Error('createCrtScreen returned null');
 	window.__ok = true;

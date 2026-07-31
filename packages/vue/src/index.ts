@@ -1,11 +1,12 @@
 // @glowbox/vue — glowbox components for Vue 3:
-//   import { LedGrid, NixieTube, SevenSegment, FlipDots, SplitFlap, NeonSign } from "@glowbox/vue";
+//   import { LedGrid, NixieTube, SevenSegment, FlipDots, SplitFlap, NeonSign, VfdPanel } from "@glowbox/vue";
 export { FlipDots } from './FlipDots';
 export { LedGrid } from './LedGrid';
 export { NeonSign } from './NeonSign';
 export { NixieTube } from './NixieTube';
 export { SevenSegment } from './SevenSegment';
 export { SplitFlap } from './SplitFlap';
+export { VfdPanel, type VfdValue } from './VfdPanel';
 
 // Re-export the cores' option/handle types so consumers can type against the
 // components (`LedDisplay`, `NixieOptions`, …) without adding the core packages as
@@ -32,3 +33,17 @@ export type {
 	SevenSegmentStyle
 } from '@glowbox/seven-segment';
 export type { FlapFace, SplitFlapBoard, SplitFlapOptions } from '@glowbox/split-flap';
+export type {
+	FilterName,
+	PhosphorName,
+	VfdBars,
+	VfdDigits,
+	VfdElement,
+	VfdGlyphs,
+	VfdIcon,
+	VfdLegend,
+	VfdPanel as VfdPanelHandle,
+	VfdPanelOptions,
+	VfdRule,
+	VfdScale
+} from '@glowbox/vfd';

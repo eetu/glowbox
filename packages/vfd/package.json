@@ -1,17 +1,17 @@
 {
-	"name": "@glowbox/vue",
+	"name": "@glowbox/vfd",
 	"version": "1.8.0",
-	"description": "glowbox components for Vue 3 — <LedGrid> (3D WebGL LED grid) + <NixieTube> (nixie-tube display).",
+	"description": "Vacuum-fluorescent display panel component — the stereo faceplate: a zoo of unlike anodes in one envelope (segment fields, lit word legends, spectrum bars, icons, tuning scale), sharing phosphor persistence, a dimmer, filament haze and filter glass, in the glowbox family.",
 	"keywords": [
 		"glowbox",
-		"vue",
-		"led",
-		"led-cube",
-		"webgl",
-		"voxel",
-		"3d",
-		"nixie",
-		"component"
+		"vfd",
+		"vacuum-fluorescent",
+		"stereo",
+		"hifi",
+		"spectrum-analyzer",
+		"14-segment",
+		"retro",
+		"display"
 	],
 	"license": "MIT",
 	"type": "module",
@@ -33,7 +33,7 @@
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/eetu/glowbox.git",
-		"directory": "packages/vue"
+		"directory": "packages/vfd"
 	},
 	"homepage": "https://eetu.github.io/glowbox/",
 	"scripts": {
@@ -47,45 +47,20 @@
 	},
 	"size-limit": [
 		{
-			"name": "esm (own code; vue + core external)",
+			"name": "esm (core + 7/14/16-segment geometry + vendored 5×7 face + SVG path parser)",
 			"path": "dist/index.js",
-			"ignore": [
-				"vue",
-				"@glowbox/flip-dot",
-				"@glowbox/neon",
-				"@glowbox/split-flap",
-				"@glowbox/led-grid",
-				"@glowbox/nixie",
-				"@glowbox/seven-segment",
-				"@glowbox/vfd"
-			],
-			"limit": "2.5 kB"
+			"limit": "12 kB"
 		}
 	],
-	"peerDependencies": {
-		"vue": "^3"
-	},
-	"dependencies": {
-		"@glowbox/flip-dot": "workspace:^",
-		"@glowbox/led-grid": "workspace:^",
-		"@glowbox/neon": "workspace:^",
-		"@glowbox/nixie": "workspace:^",
-		"@glowbox/seven-segment": "workspace:^",
-		"@glowbox/split-flap": "workspace:^",
-		"@glowbox/vfd": "workspace:^"
-	},
 	"devDependencies": {
 		"@anarkisti/eslint-config": "^1",
 		"@vitest/browser": "^4.1",
 		"@vitest/browser-playwright": "^4.1",
-		"@vue/compiler-dom": "^3.5",
-		"@vue/test-utils": "^2.4",
 		"eslint": "^10",
 		"playwright": "^1.61",
 		"typescript": "^6",
 		"vite": "^8.1",
 		"vite-plugin-dts": "^5",
-		"vitest": "^4.1",
-		"vue": "^3.5"
+		"vitest": "^4.1"
 	}
 }

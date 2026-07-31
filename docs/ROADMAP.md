@@ -66,6 +66,24 @@ torus — `d.torus()` is axis-aligned/single-colour, see the note in `torus.ts`.
    connected letterforms procedurally instead of vendoring Hershey data.
    Honest read: that's typeface design wearing a geometry costume; effort
    unknown and probably large, and the vendored faces are good.
+   **VFD panel LANDED post-1.8.0 (ships as 1.9.0)** — the second unplanned core, and
+   the first _heterogeneous_ one: every core before it is an array of identical
+   modules or a block of text, where a stereo faceplate is a zoo of unlike parts
+   (14-segment field, screen-printed word annunciators, spectrum grid, transport
+   icons, tuning dial, silkscreen). The trivial alternative is a div grid and a green
+   webfont, which is why the core is deliberately NOT the layout but the shared
+   **envelope**: phosphor persistence (the smear on a falling analyser bar — a
+   per-anode integrator across frames, the one thing CSS structurally cannot do), one
+   multiplex (filament wires over everything, panel-continuous grid mesh, and the
+   DIMMER button pulling the whole face down non-linearly), the power-on self-test
+   (which only exists because the panel knows its complete anode inventory), the
+   filter glass that crushes undriven-anode ghosts, and failure two ways — the
+   franchise wear arc at anode granularity plus the VFD-only dim-grid-column banding.
+   The enabling decision was compiling all six element kinds down to ONE flat anode
+   list (fixed patch + integer address + grid column), so the physics is a handful of
+   uniform passes over a single `Float32Array` instead of six per-element renderers.
+   First core with **no sound module**, deliberately: a VFD has no voice, and the
+   muting relay belongs to the receiver.
    The bar for every core: real wow
    beyond the trivial alternative, or it doesn't ship. Nixie proved the pattern:
    standalone 2D core + wrapper components + a demo page; the 1.0.1 decoupling made

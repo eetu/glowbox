@@ -30,7 +30,8 @@ export default defineConfig({
 				'@glowbox/split-flap',
 				'@glowbox/led-grid',
 				'@glowbox/nixie',
-				'@glowbox/seven-segment'
+				'@glowbox/seven-segment',
+				'@glowbox/vfd'
 			]
 		}
 	},
@@ -41,7 +42,8 @@ export default defineConfig({
 			'@glowbox/split-flap': resolve(import.meta.dirname, '../split-flap/src/index.ts'),
 			'@glowbox/led-grid': coreSrc,
 			'@glowbox/nixie': nixieSrc,
-			'@glowbox/seven-segment': sevenSrc
+			'@glowbox/seven-segment': sevenSrc,
+			'@glowbox/vfd': resolve(import.meta.dirname, '../vfd/src/index.ts')
 		},
 		include: ['src/**/*.browser.test.ts'],
 		browser: {
