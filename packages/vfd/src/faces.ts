@@ -15,6 +15,11 @@
 // SAME strokes in all three, so a frequency reads identically whichever mode the panel
 // mixes in — which is what real faceplates did (7-seg for the numbers, starburst for
 // the words, one envelope).
+// The 5×7 face is used TWICE here, for two different-looking jobs:
+//   • `glyphs: 'matrix'` — one anode per dot, the dot-matrix character field.
+//   • `legend` words and printed labels — the SAME bitmaps, merged into solid horizontal
+//     runs (`wordRuns`), so DOLBY NR reads as a screen-printed word rather than a grid of
+//     dots. Real panel legends were 2–3 mm tall and chunky; this is that.
 import { FONT_5X7, glyph5x7 } from './font5x7';
 
 /** The character cell all face geometry is authored in (y-down). Elements scale it. */

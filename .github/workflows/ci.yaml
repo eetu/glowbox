@@ -29,6 +29,9 @@ jobs:
           # the core's browser project also runs webkit (HDR-extension variance).
           # (bare `yarn <bin>` isn't a thing in Yarn 4; call the hoisted bin directly.)
           ./node_modules/.bin/playwright install --with-deps chromium webkit
+          # The shared/ symlinks are real symlinks, not the text files git-on-Windows
+          # would leave behind. Cheap, and first so it fails before anything confusing.
+          node scripts/check-shared.mjs
           yarn lint
           yarn format
           # Build before typecheck: cross-package typecheck resolves @glowbox/* through each

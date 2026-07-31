@@ -52,6 +52,9 @@ jobs:
           # unvalidated code, and npm publishes are effectively irreversible. Browser (vitest)
           # and e2e (Playwright) tests need chromium.
           ./node_modules/.bin/playwright install --with-deps chromium webkit
+          # The shared/ symlinks are real symlinks, not the text files git-on-Windows
+          # would leave behind. Cheap, and first so it fails before anything confusing.
+          node scripts/check-shared.mjs
           yarn lint
           yarn format
           # Build before typecheck: cross-package typecheck resolves @glowbox/* through each
