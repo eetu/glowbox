@@ -27,8 +27,12 @@ packages/
 examples/
   svelte-gallery/              — SvelteKit SPA demo (LED programs + /nixie + /seven + /flipdot + /splitflap + /neon + /vfd) → GitHub Pages.
                                  /vfd is two panels sharing one envelope option set + one scene clock: faceplate (segment field + annunciators + dial + tape/disc transport + dot ticker) and the analyser strip, which is ONE window with three jobs picked by source (20-band spectrum, EQ curve laid over it, and a 4:3 GIF `dots` area on the `gif` source = the DISPLAY button). Both panels read the same clock or they'd disagree about the scene.
+shared/                        — the ONE copy of each file more than one package needs
+                                 (color.ts, sound.ts, font5x7.ts, path-parse.ts), SYMLINKED
+                                 into each package's src/. See Conventions → Shared sources.
 scripts/
   publish-smoke.mjs            — publish-integrity smoke test (see Testing).
+  check-shared.mjs             — asserts the shared/ symlinks are symlinks (Windows guard).
 docs/ROADMAP.md                — direction (strategic bets; 1.1/1.2 themes shipped).
 ```
 
@@ -50,9 +54,22 @@ Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
 - **Cores stay import-safe in node/SSR**: nothing browser-only (`Path2D`, canvas,
   `ResizeObserver`) may run at module scope — 1.0.0 shipped an SSR import crash this
   way. Guarded by nixie's `ssr-import.test.ts` + the publish smoke.
-- **Cores are independent**: nixie vendors its own copy of the colour parser
-  (`packages/nixie/src/color.ts`) rather than depending on led-grid — a display core
-  must not pull in a sibling. Both set `role="img"` + `aria-label` (the `label` option).
+- **Cores are independent**: a display core must not depend on a sibling package, so every
+  one is genuinely zero-dep. Cores set `role="img"` + `aria-label` (the `label` option).
+- **Shared sources = `shared/` + symlinks.** The files more than one package needs live once
+  in `shared/` and are **symlinked** into each package's `src/` (`color.ts` ×7, `sound.ts`
+  ×3, `font5x7.ts` ×2, `path-parse.ts` ×2). Editing `shared/x.ts` edits it for all of them.
+  Nothing depends on it at runtime — each bundler inlines the file, so the dists and the
+  zero-dep claim are unchanged; this replaced hand-copied duplicates that were identical only
+  by discipline. `shared/color.ts` is a superset (led-grid's `Vec3` + `parseColor01`); the 2D
+  cores don't import those and they tree-shake away, which the size budgets guard.
+  `node scripts/check-shared.mjs` (in `validate` and CI) asserts the links are real symlinks
+  — **git on Windows writes symlinks as text files** containing the target path unless
+  `core.symlinks=true` + Developer Mode, and the guard turns that into a clear error.
+  Adding a shared file means adding it to `EXPECTED` in that script.
+  NOT shared: the small per-file `rgba`/`mix`/`c255` helpers, because `rgba` genuinely
+  differs (flip-dot/split-flap don't clamp alpha, neon/vfd do) — unifying them is a
+  behaviour change to shipping render paths, not a move.
 - **Packaging.** ESM-only, `files: ["dist"]`, exports with `types` + `import` (svelte:
   `svelte` condition, ships `.svelte` source via `@sveltejs/package`). All are
   public-npm scoped (`publishConfig.access: public`), versions **lockstep**. size-limit
@@ -89,7 +106,7 @@ Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
 
 - `yarn dev` — demo gallery on `:5173` (Vite; HMR into library source).
 - `yarn build` — topological: cores → wrappers/extras → demo.
-- `yarn test` / `yarn validate` (= lint + format + typecheck + test). Yarn is vendored:
+- `yarn test` / `yarn validate` (= check:shared + lint + format + typecheck + test). Yarn is vendored:
   `node .yarn/releases/yarn-*.cjs <script>`.
 - `yarn size` — bundle budgets. Per-package: `yarn workspace @glowbox/led-grid <script>`.
 - Demo routes prerender as shell pages with a `404.html` SPA fallback (GitHub Pages has

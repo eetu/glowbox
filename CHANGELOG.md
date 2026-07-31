@@ -142,6 +142,39 @@ ways to fail. Now **twelve** packages in lockstep.
   nearly free while a full-canvas blit is a million pixels every frame. They are
   deliberately inline.
 
+### Changed
+
+- **Vendored duplicates became one file each, shared by symlink.** ~2,200 lines that existed
+  as hand-maintained copies — the colour parser in **seven** packages, the sound engine in
+  three, the 5×7 face in two, the SVG path parser in two — now live once in `shared/` and are
+  symlinked into each package's `src/`. **Nothing changes for consumers**: each bundler still
+  inlines the file, so every package stays genuinely zero-dep and the dists are unchanged
+  (the two that moved by a hair, neon and vfd at +20 B, are the path split's one extra
+  module boundary).
+
+  The copies were identical only by discipline, with nothing to catch a fix applied six times
+  out of seven — and `path.ts` had already drifted into two files whose parsers were
+  character-identical but whose intent was no longer legible. Symlinks make divergence
+  impossible rather than merely detectable, which is why they beat a drift check.
+
+  `shared/color.ts` is led-grid's superset (`Vec3`, `parseColor01`); the 2D cores don't import
+  those and they tree-shake away, verified against the size budgets. `shared/path-parse.ts`
+  is the tokeniser, command walker and adaptive flattener; what each core does with the
+  result stays its own, because that is the one real difference — neon needs open
+  centrelines (a tube is a stroke), vfd closed rings (an anode is a printed fill). The
+  refactor was checked by capturing `pathToStrokes`/`pathToPolys` output over 40 cases before
+  and after: byte-identical.
+
+  **`node scripts/check-shared.mjs`** (in `validate`, CI and the release gate) asserts the
+  links really are symlinks. That is the Windows guard: git there writes symlinks as text
+  files containing the target path unless `core.symlinks=true` and Developer Mode is on, and
+  without the check that surfaces as a baffling error about a module whose contents are
+  `../../../shared/color.ts`.
+
+  Deliberately NOT shared: the small per-file `rgba`/`mix`/`c255` helpers. `rgba` genuinely
+  differs — flip-dot and split-flap don't clamp alpha, neon and vfd do — so unifying them
+  would be a behaviour change to shipping render paths rather than a move.
+
 ### Notes
 
 - **Names are the wiring**, so a duplicate or empty one **throws** rather than leaving the

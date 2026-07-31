@@ -15,7 +15,8 @@
 		"typecheck": "yarn workspaces foreach -Ap run typecheck",
 		"format": "prettier --check .",
 		"format:fix": "prettier --write .",
-		"validate": "yarn lint && yarn format && yarn typecheck && yarn test",
+		"check:shared": "node scripts/check-shared.mjs",
+		"validate": "yarn check:shared && yarn lint && yarn format && yarn typecheck && yarn test",
 		"size": "yarn workspaces foreach -Ap run size",
 		"dev": "yarn workspace @glowbox/svelte-gallery dev"
 	},
