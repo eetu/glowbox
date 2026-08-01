@@ -175,6 +175,31 @@ ways to fail. Now **twelve** packages in lockstep.
   differs — flip-dot and split-flap don't clamp alpha, neon and vfd do — so unifying them
   would be a behaviour change to shipping render paths rather than a move.
 
+### Fixed
+
+- **The clock colon was stamped through the glyph.** Both beads sat at the cell's horizontal
+  centre, on top of whatever character the cell was showing, so `12:34` rendered as two dots
+  punched through the `2`. They now ride the trailing gutter beside the decimal point, which
+  is where a driver chip wired them — and the only place they can go, since a `.` and a `:`
+  both attach to the cell before them.
+- **A NaN level killed a band for good.** `clamp01` passed NaN through, it landed in the
+  peak cap, and every later comparison against a NaN cap is false — so the band went dark and
+  stayed dark, with no way back. `clamp01` now coerces NaN to 0, and `fallPeaks` treats a
+  non-finite cap as absent rather than propagating it.
+- **A backwards clock inflated the peak caps.** `fallPeaks` subtracted `rate * dt` without
+  checking the sign, so a negative `dt` added instead: four rows became forty-four. It only
+  moves caps downwards now.
+- **A frame with no area threw from inside the render loop.** `frame: [0, 0]` made the scale
+  Infinity and every coordinate NaN, which surfaced as canvas throwing `InvalidStateError`
+  once a frame, uncatchably. `compilePanel` now rejects a non-finite or non-positive frame
+  with a readable error, so it fails at construction instead. `setLayout` compiles before it
+  commits, so a bad frame throws and leaves the panel exactly as it was.
+- **A throwing `dots` bitmap function threw forever.** It is sampled every frame, so an
+  exception escaped the rAF callback on each one. The element is now blanked, the throw is
+  reported once, and the panel carries on.
+- **`layCells` raised a bare `RangeError`** on a negative `chars` (`out.length = -4`) where
+  `compilePanel` clamps. It clamps too.
+
 ### Notes
 
 - **Names are the wiring**, so a duplicate or empty one **throws** rather than leaving the

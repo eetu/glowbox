@@ -148,10 +148,13 @@ function seg7Geometry(t: number): Poly[] {
 	];
 }
 
+// All three ride the trailing gutter, outside the right rail — which is where a driver
+// chip put them, and the only place they can go: a bead at the cell's horizontal centre
+// lands ON the glyph, so `12:34` came out as two dots stamped through the 2.
 const EXTRA_GEOMETRY: Poly[] = [
-	dot(R + 6, BOT, T7 * 0.42), // dp — outside the right rail, like the real thing
-	dot(CX, MID - 15, T7 * 0.4), // colon1
-	dot(CX, MID + 15, T7 * 0.4) // colon2
+	dot(R + 6, BOT, T7 * 0.42), // dp
+	dot(R + 6, MID - 15, T7 * 0.4), // colon1
+	dot(R + 6, MID + 15, T7 * 0.4) // colon2
 ];
 
 // --- glyph tables ------------------------------------------------------------------

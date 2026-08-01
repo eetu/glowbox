@@ -566,3 +566,34 @@ test('blanking silkscreen warns — a rule is never driven', () => {
 		console.warn = real;
 	}
 });
+
+test('a frame with no area fails at construction, not once a frame forever', () => {
+	// Unchecked this made the scale Infinity and every coordinate NaN, and canvas threw
+	// InvalidStateError from inside the render loop where nothing can catch it.
+	const canvas = document.createElement('canvas');
+	document.body.appendChild(canvas);
+	cleanup.push(() => canvas.remove());
+	expect(() => createVfdPanel(canvas, { frame: [0, 0], layout: [] })).toThrow(
+		/finite positive numbers/
+	);
+});
+
+test('setLayout with a bad frame throws and leaves the panel untouched', async () => {
+	const { canvas, panel } = mount({
+		persistence: 0,
+		layout: [{ kind: 'digits', name: 'main', chars: 4, glyphs: '7seg', x: 10, y: 8, w: 200, h: 48 }]
+	});
+	panel.set('main', '8888');
+	const lit = energy(canvas);
+	expect(lit).toBeGreaterThan(0);
+	expect(() =>
+		panel.setLayout(
+			[{ kind: 'digits', name: 'main', chars: 4, glyphs: '7seg', x: 10, y: 8, w: 200, h: 48 }],
+			[0, 0]
+		)
+	).toThrow(/finite positive numbers/);
+	// Still the old hardware, still showing what it was showing.
+	await wait(60);
+	expect(energy(canvas)).toBeCloseTo(lit, -3);
+	expect(panel.elementRect('main')).not.toBeNull();
+});

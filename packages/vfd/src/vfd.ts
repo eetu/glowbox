@@ -168,7 +168,9 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [
 	a[1] + (b[1] - a[1]) * t,
 	a[2] + (b[2] - a[2]) * t
 ];
-const clamp01 = (v: number) => (v > 1 ? 1 : v < 0 ? 0 : v);
+// NaN-safe: `v > 0 ? …` rather than `v < 0 ? 0 : …`, so a NaN option or level coerces to
+// 0 instead of propagating into the physics.
+const clamp01 = (v: number) => (v > 0 ? (v > 1 ? 1 : v) : 0);
 const WHITE: RGB = [1, 1, 1];
 
 // The wear arc thresholds — the franchise's, at anode granularity.
@@ -273,10 +275,12 @@ export function createVfdPanel(
 	let lastT = 0;
 	let flickerTimer: ReturnType<typeof setTimeout> | null = null;
 
-	function rebuild(keepState: boolean) {
+	// `precompiled` lets a caller compile first and commit after, so a layout that throws
+	// (a frame with no area) leaves the panel exactly as it was — see `setLayout`.
+	function rebuild(keepState: boolean, precompiled?: VfdPanelLayout) {
 		const prev = keepState ? states : null;
 		const prevNames = keepState ? panel.elements.map((e) => e.name) : [];
-		panel = compilePanel(frame, currentLayout);
+		panel = precompiled ?? compilePanel(frame, currentLayout);
 		const n = panel.anodes.length;
 		target = new Float32Array(n);
 		level = new Float32Array(n);
@@ -938,17 +942,16 @@ export function createVfdPanel(
 			else animate();
 		},
 		setLayout(next, nextFrame) {
-			let changed = false;
-			if (nextFrame && (nextFrame[0] !== frame[0] || nextFrame[1] !== frame[1])) {
-				frame = nextFrame;
-				changed = true;
-			}
-			if (next !== currentLayout) {
-				currentLayout = next;
-				changed = true;
-			}
+			const wantFrame = nextFrame ?? frame;
+			const changed =
+				next !== currentLayout || wantFrame[0] !== frame[0] || wantFrame[1] !== frame[1];
 			if (!changed) return;
-			rebuild(true);
+			// Compile BEFORE committing either field. A frame with no area throws, and a panel
+			// left holding it would keep the bad geometry for every later resize and draw.
+			const compiled = compilePanel(wantFrame, next);
+			frame = wantFrame;
+			currentLayout = next;
+			rebuild(true, compiled);
 			applyAria();
 			if (reduced || persistence <= 0) settle();
 			else animate();

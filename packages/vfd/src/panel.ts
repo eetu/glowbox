@@ -244,7 +244,10 @@ export interface VfdPanelLayout {
 	driven: number;
 }
 
-const clamp01 = (v: number) => (v > 1 ? 1 : v < 0 ? 0 : v);
+// NaN-safe on purpose: written as `v > 0 ? …` rather than `v < 0 ? 0 : …`, so a NaN
+// falls through to 0 instead of propagating. A NaN level used to reach a peak cap and
+// stick — every later comparison against it is false, so the band went dark for good.
+const clamp01 = (v: number) => (v > 0 ? (v > 1 ? 1 : v) : 0);
 
 /** Centroid of an anode's polygons, for the grid-column assignment. */
 function centroidX(polys: number[][]): number {
@@ -313,7 +316,15 @@ function placeWord(
  *  geometry, every time — which is what lets the golden-eyed parts (tests, a 3D
  *  consumer extruding the plates) rely on it. */
 export function compilePanel(frame: [number, number], layout: VfdElement[]): VfdPanelLayout {
-	const fw = Math.max(1e-6, frame[0]);
+	// A frame with no area has no geometry to fit into, and letting it through turns the
+	// scale into Infinity and every coordinate into NaN — which surfaces as canvas throwing
+	// InvalidStateError from inside the render loop, once a frame, where nobody can catch it.
+	if (!(frame[0] > 0) || !(frame[1] > 0) || !Number.isFinite(frame[0] * frame[1])) {
+		throw new Error(
+			`glowbox: the panel frame must be two finite positive numbers, got [${frame[0]}, ${frame[1]}].`
+		);
+	}
+	const fw = frame[0];
 	const elements: CompiledElement[] = [];
 	const anodes: VfdAnode[] = [];
 	const byName = new Map<string, number>();
@@ -636,6 +647,10 @@ export function layCells(
 	align: 'left' | 'right',
 	attach: boolean
 ): CellContent[] {
+	// Clamp rather than throw: `compilePanel` already clamps a silly `chars`, and this is
+	// the same question asked one layer down. Unclamped, `out.length = chars` raises a bare
+	// RangeError from deep inside the driver.
+	const cells = Number.isFinite(chars) ? Math.max(0, Math.floor(chars)) : 0;
 	const out: CellContent[] = [];
 	for (const ch of value) {
 		if (attach && (ch === '.' || ch === ':') && out.length) {
@@ -649,8 +664,8 @@ export function layCells(
 		}
 		out.push({ ch, dp: false, colon: false });
 	}
-	if (out.length > chars) out.length = chars;
-	const pad = chars - out.length;
+	if (out.length > cells) out.length = cells;
+	const pad = cells - out.length;
 	const blanks = Array.from({ length: pad }, () => ({ ch: ' ', dp: false, colon: false }));
 	return align === 'right' ? [...blanks, ...out] : [...out, ...blanks];
 }
@@ -685,10 +700,20 @@ export function fallPeaks(
 	rate: number,
 	dt: number
 ): void {
+	// Only ever forwards. A negative dt would ADD to every cap instead of subtracting —
+	// four rows became forty-four — and a clock that steps backwards is not this module's
+	// problem to have an opinion about.
+	const step = rate * (dt > 0 ? dt : 0);
 	for (let b = 0; b < peaks.length; b++) {
 		const rest = clamp01(levels[b] ?? 0) * rows;
-		if (peaks[b] < 0 && rest <= 0) continue;
-		peaks[b] = Math.max(peaks[b] - rate * dt, rest);
+		// A cap that is not a finite number is not a cap: treat it as absent rather than
+		// letting it poison every later Math.max.
+		const cap = Number.isFinite(peaks[b]) ? peaks[b] : -1;
+		if (cap < 0 && rest <= 0) {
+			peaks[b] = -1;
+			continue;
+		}
+		peaks[b] = Math.max(cap - step, rest);
 	}
 }
 
@@ -700,6 +725,9 @@ function slotOf(el: CompiledElement, cell: number, sub: number): number {
 	}
 	return el.index.get(addr(cell, sub)) ?? -1;
 }
+
+// Elements whose bitmap function has already thrown — warn once, not sixty times a second.
+const warnedDots = new Set<string>();
 
 /** Write an element's drive targets (0 or 1) into `out` at the element's anode slice.
  *  Pure address arithmetic — the physics (persistence, dimmer, wear) is the driver's
@@ -773,12 +801,27 @@ export function driveElement(el: CompiledElement, state: ElementState, out: Floa
 			}
 			const fn = typeof src === 'function' ? src : null;
 			const flat = fn ? null : (src as ArrayLike<number>);
-			for (let x = 0; x < el.cells; x++) {
-				for (let y = 0; y < el.stride; y++) {
-					const i = slotOf(el, x, y);
-					if (i < 0) continue;
-					const v = fn ? fn(x, y) : flat![y * el.cells + x];
-					out[i] = clamp01(Number.isFinite(v) ? v : 0);
+			try {
+				for (let x = 0; x < el.cells; x++) {
+					for (let y = 0; y < el.stride; y++) {
+						const i = slotOf(el, x, y);
+						if (i < 0) continue;
+						const v = fn ? fn(x, y) : flat![y * el.cells + x];
+						out[i] = clamp01(Number.isFinite(v) ? v : 0);
+					}
+				}
+			} catch (err) {
+				// A bitmap FUNCTION is sampled every frame, so one that throws throws forever —
+				// out of a rAF callback, where the consumer cannot catch it. Drop the element
+				// instead: dark, said once, and the panel carries on.
+				zero();
+				state.bitmap = undefined;
+				if (!warnedDots.has(el.name)) {
+					warnedDots.add(el.name);
+					console.warn(
+						`glowbox: the bitmap function for "${el.name}" threw, so the element was blanked.`,
+						err
+					);
 				}
 			}
 			break;
