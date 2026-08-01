@@ -77,16 +77,20 @@ describe('faces — segment geometry and glyph tables', () => {
 		expect(segmentBits('7seg', 'B')).toBe(segmentBits('7seg', 'b'));
 	});
 
-	it('draws V as the two upper diagonals meeting at the centre', () => {
-		// The starburst has no top-left→bottom-centre stroke, so V is the pair of upper
-		// diagonals — and Y is that same V plus the stem. This is the check that the
-		// diagonal assignment did not get mirrored.
+	it('assigns the diagonals so V, X and W are not mirrored', () => {
+		// h/j are the UPPER pair (top corners down to the centre) and k/m the LOWER pair
+		// (centre down to the bottom corners). Swap them and V becomes a literal Λ, W an M.
 		const names = segmentNames('16seg');
 		const set = (ch: string) =>
 			new Set(names.filter((_, i) => segmentBits('16seg', ch) & (1 << i)));
-		expect(set('V')).toEqual(new Set(['h', 'j']));
-		expect(set('Y')).toEqual(new Set(['h', 'j', 'l']));
+		// V runs the upper diagonals into the centre and on down the stem — full height.
+		expect(set('V')).toEqual(new Set(['h', 'j', 'l']));
+		// Y cannot also have `h j l`, so it takes a straight left arm.
+		expect(set('Y')).toEqual(new Set(['f', 'j', 'l']));
 		expect(set('X')).toEqual(new Set(['h', 'j', 'k', 'm']));
+		// W's middle peak is the LOWER pair; M's middle valley is the upper pair.
+		expect(set('W')).toEqual(new Set(['f', 'e', 'k', 'm', 'b', 'c']));
+		expect(set('M')).toEqual(new Set(['f', 'e', 'h', 'j', 'b', 'c']));
 	});
 
 	it('merges word bitmaps into solid runs', () => {
@@ -557,4 +561,43 @@ describe('driveElement — value to lit anodes', () => {
 		// …and well right of the cell's centre column, so no glyph runs through them.
 		expect(c1.lo).toBeGreaterThan(CELL.width / 2);
 	});
+});
+
+describe('V fills the cell', () => {
+	// A V that stops at the cell waist reads as a floating superscript beside full-height
+	// neighbours — VOLUME came out with a little v hovering over the baseline. Nothing on
+	// this starburst runs corner-to-corner, so the only stroke reaching the bottom-centre
+	// is `l`, and a full-height V has to be `h j l`.
+	const cellSpan = (mode: '14seg' | '16seg', ch: string) => {
+		const bits = segmentBits(mode, ch);
+		const geom = cellGeometry(mode);
+		let lo = Infinity;
+		let hi = -Infinity;
+		for (let s = 0; s < segmentCount(mode); s++) {
+			if (!(bits & (1 << s))) continue;
+			for (let i = 1; i < geom[s].length; i += 2) {
+				lo = Math.min(lo, geom[s][i]);
+				hi = Math.max(hi, geom[s][i]);
+			}
+		}
+		return { lo, hi };
+	};
+
+	for (const mode of ['14seg', '16seg'] as const) {
+		it(`reaches the baseline in ${mode}, like every other letter`, () => {
+			const v = cellSpan(mode, 'V');
+			const o = cellSpan(mode, 'O');
+			expect(v.hi).toBeGreaterThan(CELL.height * 0.8);
+			// Within a segment thickness of O — i.e. the same body height.
+			expect(Math.abs(v.hi - o.hi)).toBeLessThan(8);
+			expect(Math.abs(v.lo - o.lo)).toBeLessThan(8);
+		});
+
+		it(`stays distinct from Y in ${mode}`, () => {
+			// They cannot share `h j l`, so if V takes it Y must move.
+			expect(segmentBits(mode, 'V')).not.toBe(segmentBits(mode, 'Y'));
+			// …and Y still reaches the baseline too.
+			expect(cellSpan(mode, 'Y').hi).toBeGreaterThan(CELL.height * 0.8);
+		});
+	}
 });

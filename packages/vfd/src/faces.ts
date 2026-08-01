@@ -87,9 +87,17 @@ function dot(cx: number, cy: number, r: number): Poly {
 }
 
 // --- the segment sets ---------------------------------------------------------------
-// Names are the datasheet ones. The four diagonals all radiate from the cell centre to
-// a corner, which is what makes V (`h j` — the two upper ones meeting at the centre)
-// and X (`h j k m`) work at all on a starburst.
+// Names are the datasheet ones. The four diagonals all radiate from the cell CENTRE to a
+// corner, which is what makes X (`h j k m`) work at all on a starburst — and what forces
+// the one real compromise in this face, at V and Y.
+//
+// Nothing runs corner-to-corner, so the only stroke reaching the bottom-centre is `l`.
+// A full-height V therefore has to be `h j l` (down the upper diagonals to the centre,
+// then on down the stem) — which is also the only good Y. They cannot both have it.
+// V takes it, because a V that stops at the cell's waist reads as a floating superscript
+// next to full-height neighbours (VOLUME came out with a little v hovering over the
+// baseline), while Y survives the swap: `f j l` gives it a straight left arm and a
+// diagonal right one, which is stiffer than the symmetric form but still plainly a Y.
 const SEG16_NAMES = [
 	'a1',
 	'a2',
@@ -193,10 +201,10 @@ const SEG16_FONT: Record<string, string> = {
 	S: 'a1 a2 f g1 g2 c d1 d2',
 	T: 'a1 a2 i l',
 	U: 'f e d1 d2 c b',
-	V: 'h j',
+	V: 'h j l',
 	W: 'f e k m b c',
 	X: 'h j k m',
-	Y: 'h j l',
+	Y: 'f j l',
 	Z: 'a1 a2 j k d1 d2',
 	'-': 'g1 g2',
 	_: 'd1 d2',
