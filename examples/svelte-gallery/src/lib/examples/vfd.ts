@@ -561,11 +561,11 @@ export function createAnalyserShow(panel: VfdPanel, clock: SceneClock): { stop()
 				// Stop driving the analyser rather than writing it zeros: `spec` holds peak caps, and
 				// a cap resting on the floor row would keep one lit line across the field. The
 				// phosphor tails still fade, which is the swap worth watching.
-				panel.blank('spec');
-				panel.blank('eq');
+				panel.clear('spec');
+				panel.clear('eq');
 				for (const p of EQ_PRESETS) light(`eq${p.name}`, false);
 			} else {
-				panel.blank('graphic');
+				panel.clear('graphic');
 			}
 			// Restart the loop on entry so a pinned GIF source always begins at frame zero.
 			gifStart = 0;
@@ -578,12 +578,12 @@ export function createAnalyserShow(panel: VfdPanel, clock: SceneClock): { stop()
 			if (idx === gifFrame) return; // only re-drive when the GIF actually advances
 			gifFrame = idx;
 			drawGifFrame(frames[idx], graphic);
-			panel.dots('graphic', graphic);
+			panel.setDots('graphic', graphic);
 			return;
 		}
 
 		spectrum(t, 0.95, levels);
-		panel.bars('spec', levels);
+		panel.setBars('spec', levels);
 
 		// Slide between presets rather than cutting, so the curve travels — the phosphor tail
 		// then draws the movement, which a hard cut would not.
@@ -612,7 +612,7 @@ export function createAnalyserShow(panel: VfdPanel, clock: SceneClock): { stop()
 			// here, and a stem would fill in behind the bars and turn the overlay to soup.
 			bitmap[Math.round(row) * EQ.cols + x] = 1;
 		}
-		panel.dots('eq', bitmap);
+		panel.setDots('eq', bitmap);
 	};
 
 	raf = requestAnimationFrame(tick);
@@ -823,7 +823,7 @@ export function createStereoShow(
 		// sits still instead of wrapping round and printing itself twice.
 		const strip = scene === 'type' ? typed().padEnd(TICKER.cols / 6, ' ') : STRIP[scene];
 		const offset = scene === 'type' ? 0 : Math.floor(t * 26);
-		panel.dots('ticker', tickerBitmap(strip, TICKER.cols, TICKER.rows, offset));
+		panel.setDots('ticker', tickerBitmap(strip, TICKER.cols, TICKER.rows, offset));
 
 		if (scene === 'tuner') {
 			// Step through the presets, pausing on each. The dial cursor tracks the frequency

@@ -136,7 +136,7 @@
 			if (pushed[name] === key) continue;
 			pushed[name] = key;
 			if (typeof value === 'boolean') p.light(name, value);
-			else if (Array.isArray(value)) p.bars(name, value);
+			else if (Array.isArray(value)) p.setBars(name, value);
 			else p.set(name, value);
 		}
 	});

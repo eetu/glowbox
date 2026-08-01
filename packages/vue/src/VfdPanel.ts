@@ -111,7 +111,7 @@ export const VfdPanel = defineComponent({
 				if (pushed[name] === key) continue;
 				pushed[name] = key;
 				if (typeof value === 'boolean') panel.light(name, value);
-				else if (Array.isArray(value)) panel.bars(name, value);
+				else if (Array.isArray(value)) panel.setBars(name, value);
 				else panel.set(name, value);
 			}
 		};

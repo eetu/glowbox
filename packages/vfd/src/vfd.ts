@@ -120,19 +120,20 @@ export interface VfdPanel {
 	/** Feed a `bars` element one 0..1 level per band. Peak caps, if the element holds
 	 *  them, are the panel's job from here — they fall on their own. The values are COPIED,
 	 *  so reusing or mutating your array afterwards cannot change what the panel shows. */
-	bars(name: string, levels: ArrayLike<number>): void;
+	setBars(name: string, levels: ArrayLike<number>): void;
 	/** Feed a `dots` element a bitmap: 0..1 per dot, row-major from the top-left, or a
 	 *  function of (x, y). This is the graphic path — an animation frame, a histogram, or
 	 *  text scrolled smoothly by dot column. Fractional values are fine: a multiplexed
 	 *  anode dims by duty cycle, so greyscale needs no dithering. */
-	dots(name: string, bitmap: ArrayLike<number> | ((x: number, y: number) => number)): void;
-	/** Stop driving an element: its anodes go dark and it forgets what it was showing. Not the
-	 *  same as writing zeros — a `bars` element with `peakHold` remembers its caps, and a cap
-	 *  resting on the floor row it never falls below is a lit line across the element for good.
-	 *  This is what a panel needs when one window has more than one job (an analyser field that
-	 *  becomes a graphic display on the DISPLAY button): the driver you switched away from
-	 *  stops, memory and all. The anodes keep their phosphor tails on the way down. */
-	blank(name: string): void;
+	setDots(name: string, bitmap: ArrayLike<number> | ((x: number, y: number) => number)): void;
+	/** Stop driving an element — or the whole panel, with no argument. Its anodes go dark and
+	 *  it forgets what it was showing. Not the same as writing zeros: a `bars` element with
+	 *  `peakHold` remembers its caps, and a cap resting on the floor row it never falls below
+	 *  is a lit line across the element for good. This is what a panel needs when one window
+	 *  has more than one job (an analyser field that becomes a graphic display on the DISPLAY
+	 *  button): the driver you switched away from stops, memory and all. The anodes keep their
+	 *  phosphor tails on the way down. */
+	clear(name?: string): void;
 	/** Re-declare the hardware. Separate from `setOptions` because it is the one expensive
 	 *  call on this handle: it re-compiles the whole anode inventory, so a layout built inline
 	 *  in a render function would pay for several thousand anodes per render. Drive state
@@ -148,9 +149,9 @@ export interface VfdPanel {
 	 *  from a pointer event; null if the point missed, or hit only silkscreen. The core
 	 *  answers geometry and attaches no listeners: consumers own the events. */
 	elementAt(clientX: number, clientY: number): string | null;
-	/** An element's box in CSS pixels relative to the canvas — for parking a tooltip or
-	 *  an overlay control on top of a zone. */
-	elementRect(name: string): { x: number; y: number; width: number; height: number } | null;
+	/** An element's box in CSS pixels relative to the canvas — for parking a tooltip or an
+	 *  overlay control on top of a zone. Same shape as split-flap's `cellRect`. */
+	elementRect(name: string): { left: number; top: number; width: number; height: number } | null;
 	/** Patch the envelope: phosphor, windows, dimmer, persistence, wear, power and the rest.
 	 *  Cheap — call it as often as you like. The hardware (`frame`/`layout`) is not here on
 	 *  purpose; see `setLayout`. */
@@ -779,8 +780,8 @@ export function createVfdPanel(
 		scale: 'set',
 		legend: 'light',
 		icon: 'light',
-		bars: 'bars',
-		dots: 'dots',
+		bars: 'setBars',
+		dots: 'setDots',
 		rule: '(nothing — a rule is ink)'
 	};
 	const warnedKind = new Set<string>();
@@ -798,6 +799,23 @@ export function createVfdPanel(
 			`glowbox: "${name}" is a ${kind} element, which is driven with ${DRIVEN_BY[kind]}(), not ${method}(). The call did nothing.`
 		);
 		return false;
+	}
+
+	/** Stop driving one element: dark, and with no memory of what it was showing. */
+	function stopDriving(e: number): void {
+		const st = states[e];
+		st.text = '';
+		st.on = false;
+		st.bitmap = undefined;
+		// No cursor, rather than a cursor at zero.
+		st.pos = undefined;
+		if (panel.elements[e].kind === 'bars') {
+			levelBufs[e]!.fill(0);
+			st.levels = levelBufs[e]!;
+			// A held cap is the DRIVER's memory of a loud band, so a stopped driver has none.
+			// Sagging them to the floor would leave a lit row across the element for good.
+			peaks[e].fill(-1);
+		}
 	}
 
 	function elementIndex(name: string): number | null {
@@ -884,9 +902,9 @@ export function createVfdPanel(
 			if (reduced || persistence <= 0) settle();
 			else animate();
 		},
-		bars(name, levels) {
+		setBars(name, levels) {
 			const e = elementIndex(name);
-			if (e == null || !expectKind(e, name, 'bars')) return;
+			if (e == null || !expectKind(e, name, 'setBars')) return;
 			const el = panel.elements[e];
 			// Copy into the driver's own buffer: the values are read again every frame, so
 			// holding the caller's array would let a later mutation change the display.
@@ -901,9 +919,9 @@ export function createVfdPanel(
 			if (reduced || persistence <= 0) settle();
 			else animate();
 		},
-		dots(name, bitmap) {
+		setDots(name, bitmap) {
 			const e = elementIndex(name);
-			if (e == null || !expectKind(e, name, 'dots')) return;
+			if (e == null || !expectKind(e, name, 'setDots')) return;
 			if (typeof bitmap === 'function') {
 				// A function is kept as-is and SAMPLED every frame — that is the point of it,
 				// and there is nothing to copy.
@@ -916,27 +934,24 @@ export function createVfdPanel(
 			if (reduced || persistence <= 0) settle();
 			else animate();
 		},
-		blank(name) {
-			const e = elementIndex(name);
-			if (e == null) return;
-			const el = panel.elements[e];
-			if (el.kind === 'rule') {
-				warnOnce(`${name}:blank`, `glowbox: "${name}" is a rule — silkscreen is never driven.`);
+		clear(name) {
+			if (name == null) {
+				// The whole panel: every drivable element stops. Silkscreen is ink and stays.
+				for (let e = 0; e < panel.elements.length; e++) {
+					if (panel.elements[e].kind !== 'rule') stopDriving(e);
+				}
+				applyAria();
+				if (reduced || persistence <= 0) settle();
+				else animate();
 				return;
 			}
-			const st = states[e];
-			st.text = '';
-			st.on = false;
-			st.bitmap = undefined;
-			// No cursor, rather than a cursor at zero.
-			st.pos = undefined;
-			if (el.kind === 'bars') {
-				levelBufs[e]!.fill(0);
-				st.levels = levelBufs[e]!;
-				// A held cap is the DRIVER's memory of a loud band, so a stopped driver has none.
-				// Sagging them to the floor would leave a lit row across the element for good.
-				peaks[e].fill(-1);
+			const e = elementIndex(name);
+			if (e == null) return;
+			if (panel.elements[e].kind === 'rule') {
+				warnOnce(`${name}:clear`, `glowbox: "${name}" is a rule — silkscreen is never driven.`);
+				return;
 			}
+			stopDriving(e);
 			applyAria();
 			if (reduced || persistence <= 0) settle();
 			else animate();
@@ -988,8 +1003,8 @@ export function createVfdPanel(
 			if (e == null) return null;
 			const b = panel.elements[e].bounds;
 			return {
-				x: offX + b.x * scale,
-				y: offY + b.y * scale,
+				left: offX + b.x * scale,
+				top: offY + b.y * scale,
 				width: b.w * scale,
 				height: b.h * scale
 			};

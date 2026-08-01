@@ -19,7 +19,7 @@ ways to fail. Now **twelve** packages in lockstep.
 
 - **`@glowbox/vfd` — the seventh display core: a VFD panel.** Declare the hardware
   once as a design `frame` plus a `layout` of elements, then drive it by name with
-  `set`/`light`/`bars`/`dots`. The element kinds: **`digits`** character cells in `'7seg'`,
+  `set`/`light`/`setBars`/`setDots`. The element kinds: **`digits`** character cells in `'7seg'`,
   `'14seg'`, `'16seg'` (starburst geometry from one hexagonal-bar primitive, so diagonals
   cost no extra code; numerals authored off the seven-segment strokes, so a frequency reads
   identically in every mode) or `'matrix'` 5×7; **`legend`** a screen-printed word —
@@ -65,14 +65,15 @@ ways to fail. Now **twelve** packages in lockstep.
   stacked rather than as motion. Values are 0..1 and fractional values are honest: a
   multiplexed anode dims by duty cycle, so greyscale maps straight on with no dithering.
   Every dot is an anode, so a 120 × 7 ticker is 840 of them.
-- **`blank(name)` — stop driving an element.** Not the same as writing it zeros: a `bars`
+- **`clear(name?)` — stop driving an element, or the whole panel.** Not the same as writing it zeros: a `bars`
   element with `peakHold` remembers its caps, and a cap resting on the floor row it never
   falls below is a lit line across the element for good. A panel whose window has more than
   one job — an analyser field that becomes a graphic display on the DISPLAY button, which is
   what these units did — needs the driver it switched away from to stop, memory and all.
   `fallPeaks` accordingly leaves a cap of -1 (a band with no cap) alone rather than resting
-  it on row 0. A blanked `scale` shows no cursor rather than one parked at zero: a dial with
-  nothing tuned in is an empty scale.
+  it on row 0. A cleared `scale` shows no cursor rather than one parked at zero: a dial with
+  nothing tuned in is an empty scale. With no argument it stops every drivable element, as
+  flip-dot's and split-flap's `clear()` do; silkscreen is ink and stays.
 - **The decimal point takes no cell.** In every segment mode `.` and `:` ride the cell
   before them instead of consuming one, the way a driver chip wired its point and colon
   anodes — which is why `'FM 98.50'` fits eight cells. A `'matrix'` cell draws its own `.`
