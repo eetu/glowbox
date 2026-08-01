@@ -177,6 +177,17 @@ ways to fail. Now **twelve** packages in lockstep.
 
 ### Fixed
 
+- **V didn't reach the baseline.** It was the two upper diagonals alone, so it stopped at the
+  cell's waist and read as a little v floating over the baseline beside full-height
+  neighbours — `VOLUME` was the giveaway. It is `h j l` now: down the upper diagonals to the
+  centre, then on down the stem, full height like every other letter.
+
+  This forced a change to **Y**, which had `h j l`. Nothing on this starburst runs
+  corner-to-corner, so `l` is the only stroke that reaches the bottom-centre and a full-height
+  V has exactly one spelling — the same one Y wanted. V takes it; Y becomes `f j l`, a
+  straight left arm and a diagonal right one. Stiffer than the symmetric form, still plainly a
+  Y, and a far smaller loss than a V that can't sit on the baseline.
+
 - **The clock colon was stamped through the glyph.** Both beads sat at the cell's horizontal
   centre, on top of whatever character the cell was showing, so `12:34` rendered as two dots
   punched through the `2`. They now ride the trailing gutter beside the decimal point, which
