@@ -177,17 +177,6 @@ ways to fail. Now **twelve** packages in lockstep.
 
 ### Fixed
 
-- **V didn't reach the baseline.** It was the two upper diagonals alone, so it stopped at the
-  cell's waist and read as a little v floating over the baseline beside full-height
-  neighbours — `VOLUME` was the giveaway. It is `h j l` now: down the upper diagonals to the
-  centre, then on down the stem, full height like every other letter.
-
-  This forced a change to **Y**, which had `h j l`. Nothing on this starburst runs
-  corner-to-corner, so `l` is the only stroke that reaches the bottom-centre and a full-height
-  V has exactly one spelling — the same one Y wanted. V takes it; Y becomes `f j l`, a
-  straight left arm and a diagonal right one. Stiffer than the symmetric form, still plainly a
-  Y, and a far smaller loss than a V that can't sit on the baseline.
-
 - **The clock colon was stamped through the glyph.** Both beads sat at the cell's horizontal
   centre, on top of whatever character the cell was showing, so `12:34` rendered as two dots
   punched through the `2`. They now ride the trailing gutter beside the decimal point, which
@@ -221,6 +210,12 @@ ways to fail. Now **twelve** packages in lockstep.
   per frame — that is its purpose); and the hardware lives in **`setLayout(layout, frame?)`**
   rather than `setOptions`, because the one expensive call on the handle should not be
   reachable by re-sending an option bag.
+- **V is half-height on the starburst modes, by design.** The four diagonals radiate from the
+  cell centre to a corner and nothing runs corner to corner, so the only stroke touching the
+  bottom-centre is the stem — which makes the one full-height V `h j l`, and that is exactly
+  Y. V therefore keeps its vertex at the cell's waist and Y is the same pair plus the stem.
+  A floating v is ugly; a V that reads as Y is wrong. `faces.ts` carries the worked list of
+  alternatives that don't work, because this has been "fixed" twice.
 - **`persistence` defaults low — 0.05, about 37 ms.** It is a stylized control, not a
   physical one: real ZnO:Zn decays in microseconds, so no receiver smeared much, and what
   everyone remembers is the multiplex refresh plus their own eye — a few tens of
