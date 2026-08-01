@@ -210,12 +210,11 @@ ways to fail. Now **twelve** packages in lockstep.
   per frame — that is its purpose); and the hardware lives in **`setLayout(layout, frame?)`**
   rather than `setOptions`, because the one expensive call on the handle should not be
   reachable by re-sending an option bag.
-- **V is half-height on the starburst modes, by design.** The four diagonals radiate from the
-  cell centre to a corner and nothing runs corner to corner, so the only stroke touching the
-  bottom-centre is the stem — which makes the one full-height V `h j l`, and that is exactly
-  Y. V therefore keeps its vertex at the cell's waist and Y is the same pair plus the stem.
-  A floating v is ugly; a V that reads as Y is wrong. `faces.ts` carries the worked list of
-  alternatives that don't work, because this has been "fixed" twice.
+- **V is asymmetric on the starburst modes.** It runs down the left rail, in along the
+  lower-left diagonal and back up the upper-right one, so its vertex is the bottom-left
+  corner rather than the middle of the baseline. Nothing on a 16-segment cell touches
+  bottom-centre except the stem, and that spelling is Y. This is what the reference
+  16-segment ASCII tables use.
 - **`persistence` defaults low — 0.05, about 37 ms.** It is a stylized control, not a
   physical one: real ZnO:Zn decays in microseconds, so no receiver smeared much, and what
   everyone remembers is the multiplex refresh plus their own eye — a few tens of
