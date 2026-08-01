@@ -88,16 +88,24 @@ function dot(cx: number, cy: number, r: number): Poly {
 
 // --- the segment sets ---------------------------------------------------------------
 // Names are the datasheet ones. The four diagonals all radiate from the cell CENTRE to a
-// corner, which is what makes X (`h j k m`) work at all on a starburst — and what forces
-// the one real compromise in this face, at V and Y.
+// corner — nothing runs corner to corner — which is what makes X (`h j k m`) work, and
+// what makes V the hardest glyph on the face.
 //
-// Nothing runs corner-to-corner, so the only stroke reaching the bottom-centre is `l`.
-// A full-height V therefore has to be `h j l` (down the upper diagonals to the centre,
-// then on down the stem) — which is also the only good Y. They cannot both have it.
-// V takes it, because a V that stops at the cell's waist reads as a floating superscript
-// next to full-height neighbours (VOLUME came out with a little v hovering over the
-// baseline), while Y survives the swap: `f j l` gives it a straight left arm and a
-// diagonal right one, which is stiffer than the symmetric form but still plainly a Y.
+// V IS DELIBERATELY HALF-HEIGHT (`h j`), and it has been "fixed" twice by people who
+// assumed otherwise. Before changing it, note what the geometry allows:
+//
+//   • A V wants one vertex at the BOTTOM CENTRE with arms to the top corners. The only
+//     stroke touching bottom-centre is `l`, and from the centre the only ways up are `h`
+//     and `j` — so the one full-height V is `h j l`. That is exactly Y, and shipping it
+//     as V made VERY read as YERY.
+//   • `k m` is the LOWER pair radiating DOWN from the centre, so it draws a literal Λ.
+//   • Dropping `e c` from W (`f b k m`) orphans the diagonals' feet: the verticals stop
+//     at the waist while the Λ sits on the baseline, with a gap between them.
+//   • `f e k j` renders as `1/`; `f e k m` as an N; `f e m` as a k.
+//
+// So V keeps the vertex at the cell's waist and Y is that same pair plus the stem. The
+// two are then unmistakably different, which matters more than V matching its neighbours'
+// height — a floating v is ugly, a V that reads as Y is wrong.
 const SEG16_NAMES = [
 	'a1',
 	'a2',
@@ -201,10 +209,10 @@ const SEG16_FONT: Record<string, string> = {
 	S: 'a1 a2 f g1 g2 c d1 d2',
 	T: 'a1 a2 i l',
 	U: 'f e d1 d2 c b',
-	V: 'h j l',
+	V: 'h j',
 	W: 'f e k m b c',
 	X: 'h j k m',
-	Y: 'f j l',
+	Y: 'h j l',
 	Z: 'a1 a2 j k d1 d2',
 	'-': 'g1 g2',
 	_: 'd1 d2',
