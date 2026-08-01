@@ -96,7 +96,7 @@ const TAPE_W = 2.6;
 // The transport lives in the faceplate's right-hand half: the tape deck on top, the disc
 // below it. Stacked rather than overlaid, even though the two are never powered at once —
 // the REC block needs its own red window between the reels, and a window tints whatever sits
-// behind it, so an overlay put an amber strip across the disc's hub.
+// behind it, so an overlay would lay an amber strip across the disc's hub.
 const REELS = [
 	{ name: 'l', cx: 222, cy: 32 },
 	{ name: 'r', cx: 286, cy: 32 }

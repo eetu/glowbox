@@ -353,9 +353,8 @@ test('elementRect reports where the anodes actually are, in CSS pixels', () => {
 });
 
 test('an icon placed in a shared frame does not claim the whole panel', () => {
-	// The regression this guards: to keep several pieces of one drawing in register, an
-	// `icon` declares the shared design frame as its placement box — so hit-testing that box
-	// would have it answer for every tap anywhere on the glass, and the last such icon would
+	// An `icon` in a shared design frame takes the whole frame as its box, so hit-testing
+	// that box would have it answer for every tap on the glass and the last such icon would
 	// swallow the lot. Pointer maths uses the anodes' real extent instead.
 	const shared: [number, number] = [320, 64];
 	const { canvas, panel } = mount({
@@ -464,8 +463,8 @@ test('driving an element with the wrong call warns instead of doing nothing quie
 				{ kind: 'bars', name: 'spec', bands: 4, rows: 4, x: 60, y: 10, w: 60, h: 30 }
 			]
 		});
-		// Each of these used to be a silent no-op: the value landed in a state field the
-		// element's own driver never reads.
+		// Without the warning each of these is a silent no-op: the value lands in a state
+		// field the element's own driver never reads.
 		panel.setBars('main', [1, 1]);
 		panel.set('spec', 'nope');
 		panel.light('main', true);

@@ -1,8 +1,7 @@
 // SHARED SOURCE. This file lives in `shared/` and is SYMLINKED into each package that
 // needs it (see `scripts/check-shared.mjs` and CLAUDE.md → Conventions). Editing it here
 // edits it for every one of them. It is not a package and nothing depends on it at
-// runtime: each bundler inlines it, so the cores stay genuinely zero-dep and their dists
-// are byte-identical to the hand-copied version this replaced.
+// runtime: each bundler inlines it, so the cores stay genuinely zero-dep.
 // Shared by: flip-dot, neon, split-flap.
 //
 // A tiny mechanical-sound synth over the Web Audio API — the audible half of an

@@ -1,8 +1,7 @@
 // SHARED SOURCE. This file lives in `shared/` and is SYMLINKED into each package that
 // needs it (see `scripts/check-shared.mjs` and CLAUDE.md → Conventions). Editing it here
 // edits it for every one of them. It is not a package and nothing depends on it at
-// runtime: each bundler inlines it, so the cores stay genuinely zero-dep and their dists
-// are byte-identical to the hand-copied version this replaced.
+// runtime: each bundler inlines it, so the cores stay genuinely zero-dep.
 // Shared by: flip-dot, led-grid, neon, nixie, seven-segment, split-flap, vfd.
 //
 // A `Color` is either a numeric RGB triple in 0..1 (values >1 are allowed, and bloom
