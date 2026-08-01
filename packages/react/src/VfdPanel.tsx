@@ -152,7 +152,7 @@ export const VfdPanel = forwardRef<VfdPanelHandle | null, VfdPanelProps>(
 				if (pushedRef.current[name] === key) continue;
 				pushedRef.current[name] = key;
 				if (typeof value === 'boolean') panel.light(name, value);
-				else if (Array.isArray(value)) panel.bars(name, value);
+				else if (Array.isArray(value)) panel.setBars(name, value);
 				else panel.set(name, value);
 			}
 		}, [panel, values]);

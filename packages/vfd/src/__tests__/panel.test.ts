@@ -92,11 +92,10 @@ describe('faces — segment geometry and glyph tables', () => {
 	});
 
 	it('gives every letter ink that reaches the baseline', () => {
-		// A PROPERTY, not a snapshot: it says nothing about which segments a letter uses,
-		// so it stays true through any re-spelling. It exists because the mask tests above
-		// cannot catch a glyph that is the wrong SIZE — V once stopped at the cell's waist
-		// (bottom ≈ 50) and every mask assertion still passed. Real letters bottom out
-		// between 89.5 and 93.7 in a 100-tall cell, so 85 is a wide margin.
+		// A PROPERTY, not a snapshot: it says nothing about which segments a letter uses, so
+		// it stays true through any re-spelling. It covers what the mask tests above cannot —
+		// a glyph of the wrong SIZE, which every mask assertion happily passes. Letters bottom
+		// out between 89.5 and 93.7 in a 100-tall cell, so 85 is a wide margin.
 		for (const mode of ['14seg', '16seg'] as const) {
 			const geom = cellGeometry(mode);
 			for (const ch of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
@@ -486,8 +485,8 @@ describe('driveElement — value to lit anodes', () => {
 	});
 
 	it('leaves a peak cap alone when a level arrives as NaN', () => {
-		// A NaN level used to land in the cap, and a NaN cap never compares true again:
-		// Math.max(NaN, x) is NaN, `cap < 0` is false, so the band was dark for good.
+		// A NaN cap never compares true again — Math.max(NaN, x) is NaN and `cap < 0` is
+		// false — so one NaN level would dark the band for good.
 		const peaks = [4, 4];
 		fallPeaks(peaks, [Number.NaN, 0.5], 8, 4, 0.25);
 		expect(Number.isFinite(peaks[0])).toBe(true);

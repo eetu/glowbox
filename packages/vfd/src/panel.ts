@@ -201,9 +201,9 @@ export interface CompiledElement {
 	kind: VfdElement['kind'];
 	box: { x: number; y: number; w: number; h: number };
 	/** Where this element's anodes actually ended up, as a bounding box in frame units.
-	 *  Usually the same as `box` — but an `icon` placed through a shared design `frame` has
-	 *  to declare the whole frame as its box to keep its registration, and hit-testing that
-	 *  box would have it swallow every tap on the panel. So pointer maths uses this. */
+	 *  Usually the same as `box` — but an `icon` placed through a shared design `frame` takes
+	 *  the whole frame as its box, and hit-testing that would have it swallow every tap on the
+	 *  panel. So pointer maths uses this. */
 	bounds: { x: number; y: number; w: number; h: number };
 	/** This element's slice of the panel's anode list. */
 	first: number;
@@ -244,9 +244,9 @@ export interface VfdPanelLayout {
 	driven: number;
 }
 
-// NaN-safe on purpose: written as `v > 0 ? …` rather than `v < 0 ? 0 : …`, so a NaN
-// falls through to 0 instead of propagating. A NaN level used to reach a peak cap and
-// stick — every later comparison against it is false, so the band went dark for good.
+// NaN-safe on purpose: written as `v > 0 ? …` rather than `v < 0 ? 0 : …`, so a NaN falls
+// through to 0 instead of propagating. A NaN that reaches a peak cap sticks there — every
+// later comparison against it is false — and the band is dark for good.
 const clamp01 = (v: number) => (v > 0 ? (v > 1 ? 1 : v) : 0);
 
 /** Centroid of an anode's polygons, for the grid-column assignment. */

@@ -125,7 +125,7 @@ const PAGE = `<!doctype html>
 			if (levels) {
 				for (let b = 0; b < levels.length; b++)
 					levels[b] = 0.5 + 0.5 * Math.sin(t / 200 + b);
-				panel.bars('spec', levels);
+				panel.setBars('spec', levels);
 			}
 			const n = Math.floor(t / 100);
 			if (names.includes('main')) panel.set('main', 'FM ' + (90 + (n % 100)) + '.5');
@@ -134,7 +134,7 @@ const PAGE = `<!doctype html>
 				panel.set('title', 'PHOSPHOR DECAY ' + (n % 10) + ' TRACK ' + (n % 90));
 			if (names.includes('tune')) panel.set('tune', (n % 100) / 100);
 			// A fresh bitmap every frame: the dots path's worst case.
-			if (ticker) panel.dots('ticker', (x, y) => ((x + y + ((t / 30) | 0)) % 7 < 3 ? 1 : 0));
+			if (ticker) panel.setDots('ticker', (x, y) => ((x + y + ((t / 30) | 0)) % 7 < 3 ? 1 : 0));
 			frames++;
 			requestAnimationFrame(loop);
 		};

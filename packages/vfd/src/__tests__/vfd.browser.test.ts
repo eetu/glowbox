@@ -62,10 +62,10 @@ function channels(canvas: HTMLCanvasElement) {
 /** An element's box converted from CSS pixels to device pixels. */
 function deviceBox(
 	canvas: HTMLCanvasElement,
-	rect: { x: number; y: number; width: number; height: number }
+	rect: { left: number; top: number; width: number; height: number }
 ) {
 	const k = canvas.width / parseFloat(canvas.style.width);
-	return { x: rect.x * k, y: rect.y * k, w: rect.width * k, h: rect.height * k };
+	return { x: rect.left * k, y: rect.top * k, w: rect.width * k, h: rect.height * k };
 }
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -102,10 +102,10 @@ test('phosphor persistence leaves a tail after the drive stops', async () => {
 	const full = Array.from({ length: 12 }, () => 1);
 
 	const lingering = mount({ layout: SPECTRUM, persistence: 0.6 });
-	lingering.panel.bars('spec', full);
+	lingering.panel.setBars('spec', full);
 	await wait(120);
 	const litE = energy(lingering.canvas);
-	lingering.panel.bars('spec', new Array(12).fill(0));
+	lingering.panel.setBars('spec', new Array(12).fill(0));
 	await frames(3);
 	const tailE = energy(lingering.canvas);
 	await wait(900);
@@ -118,10 +118,10 @@ test('phosphor persistence leaves a tail after the drive stops', async () => {
 	expect(restE).toBeLessThan(litE * 0.6);
 
 	const snappy = mount({ layout: SPECTRUM, persistence: 0 });
-	snappy.panel.bars('spec', full);
+	snappy.panel.setBars('spec', full);
 	await wait(120);
 	const snapLit = energy(snappy.canvas);
-	snappy.panel.bars('spec', new Array(12).fill(0));
+	snappy.panel.setBars('spec', new Array(12).fill(0));
 	await frames(3);
 	const snapTail = energy(snappy.canvas);
 
@@ -198,8 +198,8 @@ test('a scale cursor drives exactly one block, wherever it is pointed', () => {
 		persistence: 0
 	});
 	panel.set('tune', 0);
-	const leftBox = deviceBox(canvas, { x: 0, y: 0, width: 40, height: 64 });
-	const rightBox = deviceBox(canvas, { x: 280, y: 0, width: 40, height: 64 });
+	const leftBox = deviceBox(canvas, { left: 0, top: 0, width: 40, height: 64 });
+	const rightBox = deviceBox(canvas, { left: 280, top: 0, width: 40, height: 64 });
 	const leftLit = energy(canvas, leftBox);
 	const rightDark = energy(canvas, rightBox);
 	panel.set('tune', 1);
@@ -232,22 +232,22 @@ test('a dots area paints a bitmap, with real grey levels', () => {
 	const dark = energy(canvas);
 	// Top half on, bottom half off — and the top half must be the one that lights, because
 	// row 0 is the TOP (raster order), unlike `bars`.
-	panel.dots('screen', (_x, y) => (y < 2 ? 1 : 0));
+	panel.setDots('screen', (_x, y) => (y < 2 ? 1 : 0));
 	const box = deviceBox(canvas, panel.elementRect('screen')!);
 	const top = { ...box, h: box.h / 2 };
 	const bottom = { ...box, y: box.y + box.h / 2, h: box.h / 2 };
 	expect(energy(canvas, top)).toBeGreaterThan(energy(canvas, bottom) * 1.5);
 
 	// Full on is brighter than half on, which is brighter than dark: the levels are real.
-	panel.dots('screen', () => 1);
+	panel.setDots('screen', () => 1);
 	const full = energy(canvas);
-	panel.dots('screen', () => 0.35);
+	panel.setDots('screen', () => 0.35);
 	const half = energy(canvas);
 	expect(full).toBeGreaterThan(half);
 	expect(half).toBeGreaterThan(dark);
 
 	// A flat array works too, row-major from the top-left.
-	panel.dots('screen', new Float32Array(32).fill(1));
+	panel.setDots('screen', new Float32Array(32).fill(1));
 	expect(energy(canvas)).toBeGreaterThan(half);
 });
 
@@ -303,9 +303,9 @@ test('wear dims the panel and bands one multiplex column', () => {
 	const full = Array.from({ length: 12 }, () => 1);
 
 	const fresh = mount({ layout: SPECTRUM, persistence: 0, age: 0 });
-	fresh.panel.bars('spec', full);
+	fresh.panel.setBars('spec', full);
 	const worn = mount({ layout: SPECTRUM, persistence: 0, age: 0.8 });
-	worn.panel.bars('spec', full);
+	worn.panel.setBars('spec', full);
 
 	const f = spread(fresh.canvas);
 	const wq = spread(worn.canvas);
@@ -325,7 +325,7 @@ test('elementAt maps a viewport point onto an element, and skips silkscreen', ()
 	const r = canvas.getBoundingClientRect();
 	const hit = (name: string) => {
 		const box = panel.elementRect(name)!;
-		return panel.elementAt(r.left + box.x + box.width / 2, r.top + box.y + box.height / 2);
+		return panel.elementAt(r.left + box.left + box.width / 2, r.top + box.top + box.height / 2);
 	};
 	expect(hit('main')).toBe('main');
 	expect(hit('st')).toBe('st');
@@ -345,17 +345,16 @@ test('elementRect reports where the anodes actually are, in CSS pixels', () => {
 	// 140×40 that was asked for — and it stays on the canvas.
 	expect(box.width / box.height).toBeGreaterThan(2.5);
 	expect(box.width / box.height).toBeLessThan(4.5);
-	expect(box.x).toBeGreaterThan(0);
-	expect(box.y).toBeGreaterThan(0);
-	expect(box.x + box.width).toBeLessThanOrEqual(cssW);
-	expect(box.y + box.height).toBeLessThanOrEqual(cssH);
+	expect(box.left).toBeGreaterThan(0);
+	expect(box.top).toBeGreaterThan(0);
+	expect(box.left + box.width).toBeLessThanOrEqual(cssW);
+	expect(box.top + box.height).toBeLessThanOrEqual(cssH);
 	expect(panel.elementRect('nope')).toBe(null);
 });
 
 test('an icon placed in a shared frame does not claim the whole panel', () => {
-	// The regression this guards: to keep several pieces of one drawing in register, an
-	// `icon` declares the shared design frame as its placement box — so hit-testing that box
-	// would have it answer for every tap anywhere on the glass, and the last such icon would
+	// An `icon` in a shared design frame takes the whole frame as its box, so hit-testing
+	// that box would have it answer for every tap on the glass and the last such icon would
 	// swallow the lot. Pointer maths uses the anodes' real extent instead.
 	const shared: [number, number] = [320, 64];
 	const { canvas, panel } = mount({
@@ -372,13 +371,13 @@ test('an icon placed in a shared frame does not claim the whole panel', () => {
 	expect(rect.width).toBeLessThan(parseFloat(canvas.style.width) * 0.2);
 	// And a tap on the character field reaches the character field.
 	const main = panel.elementRect('main')!;
-	expect(panel.elementAt(r.left + main.x + main.width / 2, r.top + main.y + main.height / 2)).toBe(
-		'main'
-	);
+	expect(
+		panel.elementAt(r.left + main.left + main.width / 2, r.top + main.top + main.height / 2)
+	).toBe('main');
 	// …while a tap on the block reaches the block.
-	expect(panel.elementAt(r.left + rect.x + rect.width / 2, r.top + rect.y + rect.height / 2)).toBe(
-		'mark'
-	);
+	expect(
+		panel.elementAt(r.left + rect.left + rect.width / 2, r.top + rect.top + rect.height / 2)
+	).toBe('mark');
 });
 
 test('a re-compiled layout keeps what the panel was already showing', () => {
@@ -439,7 +438,7 @@ test('survives a sub-pixel canvas and an empty layout', () => {
 		const p = createVfdPanel(bare, { frame: FRAME, layout: [] })!;
 		p.selfTest();
 		p.set('nothing', 'x');
-		p.bars('nothing', [1]);
+		p.setBars('nothing', [1]);
 		expect(p.elementAt(0, 0)).toBe(null);
 		p.dispose();
 	}).not.toThrow();
@@ -464,16 +463,16 @@ test('driving an element with the wrong call warns instead of doing nothing quie
 				{ kind: 'bars', name: 'spec', bands: 4, rows: 4, x: 60, y: 10, w: 60, h: 30 }
 			]
 		});
-		// Each of these used to be a silent no-op: the value landed in a state field the
-		// element's own driver never reads.
-		panel.bars('main', [1, 1]);
+		// Without the warning each of these is a silent no-op: the value lands in a state
+		// field the element's own driver never reads.
+		panel.setBars('main', [1, 1]);
 		panel.set('spec', 'nope');
 		panel.light('main', true);
 		expect(warns.filter((w) => w.includes('is a digits element')).length).toBeGreaterThan(0);
 		expect(warns.filter((w) => w.includes('is a bars element')).length).toBeGreaterThan(0);
 		// Warned once per pairing, not once per call.
 		const before = warns.length;
-		panel.bars('main', [1, 1]);
+		panel.setBars('main', [1, 1]);
 		expect(warns.length).toBe(before);
 	} finally {
 		console.warn = real;
@@ -490,8 +489,8 @@ test('bars and dots copy what they are given, so later mutation cannot change th
 	});
 	const levels = new Array(8).fill(1);
 	const bitmap = new Float32Array(64).fill(1);
-	panel.bars('spec', levels);
-	panel.dots('screen', bitmap);
+	panel.setBars('spec', levels);
+	panel.setDots('screen', bitmap);
 	const lit = energy(canvas);
 	expect(lit).toBeGreaterThan(0);
 
@@ -503,8 +502,8 @@ test('bars and dots copy what they are given, so later mutation cannot change th
 	expect(energy(canvas)).toBeCloseTo(lit, -2);
 
 	// Pushing the emptied arrays does take effect.
-	panel.bars('spec', levels);
-	panel.dots('screen', bitmap);
+	panel.setBars('spec', levels);
+	panel.setDots('screen', bitmap);
 	expect(energy(canvas)).toBeLessThan(lit * 0.7);
 });
 
@@ -520,19 +519,19 @@ test('blank stops driving an element, including a peak cap that zeros cannot cle
 		]
 	});
 	const box = deviceBox(canvas, panel.elementRect('spec')!);
-	panel.bars('spec', new Array<number>(8).fill(1));
+	panel.setBars('spec', new Array<number>(8).fill(1));
 	const loud = energy(canvas, box);
 	expect(loud).toBeGreaterThan(0);
 
 	// Zeros: the caps fall to the floor row and park there, lit.
-	panel.bars('spec', new Array<number>(8).fill(0));
+	panel.setBars('spec', new Array<number>(8).fill(0));
 	await wait(600);
 	const parked = energy(canvas, box);
 	expect(parked).toBeLessThan(loud * 0.5);
 	expect(parked).toBeGreaterThan(0);
 
 	// blank(): nothing is driven, so the tail fades to the undriven ghost and stays there.
-	panel.blank('spec');
+	panel.clear('spec');
 	await wait(600);
 	expect(energy(canvas, box)).toBeLessThan(parked * 0.6);
 });
@@ -545,7 +544,7 @@ test('blank leaves a scale with no cursor at all, not a cursor at zero', async (
 	const box = deviceBox(canvas, panel.elementRect('tune')!);
 	panel.set('tune', 0);
 	const atZero = energy(canvas, box);
-	panel.blank('tune');
+	panel.clear('tune');
 	await wait(200);
 	// Only the printed ticks are left. A cursor parked at 0 would still be a lit block.
 	expect(energy(canvas, box)).toBeLessThan(atZero * 0.9);
@@ -560,7 +559,7 @@ test('blanking silkscreen warns — a rule is never driven', () => {
 			persistence: 0,
 			layout: [{ kind: 'rule', name: 'edge', shape: 'box', x: 4, y: 4, w: 300, h: 50 }]
 		});
-		panel.blank('edge');
+		panel.clear('edge');
 		expect(warns.some((w) => w.includes('silkscreen is never driven'))).toBe(true);
 	} finally {
 		console.warn = real;
@@ -596,4 +595,42 @@ test('setLayout with a bad frame throws and leaves the panel untouched', async (
 	await wait(60);
 	expect(energy(canvas)).toBeCloseTo(lit, -3);
 	expect(panel.elementRect('main')).not.toBeNull();
+});
+
+test('clear() with no name stops the whole panel but leaves the silkscreen', async () => {
+	// Matches the family: flip-dot and split-flap both have a no-argument clear().
+	const { canvas, panel } = mount({
+		persistence: 0,
+		layout: [
+			{ kind: 'digits', name: 'main', chars: 3, glyphs: '7seg', x: 8, y: 8, w: 90, h: 44 },
+			{
+				kind: 'bars',
+				name: 'spec',
+				bands: 6,
+				rows: 6,
+				peakHold: true,
+				x: 110,
+				y: 8,
+				w: 120,
+				h: 44
+			},
+			{ kind: 'legend', name: 'st', text: 'ST', x: 240, y: 10, w: 20, h: 10 },
+			{ kind: 'rule', name: 'edge', shape: 'box', x: 4, y: 4, w: 300, h: 52 }
+		]
+	});
+	panel.set('main', '888');
+	panel.setBars('spec', new Array<number>(6).fill(1));
+	panel.light('st', true);
+	const lit = energy(canvas);
+	expect(lit).toBeGreaterThan(0);
+
+	panel.clear();
+	await wait(400);
+	const dark = energy(canvas);
+	expect(dark).toBeLessThan(lit * 0.4);
+	// The rule is ink, so something is still on the glass — clear() is not a blank canvas.
+	expect(dark).toBeGreaterThan(0);
+	// And it can be driven again straight afterwards.
+	panel.set('main', '888');
+	expect(energy(canvas)).toBeGreaterThan(dark);
 });

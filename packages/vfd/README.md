@@ -31,7 +31,7 @@ const panel = createVfdPanel(canvas, {
 
 panel?.set('main', 'FM 98.50');
 panel?.light('st', true);
-panel?.bars('spec', levels); // 0..1 per band; the caps fall on their own
+panel?.setBars('spec', levels); // 0..1 per band; the caps fall on their own
 ```
 
 Give it a canvas; it owns the 2D render, the physics, resize, and the render loop — which
@@ -72,17 +72,17 @@ envelope is:
 Every element is placed at `x, y, w, h` in the panel's `frame` units and addressed by
 `name`. Names are the wiring, so they are **required and unique**; a duplicate throws.
 
-| kind     | drives with          | what it is                                                         |
-| -------- | -------------------- | ------------------------------------------------------------------ |
-| `digits` | `set(name, str)`     | character cells: `'7seg'`, `'14seg'`, `'16seg'` or `'matrix'` 5×7  |
-| `legend` | `light(name, on)`    | a screen-printed word — one anode, one wire, lights as a unit      |
-| `bars`   | `bars(name, levels)` | `bands` × `rows` blocks, optional `peakHold` caps and `wedge` ramp |
-| `icon`   | `light(name, on)`    | arbitrary SVG **fill** data                                        |
-| `scale`  | `set(name, 0..1)`    | a tuning dial: printed ticks plus discrete cursor blocks           |
-| `dots`   | `dots(name, bitmap)` | a raw `cols` × `rows` dot grid — the graphic half of a panel       |
-| `rule`   | — (ink)              | silkscreen hairlines and boxes that group the face into zones      |
+| kind     | drives with             | what it is                                                         |
+| -------- | ----------------------- | ------------------------------------------------------------------ |
+| `digits` | `set(name, str)`        | character cells: `'7seg'`, `'14seg'`, `'16seg'` or `'matrix'` 5×7  |
+| `legend` | `light(name, on)`       | a screen-printed word — one anode, one wire, lights as a unit      |
+| `bars`   | `setBars(name, levels)` | `bands` × `rows` blocks, optional `peakHold` caps and `wedge` ramp |
+| `icon`   | `light(name, on)`       | arbitrary SVG **fill** data                                        |
+| `scale`  | `set(name, 0..1)`       | a tuning dial: printed ticks plus discrete cursor blocks           |
+| `dots`   | `setDots(name, bitmap)` | a raw `cols` × `rows` dot grid — the graphic half of a panel       |
+| `rule`   | — (ink)                 | silkscreen hairlines and boxes that group the face into zones      |
 
-Anything drivable also answers `blank(name)`, which is not the same as writing zeros — see
+Anything drivable also answers `clear(name)`, which is not the same as writing zeros — see
 below.
 
 **Icons are fills, not centrelines.** A VFD anode is a patch of phosphor screen-printed onto
@@ -116,18 +116,19 @@ element **name**. `setOptions(patch)` patches the envelope (phosphor, windows, d
 persistence, wear, power) and cannot re-compile, so a wrapper is free to re-send the whole
 bag on every slider tick; all three of ours do.
 
-`bars` and `dots` **copy** what you hand them, so an array you reuse next frame cannot
-retroactively change the display. A function passed to `dots` is the exception: it is kept
+`setBars` and `setDots` **copy** what you hand them, so an array you reuse next frame cannot
+retroactively change the display. A function passed to `setDots` is the exception: it is kept
 and sampled each frame, which is the point of it.
 
-**`blank(name)` stops driving an element.** Writing zeros is not equivalent: a `bars`
-element with `peakHold` remembers its caps, and a cap resting on the floor row it never
-falls below is a lit line across the element for good. That matters as soon as one window
-has more than one job — an analyser field that becomes a graphic display on the DISPLAY
-button, as these panels really did: the driver you switched away from has to stop, memory
-and all. A blanked `scale` shows no cursor rather than one parked at zero, because a dial
-with nothing tuned in is an empty scale. The anodes keep their phosphor tails on the way
-down.
+**`clear(name)` stops driving an element** — or the whole panel, with no argument, the way
+flip-dot's and split-flap's `clear()` do. Writing zeros is not equivalent: a `bars` element
+with `peakHold` remembers its caps, and a cap resting on the floor row it never falls below
+is a lit line across the element for good. That matters as soon as one window has more than
+one job — an analyser field that becomes a graphic display on the DISPLAY button, as these
+panels really did: the driver you switched away from has to stop, memory and all. A cleared
+`scale` shows no cursor rather than one parked at zero, because a dial with nothing tuned in
+is an empty scale. Silkscreen is ink and stays. The anodes keep their phosphor tails on the
+way down.
 
 Driving an element through the wrong call warns rather than silently doing nothing.
 
