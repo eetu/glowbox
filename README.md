@@ -44,11 +44,11 @@ DIMMER and a spectrum analyser that smears — on `/vfd`.
 | [`@glowbox/vfd`](packages/vfd)                     | `yarn add @glowbox/vfd`           | VFD panel core: a stereo faceplate in one envelope, persistence, dimmer   |
 | [`@glowbox/crt`](packages/crt)                     | `yarn add @glowbox/crt`           | composable CRT screen over any canvas: curvature, phosphor persistence    |
 | [`@glowbox/svelte`](packages/svelte)               | `yarn add @glowbox/svelte`        | Svelte 5 components, one per core (`<LedGrid>` … `<VfdPanel>`)            |
-| [`@glowbox/react`](packages/react)                 | `yarn add @glowbox/react`         | React components: the same seven (`^18 \|\| ^19`)                         |
-| [`@glowbox/vue`](packages/vue)                     | `yarn add @glowbox/vue`           | Vue 3 components: the same seven                                          |
+| [`@glowbox/react`](packages/react)                 | `yarn add @glowbox/react`         | React components: one per core (`^18 \|\| ^19`)                           |
+| [`@glowbox/vue`](packages/vue)                     | `yarn add @glowbox/vue`           | Vue 3 components: one per core                                            |
 | [`@glowbox/extras`](packages/extras)               | `yarn add @glowbox/extras`        | content: GIF/image players, 5×7 LED font text + scroller                  |
 
-Seven rendering cores — the 3D LED grid (`@glowbox/led-grid`), the nixie tube
+The rendering cores — the 3D LED grid (`@glowbox/led-grid`), the nixie tube
 (`@glowbox/nixie`), the seven-segment display (`@glowbox/seven-segment`), the
 flip-dot board (`@glowbox/flip-dot`), the split-flap display
 (`@glowbox/split-flap`), the neon sign (`@glowbox/neon`) and the VFD panel
@@ -138,7 +138,7 @@ their own `build`/`test`.
 
 ## Publishing
 
-All twelve packages publish to the public npm registry under the `@glowbox` scope. Tag
+Every package publishes to the public npm registry under the `@glowbox` scope. Tag
 a release (`vX.Y.Z`) and the `release` workflow publishes each via **npm trusted
 publishing (OIDC)** with provenance — no `NPM_TOKEN` secret (the cores first, then
 the wrappers + extras). Each package needs a trusted publisher configured on npm.

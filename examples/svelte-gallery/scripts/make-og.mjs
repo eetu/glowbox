@@ -4,7 +4,11 @@
 //
 //   node scripts/make-og.mjs
 //
-// Re-run it when the wordmark, the core list or the neon renderer changes.
+// Re-run it when the wordmark, the core list or the neon renderer changes, and commit
+// the PNG — it is a static asset, not a build artefact.
+//
+// The bold entry is NEON because neon draws this card. It is not "the newest core", so
+// it does not move when one is added; the list carries no count for the same reason.
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
@@ -45,7 +49,7 @@ const html = `<!doctype html>
 <div class="card">
   <canvas id="sign"></canvas>
   <div class="cores">
-    LED grid · nixie · seven-segment · flip-dot · split-flap · <b>neon</b>
+    LED grid · nixie · seven-segment · flip-dot · split-flap · <b>neon</b> · VFD
   </div>
   <div class="tag">glowing display components for the web</div>
 </div>

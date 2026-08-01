@@ -87,7 +87,7 @@
 		border: 1px solid var(--halo-border);
 		border-radius: var(--halo-radius);
 		background: var(--halo-bg-main);
-		/* Seven cores no longer fit a phone header: scroll the strip instead of
+		/* The cores stopped fitting a phone header: scroll the strip instead of
 		   clipping the last tab off the screen edge. */
 		overflow-x: auto;
 		scrollbar-width: none;
