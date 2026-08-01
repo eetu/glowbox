@@ -77,22 +77,31 @@ describe('faces — segment geometry and glyph tables', () => {
 		expect(segmentBits('7seg', 'B')).toBe(segmentBits('7seg', 'b'));
 	});
 
-	it('keeps V half-height and distinct from Y', () => {
-		// V is the pair of UPPER diagonals meeting at the cell waist; Y is that plus the
-		// stem. See the long note in faces.ts before changing this — the full-height V is
-		// `h j l`, which is Y, and shipping it as V made VERY read as YERY.
+	it('matches the reference tables for the diagonal letters', () => {
+		// The starburst makes these hard, so they are pinned against the classic
+		// 16-segment ASCII tables rather than to taste. `h j`/`k m` are the upper and
+		// lower diagonal pairs: W's middle peak is the lower one, M's valley the upper.
 		const names = segmentNames('16seg');
 		const set = (ch: string) =>
 			new Set(names.filter((_, i) => segmentBits('16seg', ch) & (1 << i)));
-		expect(set('V')).toEqual(new Set(['h', 'j']));
+		expect(set('V')).toEqual(new Set(['f', 'e', 'k', 'j']));
 		expect(set('Y')).toEqual(new Set(['h', 'j', 'l']));
-		// Y is V plus exactly one stroke, and that stroke is the stem.
-		expect([...set('Y')].filter((s) => !set('V').has(s))).toEqual(['l']);
 		expect(set('X')).toEqual(new Set(['h', 'j', 'k', 'm']));
-		// The guard against a mirrored assignment: W's middle peak is the LOWER pair,
-		// M's middle valley the upper one. Swap them and V would draw a Λ for real.
 		expect(set('W')).toEqual(new Set(['f', 'e', 'k', 'm', 'b', 'c']));
 		expect(set('M')).toEqual(new Set(['f', 'e', 'h', 'j', 'b', 'c']));
+
+		// V reaches the baseline like every other letter — within a segment thickness,
+		// since a diagonal's pointed end insets further than a flat bottom bar does.
+		const geom = cellGeometry('16seg');
+		const bottom = (ch: string) =>
+			Math.max(
+				...names.flatMap((_, s) =>
+					segmentBits('16seg', ch) & (1 << s)
+						? geom[s].filter((_, i) => i % 2 === 1)
+						: [Number.NEGATIVE_INFINITY]
+				)
+			);
+		expect(bottom('O') - bottom('V')).toBeLessThan(6);
 	});
 
 	it('merges word bitmaps into solid runs', () => {
