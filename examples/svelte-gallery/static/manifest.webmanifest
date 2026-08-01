@@ -1,7 +1,7 @@
 {
 	"name": "glowbox",
 	"short_name": "glowbox",
-	"description": "A generic 3D LED-grid display — a glowing WebGL voxel cube you draw on.",
+	"description": "Glowing retro display components: a 3D WebGL LED grid, nixie tubes, seven-segment digits, flip-dots, a split-flap board, neon signs and a VFD panel.",
 	"display": "standalone",
 	"start_url": ".",
 	"background_color": "#0f0f0f",

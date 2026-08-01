@@ -124,9 +124,8 @@ on rerun (`npm view` guard); prerelease versions (`-rc.N`) go to the `rc` dist-t
 
 ## Status / next
 
-- **1.0.x–1.8.0 shipped** (latest: 1.8.0 on 2026-07-30 — the neon core) — **twelve**
-  packages in lockstep: eleven live on npm, plus **`@glowbox/vfd` in-tree awaiting
-  its first release (1.9.0)**, whose first publish needs the new-package flow below.
+- **1.0.x–1.9.0 shipped** (latest: 1.9.0 on 2026-08-01 — the vfd panel core) — **twelve**
+  packages in lockstep, all live on npm.
   NOTE for
   future new packages: npm needs the package to exist before a **trusted publisher**
   can be configured — first-publish a local `-rc.1` with `npm publish --tag rc
@@ -135,7 +134,8 @@ on rerun (`npm view` guard); prerelease versions (`-rc.N`) go to the `rc` dist-t
   make sure the manual publish uses the `-rc.N` version (a stray publish of the
   STABLE version, even if unpublished, burns that number forever — 1.5.0 → 1.5.1
   happened this way), and mind that the rc briefly holds the `latest` dist-tag
-  until the stable ships.
+  until the stable ships — vfd's rcs went out as `1.8.0-rc.N` on purpose, so `latest`
+  sat on an rc until 1.9.0 shipped and no stable number was burned.
 - **Direction:** see `docs/ROADMAP.md` — the strategic bets: `@glowbox/bridge`
   (WLED/DDP hardware streaming), trigger-based WebGL2 renderer (the only 2.0). The
   planned cores all shipped; **neon** was the first post-plan core to clear the

@@ -7,7 +7,7 @@
 		<!-- Static title/description/social cards: the app renders client-side only, so
 		     this — not any component markup — is what crawlers and link unfurlers see.
 		     (Routes override the title at runtime via <svelte:head>.) -->
-		<title>glowbox — seven glowing retro display components</title>
+		<title>glowbox — glowing retro display components</title>
 		<meta
 			name="description"
 			content="Glowing retro displays you can install: a 3D WebGL LED grid you draw on like a tiny 3D canvas, plus nixie tubes, seven-segment digits, a flip-dot board, a split-flap departure board, glass-tube neon signs and a vacuum-fluorescent stereo panel — framework-agnostic cores with Svelte, React and Vue wrappers, and a live demo for every one."
@@ -15,25 +15,28 @@
 		<meta property="og:type" content="website" />
 		<meta property="og:site_name" content="glowbox" />
 		<meta property="og:locale" content="en" />
-		<meta property="og:title" content="glowbox — seven glowing retro display components" />
+		<meta property="og:title" content="glowbox — glowing retro display components" />
 		<meta
 			property="og:description"
 			content="A 3D LED grid, nixie tubes, seven-segment digits, flip-dots, a split-flap board, neon signs and a VFD stereo panel — installable, framework-agnostic, with live demos."
 		/>
 		<meta property="og:url" content="https://eetu.github.io/glowbox/" />
 		<!-- The card is drawn BY the library (the neon core bends the wordmark) and
-		     regenerated with scripts/make-og.mjs. Absolute URL: unfurlers don't
-		     resolve relative paths, and it lives under the Pages base path. -->
+		     regenerated with scripts/make-og.mjs — re-run that when a core is added, and
+		     update the alt text below with it. Absolute URL: unfurlers don't resolve
+		     relative paths, and it lives under the Pages base path.
+		     No counts in any of this copy: a number goes stale the next time a core ships,
+		     and stale metadata is what crawlers cache. -->
 		<meta property="og:image" content="https://eetu.github.io/glowbox/og.png" />
 		<meta property="og:image:type" content="image/png" />
 		<meta property="og:image:width" content="1200" />
 		<meta property="og:image:height" content="630" />
 		<meta
 			property="og:image:alt"
-			content="The word glowbox bent into glowing gold neon tubing on a dark wall, above the list: LED grid, nixie, seven-segment, flip-dot, split-flap, neon."
+			content="The word glowbox bent into glowing gold neon tubing on a dark wall, above the list: LED grid, nixie, seven-segment, flip-dot, split-flap, neon, VFD."
 		/>
 		<meta name="twitter:card" content="summary_large_image" />
-		<meta name="twitter:title" content="glowbox — seven glowing retro display components" />
+		<meta name="twitter:title" content="glowbox — glowing retro display components" />
 		<meta
 			name="twitter:description"
 			content="A 3D LED grid, nixie tubes, seven-segment digits, flip-dots, a split-flap board, neon signs and a VFD stereo panel — installable, framework-agnostic, with live demos."
