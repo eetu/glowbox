@@ -4,7 +4,7 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
-## [Unreleased]
+## [1.9.0] — 2026-08-01
 
 The seventh display core: a **vacuum-fluorescent display panel** — the front of a
 90s mini-system, and the first _heterogeneous_ core in the family. Every one before
