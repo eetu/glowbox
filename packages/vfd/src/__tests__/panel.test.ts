@@ -89,19 +89,29 @@ describe('faces — segment geometry and glyph tables', () => {
 		expect(set('X')).toEqual(new Set(['h', 'j', 'k', 'm']));
 		expect(set('W')).toEqual(new Set(['f', 'e', 'k', 'm', 'b', 'c']));
 		expect(set('M')).toEqual(new Set(['f', 'e', 'h', 'j', 'b', 'c']));
+	});
 
-		// V reaches the baseline like every other letter — within a segment thickness,
-		// since a diagonal's pointed end insets further than a flat bottom bar does.
-		const geom = cellGeometry('16seg');
-		const bottom = (ch: string) =>
-			Math.max(
-				...names.flatMap((_, s) =>
-					segmentBits('16seg', ch) & (1 << s)
-						? geom[s].filter((_, i) => i % 2 === 1)
-						: [Number.NEGATIVE_INFINITY]
-				)
-			);
-		expect(bottom('O') - bottom('V')).toBeLessThan(6);
+	it('gives every letter ink that reaches the baseline', () => {
+		// A PROPERTY, not a snapshot: it says nothing about which segments a letter uses,
+		// so it stays true through any re-spelling. It exists because the mask tests above
+		// cannot catch a glyph that is the wrong SIZE — V once stopped at the cell's waist
+		// (bottom ≈ 50) and every mask assertion still passed. Real letters bottom out
+		// between 89.5 and 93.7 in a 100-tall cell, so 85 is a wide margin.
+		for (const mode of ['14seg', '16seg'] as const) {
+			const geom = cellGeometry(mode);
+			for (const ch of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+				const bits = segmentBits(mode, ch);
+				const ys: number[] = [];
+				for (let s = 0; s < segmentCount(mode); s++) {
+					if (!(bits & (1 << s))) continue;
+					for (let i = 1; i < geom[s].length; i += 2) ys.push(geom[s][i]);
+				}
+				expect(ys.length, `${ch} (${mode}) has no lit segments`).toBeGreaterThan(0);
+				expect(Math.max(...ys), `${ch} (${mode}) floats above the baseline`).toBeGreaterThan(
+					CELL.height * 0.85
+				);
+			}
+		}
 	});
 
 	it('merges word bitmaps into solid runs', () => {
