@@ -204,3 +204,35 @@ test('tapping the glass names the element under the point', async ({ page }) => 
 	await page.mouse.click(box.x + box.width * 0.22, box.y + box.height * 0.38);
 	await expect(page.getByText(/^tapped: /)).toBeVisible();
 });
+
+test('the Type source shows what you type on both the field and the ticker', async ({ page }) => {
+	await page.goto('/vfd');
+	await page.getByText('Type', { exact: true }).click();
+	const input = page.locator('.bench input');
+	await expect(input).toBeVisible();
+	await input.fill('QRSTUVWX');
+	const panel = page.locator('canvas.face');
+	// The segment field is the upper-left third; the dot ticker the bottom strip. Both must
+	// carry the text, which is the point of the bench: one string, two repertoires.
+	const litIn = (y0: number, y1: number) =>
+		panel.evaluate(
+			(el, b) => {
+				const c = el as HTMLCanvasElement;
+				const ctx = c.getContext('2d', { willReadFrequently: true });
+				if (!ctx || !c.width) return 0;
+				const py = Math.floor(c.height * b.y0);
+				const h = Math.max(1, Math.floor(c.height * (b.y1 - b.y0)));
+				const d = ctx.getImageData(0, py, Math.floor(c.width * 0.55), h).data;
+				let n = 0;
+				for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 120) n++;
+				return n;
+			},
+			{ y0, y1 }
+		);
+	await expect.poll(() => litIn(14 / 110, 48 / 110), { timeout: 15_000 }).toBeGreaterThan(150);
+	await expect.poll(() => litIn(84 / 110, 106 / 110), { timeout: 15_000 }).toBeGreaterThan(150);
+
+	// Clearing it darkens both, which proves the field is actually following the input.
+	await input.fill('');
+	await expect.poll(() => litIn(14 / 110, 48 / 110), { timeout: 15_000 }).toBeLessThan(40);
+});

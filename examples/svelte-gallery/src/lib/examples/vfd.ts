@@ -34,8 +34,10 @@ import loopUrl from './loop.gif?url';
 /** Which source the face is showing. 'auto' runs the full attract cycle. */
 export type StereoSource = 'auto' | StereoScene;
 /** What the chassis is actually doing — 'auto' resolves to one of these. `gif` is the DISPLAY
- *  button: the analyser strip stops being an analyser and plays an animation instead. */
-export type StereoScene = 'tuner' | 'cd' | 'tape' | 'gif';
+ *  button: the analyser strip stops being an analyser and plays an animation instead. `type`
+ *  is not a source at all — it is the bench mode, showing whatever you type so the glyph
+ *  repertoires can be read by eye. It is reachable only by pinning, never from the cycle. */
+export type StereoScene = 'tuner' | 'cd' | 'tape' | 'gif' | 'type';
 
 /** The faceplate's design frame — every element box below is in these units. Roughly a real
  *  faceplate's 3:1, which it can afford because the analyser moved to its own strip: the
@@ -678,7 +680,10 @@ const STRIP: Record<StereoScene, string> = {
 	tuner: 'RADIO TEXT - NOW PLAYING THE LATE SHIFT WITH A GUEST MIX   ',
 	cd: 'CD TEXT - THE LONG WAY ROUND - 12 TRACKS - PHOSPHOR DECAY   ',
 	tape: 'SIDE A - DOLBY B NR - AUTO REVERSE - COUNTER 0000   ',
-	gif: 'GRAPHIC DISPLAY - ONE ANODE PER DOT - GREY BY DUTY CYCLE   '
+	gif: 'GRAPHIC DISPLAY - ONE ANODE PER DOT - GREY BY DUTY CYCLE   ',
+	// Replaced by whatever is typed, so the same string can be read on the 5x7 dot grid
+	// and in the segment field at once.
+	type: ''
 };
 const CD_TRACKS = 12;
 
@@ -731,7 +736,12 @@ const pad2 = (n: number) => String(n).padStart(2, '0');
 
 /** Run the attract show on the faceplate. Owns its own rAF loop and returns a stop handle; the
  *  scene comes from the chassis clock, which the analyser strip reads too. */
-export function createStereoShow(panel: VfdPanel, clock: SceneClock): { stop(): void } {
+export function createStereoShow(
+	panel: VfdPanel,
+	clock: SceneClock,
+	/** What the bench mode shows. Read every frame, so typing is live. */
+	typed: () => string = () => ''
+): { stop(): void } {
 	// Only push a value when it changed — the panel animates on every set(), and a character
 	// field re-driven 60 times a second would never settle.
 	const shown = new Map<string, string | number | boolean>();
@@ -807,9 +817,13 @@ export function createStereoShow(panel: VfdPanel, clock: SceneClock): { stop(): 
 		raf = requestAnimationFrame(frame);
 		const { scene, local, t } = clock(now);
 
-		// The ticker crawls at a steady ~26 dot columns a second, regardless of scene.
-		const offset = Math.floor(t * 26);
-		panel.dots('ticker', tickerBitmap(STRIP[scene], TICKER.cols, TICKER.rows, offset));
+		// The ticker crawls at a steady ~26 dot columns a second, regardless of scene. In the
+		// bench mode it holds still instead: you are reading it, not watching it.
+		// Padded to the grid's own width (120 columns / 6 per character) so a short string
+		// sits still instead of wrapping round and printing itself twice.
+		const strip = scene === 'type' ? typed().padEnd(TICKER.cols / 6, ' ') : STRIP[scene];
+		const offset = scene === 'type' ? 0 : Math.floor(t * 26);
+		panel.dots('ticker', tickerBitmap(strip, TICKER.cols, TICKER.rows, offset));
 
 		if (scene === 'tuner') {
 			// Step through the presets, pausing on each. The dial cursor tracks the frequency
@@ -872,13 +886,21 @@ export function createStereoShow(panel: VfdPanel, clock: SceneClock): { stop(): 
 				rec: recording
 			});
 			transport(t, { tape: true, moving: rolling, recording });
-		} else {
+		} else if (scene === 'gif') {
 			// GRAPHIC DISPLAY. The faceplate says what the strip below it is doing and otherwise
 			// gets out of the way: no source has power, so no transport, no counter, no dial.
 			set('main', ' GRAPHIC');
 			set('trk', '');
 			set('tune', 0);
 			lamps({ play: true });
+			transport(t, {});
+		} else {
+			// THE BENCH. Whatever is typed, in the segment field and on the dot ticker at once,
+			// with everything else dark so nothing distracts from the letterforms.
+			set('main', typed());
+			set('trk', '');
+			set('tune', 0);
+			lamps({});
 			transport(t, {});
 		}
 	};

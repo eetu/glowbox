@@ -36,6 +36,8 @@
 	} from '$lib/examples/vfd';
 
 	let source = $state<StereoSource>('auto');
+	// The bench mode's text. Read every frame by the show, so typing lands live.
+	let typed = $state('ABCDEFGH');
 	// ONE clock for the chassis, read by both panels — they have to agree on the scene, since
 	// the analyser strip stops being an analyser on the GIF source. Two shows each timing from
 	// their own first frame would drift apart.
@@ -100,7 +102,7 @@
 		);
 		if (!p) return;
 		panel = p;
-		const show = createStereoShow(p, clock);
+		const show = createStereoShow(p, clock, () => typed);
 		return () => {
 			show.stop();
 			p.dispose();
@@ -192,7 +194,8 @@
 					{ value: 'tuner', label: 'Tuner' },
 					{ value: 'cd', label: 'CD' },
 					{ value: 'tape', label: 'Tape' },
-					{ value: 'gif', label: 'GIF' }
+					{ value: 'gif', label: 'GIF' },
+					{ value: 'type', label: 'Type' }
 				]}
 			/>
 		</label>
@@ -239,6 +242,28 @@
 					{on ? 'ON' : 'STANDBY'}
 				</button>
 			</div>
+
+			{#if source === 'type'}
+				<!-- The bench. The same string lands in the segment field and on the 5×7 ticker,
+				     so a repertoire can be read against the dot grid that renders it honestly. -->
+				<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+				<div class="bench" onclick={(e) => e.stopPropagation()}>
+					<!-- svelte-ignore a11y_autofocus -->
+					<input
+						bind:value={typed}
+						autofocus
+						spellcheck="false"
+						autocomplete="off"
+						aria-label="text to display"
+						placeholder="type here"
+					/>
+					<div class="presets">
+						{#each ['ABCDEFGH', 'IJKLMNOP', 'QRSTUVWX', 'YZ 0123', '456789.:', 'VERY WXY'] as p (p)}
+							<button onclick={() => (typed = p)}>{p.trim()}</button>
+						{/each}
+					</div>
+				</div>
+			{/if}
 
 			<!-- The analyser strip, on its own glass directly under the faceplate: spectrum and
 			     EQ, or the graphic display on the GIF source — one window, whichever job. -->
@@ -518,6 +543,50 @@
 		margin-top: 10px;
 	}
 
+	/* The bench row — chassis furniture, so it reads as part of the unit. */
+	.bench {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		align-items: center;
+		margin-top: 10px;
+	}
+	.bench input {
+		flex: 1 1 200px;
+		min-width: 0;
+		padding: 7px 10px;
+		font-family: var(--halo-font-mono, monospace);
+		font-size: 13px;
+		letter-spacing: 0.08em;
+		color: #d6dbe0;
+		background: #15171a;
+		border: 1px solid #33363c;
+		border-radius: var(--halo-radius);
+	}
+	.bench input:focus-visible {
+		border-color: #6d757e;
+		outline: none;
+	}
+	.presets {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+	.presets button {
+		padding: 6px 8px;
+		font-family: var(--halo-font-mono, monospace);
+		font-size: 11px;
+		letter-spacing: 0.06em;
+		color: #9aa1a8;
+		background: #15171a;
+		border: 1px solid #33363c;
+		border-radius: var(--halo-radius);
+		cursor: pointer;
+	}
+	.presets button:hover {
+		color: #d6dbe0;
+		border-color: #6d757e;
+	}
 	.tapped {
 		margin-left: auto;
 		font-variant-numeric: tabular-nums;
