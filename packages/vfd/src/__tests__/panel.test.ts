@@ -3,7 +3,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+	CELL,
 	CELL_EXTRAS,
+	cellGeometry,
 	matrixDotLit,
 	segmentBits,
 	segmentCount,
@@ -13,6 +15,7 @@ import {
 import {
 	compilePanel,
 	driveElement,
+	type ElementState,
 	fallPeaks,
 	GRID_COLS,
 	layCells,
@@ -455,5 +458,103 @@ describe('driveElement — value to lit anodes', () => {
 		const out = new Float32Array(inked.anodes.length);
 		driveElement(inked.elements[0], { on: true }, out);
 		expect(Array.from(out)).toEqual([0]);
+	});
+
+	it('leaves a peak cap alone when a level arrives as NaN', () => {
+		// A NaN level used to land in the cap, and a NaN cap never compares true again:
+		// Math.max(NaN, x) is NaN, `cap < 0` is false, so the band was dark for good.
+		const peaks = [4, 4];
+		fallPeaks(peaks, [Number.NaN, 0.5], 8, 4, 0.25);
+		expect(Number.isFinite(peaks[0])).toBe(true);
+		expect(peaks[0]).toBeCloseTo(3);
+		expect(peaks[1]).toBeCloseTo(4);
+		// And it recovers: a real level after the NaN drives the cap normally.
+		fallPeaks(peaks, [1, 0.5], 8, 4, 0.25);
+		expect(peaks[0]).toBeCloseTo(8);
+	});
+
+	it('never grows a peak cap when the clock steps backwards', () => {
+		// A negative dt subtracts a negative — four rows became forty-four.
+		const peaks = [4];
+		fallPeaks(peaks, [0], 8, 4, -10);
+		expect(peaks[0]).toBeCloseTo(4);
+	});
+
+	it('recovers a cap that is already NaN rather than keeping it', () => {
+		const peaks = [Number.NaN];
+		fallPeaks(peaks, [0], 8, 4, 0.1);
+		expect(peaks[0]).toBe(-1);
+	});
+
+	it('throws a readable error for a frame with no area', () => {
+		// Unchecked, this makes the scale Infinity and every coordinate NaN, which surfaces
+		// as canvas throwing InvalidStateError from inside the render loop once a frame.
+		for (const frame of [
+			[0, 0],
+			[320, 0],
+			[-10, 64],
+			[Number.NaN, 64],
+			[Number.POSITIVE_INFINITY, 64]
+		] as [number, number][]) {
+			expect(() => compilePanel(frame, [])).toThrow(/finite positive numbers/);
+		}
+	});
+
+	it('clamps a negative cell count instead of raising a bare RangeError', () => {
+		// `out.length = -4` is a RangeError from deep inside the driver.
+		expect(() => layCells('12', -4, 'left', true)).not.toThrow();
+		expect(layCells('12', -4, 'left', true)).toEqual([]);
+		expect(layCells('12', 2.7, 'left', true)).toHaveLength(2);
+	});
+
+	it('blanks a dots element whose bitmap function throws, once', () => {
+		// A function bitmap is sampled every frame, so a thrower throws forever — out of a
+		// rAF callback, where the consumer cannot catch it.
+		const panel = compilePanel(
+			[100, 40],
+			[{ kind: 'dots', name: 'boom', cols: 4, rows: 4, x: 0, y: 0, w: 100, h: 40 }]
+		);
+		const el = panel.elements[0];
+		const out = new Float32Array(panel.anodes.length);
+		const state: ElementState = {
+			bitmap: () => {
+				throw new Error('nope');
+			}
+		};
+		const warn = console.warn;
+		console.warn = () => {};
+		try {
+			expect(() => driveElement(el, state, out)).not.toThrow();
+			expect(out.every((v) => v === 0)).toBe(true);
+			// The thrower is dropped, so the next frame is not another throw.
+			expect(state.bitmap).toBeUndefined();
+			expect(() => driveElement(el, state, out)).not.toThrow();
+		} finally {
+			console.warn = warn;
+		}
+	});
+
+	it('puts the colon beads in the trailing gutter, clear of the glyph', () => {
+		// At the cell centre they land ON the digit: `12:34` rendered as two dots stamped
+		// through the 2. They belong beside the decimal point, where the driver wired them.
+		const geom = cellGeometry('16seg');
+		const bx = (poly: number[]) => {
+			let lo = Infinity;
+			let hi = -Infinity;
+			for (let i = 0; i < poly.length; i += 2) {
+				lo = Math.min(lo, poly[i]);
+				hi = Math.max(hi, poly[i]);
+			}
+			return { lo, hi, mid: (lo + hi) / 2 };
+		};
+		const n = segmentCount('16seg');
+		const dp = bx(geom[n]);
+		const c1 = bx(geom[n + 1]);
+		const c2 = bx(geom[n + 2]);
+		// Same column as the point (their radii differ a little, so compare centres)…
+		expect(c1.mid).toBeCloseTo(dp.mid, 3);
+		expect(c2.mid).toBeCloseTo(dp.mid, 3);
+		// …and well right of the cell's centre column, so no glyph runs through them.
+		expect(c1.lo).toBeGreaterThan(CELL.width / 2);
 	});
 });
