@@ -1,15 +1,16 @@
 # @glowbox/vue
 
 glowbox components for **Vue 3** — one per display core: `<LedGrid>` (the 3D WebGL LED
-grid), `<NixieTube>`, `<SevenSegment>`, `<FlipDots>`, `<SplitFlap>`, `<NeonSign>` and
-`<VfdPanel>`, each a thin live-updating wrapper over its sibling core package.
+grid), `<NixieTube>`, `<SevenSegment>`, `<FlipDots>`, `<SplitFlap>`, `<NeonSign>`,
+`<VfdPanel>` and `<LcdModule>`, each a thin live-updating wrapper over its sibling
+core package.
 
 **[⚡ Open in StackBlitz](https://stackblitz.com/github/eetu/glowbox/tree/main/examples/starters/vue)** —
 a running `<LedGrid>` + `<NixieTube>` playground in your browser, no install.
 
 ```sh
 yarn add @glowbox/vue
-# peer: vue ^3   (the seven display cores come along as dependencies)
+# peer: vue ^3   (the eight display cores come along as dependencies)
 ```
 
 ## `<LedGrid>`
@@ -228,6 +229,31 @@ envelope props (`phosphor`, `filter`, `zones`, `brightness`, `persistence`, `fil
 expensive call. The handle is `expose()`d as `panel`, or comes through `:oncreate` —
 animated content (`setDots`, a spectrum's `setBars`) wants it. See **@glowbox/vfd** for
 the element kinds and the envelope physics.
+
+## `<LcdModule>`
+
+```vue
+<script setup lang="ts">
+import { LcdModule } from '@glowbox/vue';
+</script>
+
+<template>
+	<div style="width: 480px; height: 150px">
+		<LcdModule :text="'HELLO\nWORLD'" cursor="block" />
+	</div>
+</template>
+```
+
+A character LCD module (HD44780-class) over **[@glowbox/lcd](https://www.npmjs.com/package/@glowbox/lcd)** —
+the family's first reflective display: liquid-crystal response smear, the contrast pot,
+crosstalk streaks, the boot row of solid blocks. `text` takes a string (`'\n'` splits
+rows) or one string per row — the shutters chase it at crystal speed; `cols`, `rows`,
+`panel` (`'green'` \| `'blue'` \| `'white'`), `backlight`, `contrast`, `response`,
+`ghost`, `cursor` (`'none'` \| `'line'` \| `'block'`), `age`, `on`, `boot`, `bezel`,
+`pixelRatio`, `label` mirror the core options and update **live**; the handle is
+`expose()`d as `lcd`, or comes through `:oncreate` — the imperative `LcdModule`
+(`setGlyph` for CGRAM custom characters, `setCursor`, `power`, `cellAt`/`cellRect`
+hit-testing). See **@glowbox/lcd** for the panels and the crystal physics.
 
 ## Using with `@glowbox/crt`
 

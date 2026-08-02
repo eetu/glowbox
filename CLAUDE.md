@@ -1,8 +1,9 @@
 # glowbox — repo overview
 
-Glowing retro **display components** shipped as installable npm packages: seven
+Glowing retro **display components** shipped as installable npm packages: eight
 framework-agnostic rendering cores (a 3D WebGL LED grid + 2D-canvas nixie tube,
-seven-segment, flip-dot, split-flap, neon-sign and VFD-panel displays), thin
+seven-segment, flip-dot, split-flap, neon-sign, VFD-panel and character-LCD
+displays), thin
 Svelte/React/Vue wrappers over all, and content helpers — developed in a
 Yarn-workspaces monorepo with a runnable demo SPA. Part of eetu's homebrew family
 (Svelte, halo-design, ts-style) — but it is a **library**, not a self-hosted app:
@@ -19,13 +20,14 @@ packages/
   split-flap/ @glowbox/split-flap — 2D-canvas Solari board: drum-of-cards model (forward-only wraps), perspective falls, grapheme drums + drum zones (per-field drums) + chroma drums (chromaDrum/paletteFrame/FlapFace), card-slap sound (vendored createMechSound + noise shaping). Zero deps.
   neon/      @glowbox/neon     — 2D-canvas glass-tube neon sign: single-stroke tube letterforms (vendored Hershey script+sans faces, custom NeonFont escape hatch), sign art (SVG path data → tubes via pathToStrokes, placed behind/beside the text, own gas/colour + flasher circuit, shared `frame` registers multi-piece drawings, `opaque` faces cut rear tubes for real overlap), visible unlit glass, electrode strike sequences, wear arc, rate-capped flasher programs, `polarity: 'absorb'` (the one invented element — tubes that ink a pale wall, per sign or per art piece, so neon works in a light theme; ink composites on one layer per frame, never per pass), tappable tubes (`sectionAt` + `jolt`, split-flap's geometry-only contract), transformer hum (createHum in the vendored sound engine; Hershey ack ships as HERSHEY_LICENSE + LICENSE-hershey). Zero deps.
   vfd/       @glowbox/vfd      — 2D-canvas vacuum-fluorescent PANEL: the franchise's first heterogeneous core. Declare a `frame` + `layout` of element kinds (`digits` 7/14/16-seg + 5x7 matrix, `legend` screen-printed words, `bars` spectrum/VU with peak-hold caps, `icon` from plain SVG *fill* data — several in one box lit in turn = the hardware's own frame animation, `scale` tuning dial with discrete cursor blocks, `dots` raw cols x rows grid from a bitmap/fn (the graphic half: animations + smooth column scrolling, which a character-addressed field cannot do; grey levels are honest since anodes dim by duty cycle), `rule` silkscreen); `panel.ts` compiles ALL of them to one flat anode inventory (fixed patch + integer address + multiplex column), so the envelope physics is a few uniform passes over one Float32Array: phosphor persistence (fast attack / slow release = the smear; default 0.05 ≈ 37 ms, LOW on purpose — real ZnO:Zn decays in µs, so a high setting reads as a long exposure, not hardware), the DIMMER, filament haze + panel-continuous grid mesh, filter glass (one multiply pass; crushes undriven-anode ghosts) + panel-level `zones` (extra windows over REGIONS — a filter is plastic over a rectangle, so it belongs to the panel, not to an element whose box it would also tint behind), `selfTest()`, and wear → dim → flicker → dead PLUS the VFD-only dim-grid-column banding. API contract: names are the wiring (duplicate/empty THROWS), driving via the wrong call warns, `setBars`/`setDots` COPY their input (a fn given to `setDots` is kept + sampled per frame), hardware lives in `setLayout(layout, frame?)` and NOT in `setOptions` (the one expensive call must not be reachable by re-sending an option bag), a framed `icon` needs no box at all (its path coords ARE frame coords), `clear(name?)` STOPS driving an element (or all of them) — zeros can't clear a `peakHold` cap (caps rest on the floor row, so a window with two jobs could never hand over), and `fallPeaks` leaves a -1 "no cap" alone. `elementAt`/`elementRect` geometry (real anode BOUNDS, not the declared box; `elementRect` returns {left,top,width,height} to match split-flap's `cellRect`), no listeners. PERF: `shadowBlur` is the whole frame cost — the glow is a low-res offscreen composited back upscaled (the upscale IS the blur, one pass for the envelope) rather than a gaussian per anode; that plus per-element colour caching took the demo faceplate 5 -> 60 fps and the bench worst case 17-26 -> 40-63. Caching the static ghost/silkscreen layers to an offscreen was MEASURED SLOWER (a full-canvas blit beats ~890 alpha-0.014 fills only in theory) - left inline on purpose. `node scripts/bench-vfd.mjs` for numbers. **No sound module** (a VFD has no voice) — the only core without one. Zero deps.
+  lcd/       @glowbox/lcd      — 2D-canvas character LCD MODULE (HD44780-class 16×2): the family's first REFLECTIVE display — dark ink on a lit pane, light-theme native. The core is the LIQUID CRYSTAL, not the character grid: every dot's `state` chases its `target` with asymmetric rise/fall taus (`response`; moving text drags a trailing ghost, power-off DRAINS rather than blanks), the `contrast` pot saturates then OVERDRIVES (past ~0.85 the resting `ghost` lattice darkens and passive-matrix CROSSTALK streaks grow down driven columns — twist-the-trimmer-too-far, emergent not scripted), `panel` presets green/blue/white where BLUE is a NEGATIVE transmissive image (no `backlight`, no image — honest physics; green/white read unlit because reflective), `boot` = the uninitialised top row of solid blocks (THE 16×2 symptom), CGRAM `setGlyph(slot 0-7)` addressed from text by code points 0-7 (bit 4 = leftmost, the datasheet's own convention), cursor 'line'/'block' rendered THROUGH the crystals (a blink genuinely smears), and wear → dim → flickering column → DEAD COLUMN of bare lattice (a failed driver, the LCD's banding analog). `cellAt`/`cellRect` (viewport, family contract), `layLines` pure/node-testable, vendored 5×7 face + shared color.ts symlinks. **No sound module** (an LED-backlit module is silent — vfd's precedent). Zero deps.
   crt/       @glowbox/crt      — composable CRT effect over any canvas/element (WebGL pass; curvature, persistence, event forwarding). Zero deps.
-  svelte/    @glowbox/svelte   — Svelte 5 <LedGrid> + <NixieTube> + <SevenSegment> + <FlipDots> + <SplitFlap> + <NeonSign> + <VfdPanel> (ships .svelte source).
+  svelte/    @glowbox/svelte   — Svelte 5 <LedGrid> + <NixieTube> + <SevenSegment> + <FlipDots> + <SplitFlap> + <NeonSign> + <VfdPanel> + <LcdModule> (ships .svelte source).
   react/     @glowbox/react    — React 18/19 components (dist carries 'use client').
   vue/       @glowbox/vue      — Vue 3 render-function components.
   extras/    @glowbox/extras   — GIF/image players + text helper over the draw API (bundles gifuct-js).
 examples/
-  svelte-gallery/              — SvelteKit SPA demo (LED programs + /nixie + /seven + /flipdot + /splitflap + /neon + /vfd) → GitHub Pages.
+  svelte-gallery/              — SvelteKit SPA demo (LED programs + /nixie + /seven + /flipdot + /splitflap + /neon + /vfd + /lcd) → GitHub Pages.
                                  /vfd is two panels sharing one envelope option set + one scene clock: faceplate (segment field + annunciators + dial + tape/disc transport + dot ticker) and the analyser strip, which is ONE window with three jobs picked by source (20-band spectrum, EQ curve laid over it, and a 4:3 GIF `dots` area on the `gif` source = the DISPLAY button). Both panels read the same clock or they'd disagree about the scene.
 shared/                        — the ONE copy of each file more than one package needs
                                  (color.ts, sound.ts, font5x7.ts, path-parse.ts), SYMLINKED
@@ -57,8 +59,8 @@ Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
 - **Cores are independent**: a display core must not depend on a sibling package, so every
   one is genuinely zero-dep. Cores set `role="img"` + `aria-label` (the `label` option).
 - **Shared sources = `shared/` + symlinks.** The files more than one package needs live once
-  in `shared/` and are **symlinked** into each package's `src/` (`color.ts` ×8, `sound.ts`
-  ×3, `font5x7.ts` ×2, `path-parse.ts` ×2). Editing `shared/x.ts` edits it for all of them.
+  in `shared/` and are **symlinked** into each package's `src/` (`color.ts` ×9, `sound.ts`
+  ×3, `font5x7.ts` ×3, `path-parse.ts` ×2). Editing `shared/x.ts` edits it for all of them.
   Nothing depends on it at runtime — each bundler inlines the file, so the dists and the
   zero-dep claim are unchanged; this replaced hand-copied duplicates that were identical only
   by discipline. `shared/color.ts` is a superset (led-grid's `Vec3` + `parseColor01`); the 2D
@@ -115,7 +117,9 @@ Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
 
 ## Publishing
 
-Tag `vX.Y.Z` on main → `release.yaml` publishes all twelve to npm via **trusted publishing
+Tag `vX.Y.Z` on main → `release.yaml` publishes all thirteen to npm via **trusted publishing
+(NOTE: its two `for pkg in …` lists are ENUMERATION, not discovery — a new package must be
+added to both by hand; vfd was missed for 1.9.0 and had to ship manually)
 (OIDC) + provenance** (no `NPM_TOKEN`). Gates: tag-on-main, tag matches **every**
 package's version, the full validate suite, and the publish smoke. Versions are bumped
 in lockstep across all `packages/*` `package.json`s via `node scripts/bump-version.mjs <version>`,

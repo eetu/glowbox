@@ -34,10 +34,12 @@ jobs:
       - name: Verify tag is on main
         run: git merge-base --is-ancestor "${{ github.sha }}" origin/main
       - name: Verify tag matches every @glowbox/* version
-        # All six publish in lockstep — a stale version field in ANY package must block
-        # the whole release, not publish silently under the wrong tag.
+        # Everything publishes in lockstep — a stale version field in ANY package must
+        # block the whole release, not publish silently under the wrong tag. This list
+        # is enumeration, not discovery: adding a package means adding it HERE and in
+        # the publish loop below (vfd was missed for 1.9.0 and had to ship by hand).
         run: |
-          for pkg in led-grid nixie seven-segment flip-dot split-flap neon crt svelte react vue extras; do
+          for pkg in led-grid nixie seven-segment flip-dot split-flap neon vfd lcd crt svelte react vue extras; do
             v="v$(node -p "require('./packages/$pkg/package.json').version")"
             if [ "$v" != "${{ github.ref_name }}" ]; then
               echo "@glowbox/$pkg is $v but the tag is ${{ github.ref_name }}"
@@ -71,7 +73,7 @@ jobs:
           if [[ "$VERSION" == *-* ]]; then TAG=rc; else TAG=latest; fi
           # led-grid first so dependents resolve. `npm view` guard makes reruns idempotent
           # (npm has no --tolerate-republish; republishing a version is a hard 403).
-          for pkg in led-grid nixie seven-segment flip-dot split-flap neon crt svelte react vue extras; do
+          for pkg in led-grid nixie seven-segment flip-dot split-flap neon vfd lcd crt svelte react vue extras; do
             name="@glowbox/$pkg"
             if npm view "$name@$VERSION" version >/dev/null 2>&1; then
               echo "$name@$VERSION already published — skipping"

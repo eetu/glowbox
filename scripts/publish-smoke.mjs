@@ -27,6 +27,7 @@ const PACKAGES = [
 	'split-flap',
 	'neon',
 	'vfd',
+	'lcd',
 	'crt',
 	'svelte',
 	'react',
@@ -113,11 +114,12 @@ import { createFlipDots, createMechSound, ditherFrame, type FlipDotsOptions } fr
 import { chromaDrum, createSplitFlap, DRUM_DIGITS, paletteFrame, type SplitFlapOptions } from '@glowbox/split-flap';
 import { createHum, createNeonSign, HERSHEY_LICENSE, layoutTubes, type NeonSignOptions } from '@glowbox/neon';
 import { compilePanel, createVfdPanel, layCells, type VfdElement, type VfdPanelOptions } from '@glowbox/vfd';
+import { createLcdModule, layLines, type LcdModuleOptions, PANELS } from '@glowbox/lcd';
 import { createCrtScreen, type CrtOptions } from '@glowbox/crt';
 import { makeGifPlayer, text } from '@glowbox/extras';
-import { FlipDots as SvelteFlipDots, LedGrid as SvelteLedGrid, NeonSign as SvelteNeonSign, NixieTube as SvelteNixieTube, SevenSegment as SvelteSevenSegment, SplitFlap as SvelteSplitFlap, VfdPanel as SvelteVfdPanel, type VfdValue } from '@glowbox/svelte';
-import { FlipDots as ReactFlipDots, LedGrid as ReactLedGrid, NeonSign as ReactNeonSign, NixieTube as ReactNixieTube, SevenSegment as ReactSevenSegment, SplitFlap as ReactSplitFlap, VfdPanel as ReactVfdPanel } from '@glowbox/react';
-import { FlipDots as VueFlipDots, type Frame as VueFrame, LedGrid as VueLedGrid, NeonSign as VueNeonSign, NixieTube as VueNixieTube, SevenSegment as VueSevenSegment, SplitFlap as VueSplitFlap, VfdPanel as VueVfdPanel } from '@glowbox/vue';
+import { FlipDots as SvelteFlipDots, LcdModule as SvelteLcdModule, LedGrid as SvelteLedGrid, NeonSign as SvelteNeonSign, NixieTube as SvelteNixieTube, SevenSegment as SvelteSevenSegment, SplitFlap as SvelteSplitFlap, VfdPanel as SvelteVfdPanel, type VfdValue } from '@glowbox/svelte';
+import { FlipDots as ReactFlipDots, LcdModule as ReactLcdModule, LedGrid as ReactLedGrid, NeonSign as ReactNeonSign, NixieTube as ReactNixieTube, SevenSegment as ReactSevenSegment, SplitFlap as ReactSplitFlap, VfdPanel as ReactVfdPanel } from '@glowbox/react';
+import { FlipDots as VueFlipDots, type Frame as VueFrame, LcdModule as VueLcdModule, LedGrid as VueLedGrid, NeonSign as VueNeonSign, NixieTube as VueNixieTube, SevenSegment as VueSevenSegment, SplitFlap as VueSplitFlap, VfdPanel as VueVfdPanel } from '@glowbox/vue';
 
 const g = createVoxelGrid(4, 4, 4);
 g.plot(1, 2, 3, [1, 0.5, 0]);
@@ -149,6 +151,9 @@ const vfdOpts: VfdPanelOptions = { frame: [320, 64], layout: vfdLayout, phosphor
 const vfdPanel = compilePanel([320, 64], vfdLayout);
 const vfdCells = layCells('FM 98.50', 8, 'left', true);
 const crtOpts: CrtOptions = { persistence: 0.5, events: true, background: [1, 0, 0] };
+const lcdOpts: LcdModuleOptions = { cols: 16, rows: 2, panel: 'green', cursor: 'block' };
+const lcdLines = layLines('FM 98.50', 16, 2);
+const lcdNegative: boolean = PANELS.blue.negative;
 // The 1.10 family-alignment surface: the wrapper type exports.
 const vfdValues: Record<string, VfdValue> = { track: 'A-12', play: true, spec: [0.4, 0.9] };
 const vueFrame: VueFrame = (x, y) => (x + y) % 2;
@@ -174,6 +179,7 @@ export const used = [
 	SvelteSplitFlap,
 	SvelteNeonSign,
 	SvelteVfdPanel,
+	SvelteLcdModule,
 	ReactLedGrid,
 	ReactNixieTube,
 	ReactSevenSegment,
@@ -181,6 +187,7 @@ export const used = [
 	ReactSplitFlap,
 	ReactNeonSign,
 	ReactVfdPanel,
+	ReactLcdModule,
 	VueLedGrid,
 	VueNixieTube,
 	VueSevenSegment,
@@ -188,11 +195,15 @@ export const used = [
 	VueSplitFlap,
 	VueNeonSign,
 	VueVfdPanel,
+	VueLcdModule,
 	opts,
 	segOpts,
 	dotOpts,
 	bits,
 	sfOpts,
+	lcdOpts,
+	lcdLines,
+	lcdNegative,
 	sfLines,
 	neonOpts,
 	neonLay,
@@ -244,6 +255,7 @@ export type D = LedDisplay;
 		"@glowbox/split-flap": "/node_modules/@glowbox/split-flap/dist/index.js",
 		"@glowbox/neon": "/node_modules/@glowbox/neon/dist/index.js",
 		"@glowbox/vfd": "/node_modules/@glowbox/vfd/dist/index.js",
+		"@glowbox/lcd": "/node_modules/@glowbox/lcd/dist/index.js",
 		"@glowbox/crt": "/node_modules/@glowbox/crt/dist/index.js",
 		"@glowbox/extras": "/node_modules/@glowbox/extras/dist/index.js"
 	}
@@ -256,6 +268,7 @@ export type D = LedDisplay;
 <canvas id="sf" style="width:280px;height:40px"></canvas>
 <canvas id="ne" style="width:280px;height:100px"></canvas>
 <canvas id="vf" style="width:320px;height:64px"></canvas>
+<canvas id="lc" style="width:320px;height:100px"></canvas>
 <script type="module">
 	import { createLedDisplay } from '@glowbox/led-grid';
 	import { createNixieTube } from '@glowbox/nixie';
@@ -264,6 +277,7 @@ export type D = LedDisplay;
 	import { createSplitFlap } from '@glowbox/split-flap';
 	import { createNeonSign } from '@glowbox/neon';
 	import { createVfdPanel } from '@glowbox/vfd';
+	import { createLcdModule } from '@glowbox/lcd';
 	import { createCrtScreen } from '@glowbox/crt';
 	import { text } from '@glowbox/extras';
 	const d = createLedDisplay(document.getElementById('g'), {
@@ -302,6 +316,13 @@ export type D = LedDisplay;
 	vf.light('st', true);
 	vf.setBars('spec', [0.2, 0.4, 0.6, 0.8, 1, 0.8, 0.6, 0.4, 0.2, 0.5, 0.7, 0.3]);
 	vf.setDots('screen', (x, y) => ((x + y) % 3 === 0 ? 1 : 0.2));
+	const lc = createLcdModule(document.getElementById('lc'), {
+		text: 'GLOWBOX',
+		boot: false,
+		response: 0
+	});
+	if (!lc) throw new Error('createLcdModule returned null');
+	lc.setLine(1, 'READY>');
 	const crt = createCrtScreen(document.getElementById('n'));
 	if (!crt) throw new Error('createCrtScreen returned null');
 	window.__ok = true;
