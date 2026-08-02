@@ -225,6 +225,32 @@ test('sectionAt hit-tests the glass; jolt makes that tube stutter', async () => 
 	expect(energy(canvas)).toBeCloseTo(off, -3);
 });
 
+test('sectionRect frames the glass sectionAt hit', () => {
+	// Same single centred stem: the canvas centre is on tube 0, so tube 0's rect
+	// must contain that point. (Not the other way round — a glyph with a counter
+	// can have a rect centre off the glass, so the rect→sectionAt round-trip is
+	// deliberately not the contract.)
+	const { canvas, sign } = mount({ text: 'I', font: 'sans', strikeMs: 0, wall: null });
+	const r = canvas.getBoundingClientRect();
+	const cx = r.left + r.width / 2;
+	const cy = r.top + r.height / 2;
+	expect(sign.sectionAt(cx, cy)).toBe(0);
+	const rect = sign.sectionRect(0)!;
+	expect(rect).not.toBeNull();
+	expect(rect.width).toBeGreaterThan(0);
+	expect(rect.height).toBeGreaterThan(0);
+	expect(cx).toBeGreaterThanOrEqual(rect.left);
+	expect(cx).toBeLessThanOrEqual(rect.left + rect.width);
+	expect(cy).toBeGreaterThanOrEqual(rect.top);
+	expect(cy).toBeLessThanOrEqual(rect.top + rect.height);
+	// A stem is tube-thin: the rect hugs the glass, it doesn't cover the canvas.
+	expect(rect.width).toBeLessThan(r.width / 2);
+	// Out of range, in every way an index can be.
+	expect(sign.sectionRect(-1)).toBeNull();
+	expect(sign.sectionRect(99)).toBeNull();
+	expect(sign.sectionRect(Number.NaN)).toBeNull();
+});
+
 test('the glass and the hardware are customizable, and sane per polarity', () => {
 	// On a pale wall the electrodes are the darkest marks on an unlit sign, so
 	// absorbing hardware defaults to mid-grey; near-black is available, not forced.
