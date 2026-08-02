@@ -49,7 +49,7 @@ const html = `<!doctype html>
 <div class="card">
   <canvas id="sign"></canvas>
   <div class="cores">
-    LED grid · nixie · seven-segment · flip-dot · split-flap · <b>neon</b> · VFD
+    LED grid · nixie · seven-segment · flip-dot · split-flap · <b>neon</b> · VFD · LCD
   </div>
   <div class="tag">glowing display components for the web</div>
 </div>
