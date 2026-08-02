@@ -3,8 +3,9 @@
 // voxel draw API. Zero deps, no module-scope browser globals — the AnalyserNode comes
 // from the caller's WebAudio graph (mic, media element, synth …), so this file never
 // touches an AudioContext itself.
-import { type Color, type LedDisplay, parseColor, type RGB } from '@glowbox/led-grid';
+import { type Color, parseColor, type RGB } from '@glowbox/led-grid';
 
+import { type DrawFn } from './image';
 import { type Plane, planeAxes } from './plane';
 
 export interface AudioBandsOptions {
@@ -107,10 +108,7 @@ const resolveColor = (c: VisualizerColor | undefined) => {
 };
 
 /** Classic spectrum bars: one column (or more) per band, height = band energy. */
-export function makeBarsVisualizer(
-	audio: AudioBands,
-	opts: VisualizerOptions = {}
-): (d: LedDisplay, dt: number) => void {
+export function makeBarsVisualizer(audio: AudioBands, opts: VisualizerOptions = {}): DrawFn {
 	const color = resolveColor(opts.color);
 	const gain = opts.gain ?? 1;
 	const clear = opts.clear ?? true;
@@ -133,10 +131,7 @@ export function makeBarsVisualizer(
 }
 
 /** Radial spokes: bands fan out from the plane's centre, length = band energy. */
-export function makeRadialVisualizer(
-	audio: AudioBands,
-	opts: VisualizerOptions = {}
-): (d: LedDisplay, dt: number) => void {
+export function makeRadialVisualizer(audio: AudioBands, opts: VisualizerOptions = {}): DrawFn {
 	const color = resolveColor(opts.color);
 	const gain = opts.gain ?? 1;
 	const clear = opts.clear ?? true;
