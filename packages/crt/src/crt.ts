@@ -17,6 +17,11 @@
 // with opacity — never visibility — so a wrapped display's `role="img"` + live label
 // stay in the accessibility tree.
 
+// Type-only: the family `Color` contract (an [r,g,b] triple 0..1 or any CSS string).
+// Nothing of the shared module survives into the bundle — crt keeps its own tiny
+// serializer because CSS strings must reach fillStyle VERBATIM (alpha included).
+import { type Color } from './color';
+
 const VERT = `
   attribute vec2 aQuad;
   varying vec2 vUv;
@@ -126,10 +131,11 @@ export interface CrtOptions {
 	noise?: number;
 	/** Brightness compensation (default 1.08 — the mask/scanlines eat some light). */
 	gain?: number;
-	/** The tube-face floor behind sparse content (any CSS colour). Default: the
-	 *  container's computed background colour in element mode (so your backdrop shows
-	 *  through the tube), else black. */
-	background?: string;
+	/** The tube-face floor behind sparse content (any CSS colour, or an `[r,g,b]`
+	 *  triple 0..1 like every other core). Default: the container's computed
+	 *  background colour in element mode (so your backdrop shows through the
+	 *  tube), else black. */
+	background?: Color;
 	/** Forward pointer + wheel events from the output to the source canvas, so
 	 *  drag-orbit/zoom keep working through the effect (default true). */
 	events?: boolean;
@@ -146,8 +152,18 @@ export interface CrtScreen {
 	readonly canvas: HTMLCanvasElement;
 	setOptions(patch: Partial<CrtOptions>): void;
 	resize(): void;
+	/** Return the current frame as a PNG data URL (forces a redraw first — the
+	 *  context keeps no drawing buffer between frames, so the encode must share
+	 *  the draw's task). */
+	snapshot(): string;
 	dispose(): void;
 }
+
+const c255 = (v: number) => Math.max(0, Math.min(255, Math.round(v * 255)));
+// Strings pass through untouched — 'rgba(0,0,0,.5)' keeps its alpha on the way
+// to fillStyle; only array triples need serializing.
+const cssColor = (c: Color): string =>
+	typeof c === 'string' ? c : `rgb(${c255(c[0])},${c255(c[1])},${c255(c[2])})`;
 
 /**
  * Wrap `source` in a CRT screen. Returns null where WebGL is unavailable.
@@ -391,7 +407,7 @@ export function createCrtScreen(
 			comp!.height = h;
 		}
 		const c2 = compCtx!;
-		c2.fillStyle = background ?? containerBg ?? '#000';
+		c2.fillStyle = background != null ? cssColor(background) : (containerBg ?? '#000');
 		c2.fillRect(0, 0, w, h);
 		for (const c of tracked) {
 			if (!c.width || !c.height) continue;
@@ -410,6 +426,11 @@ export function createCrtScreen(
 	function frame() {
 		if (!running) return;
 		raf = requestAnimationFrame(frame);
+		renderFrame();
+	}
+
+	// One draw, no scheduling — the loop's body, also forced by `snapshot()`.
+	function renderFrame() {
 		if (gl!.isContextLost()) return; // wait for the restore handler to rebuild
 		// Self-heal the output size every frame (one clientWidth read): creation-order
 		// races — the screen made before its container is laid out, a panel that opens
@@ -581,6 +602,10 @@ export function createCrtScreen(
 			}
 		},
 		resize,
+		snapshot() {
+			renderFrame();
+			return canvas.toDataURL('image/png');
+		},
 		dispose() {
 			running = false;
 			if (raf) cancelAnimationFrame(raf);

@@ -22,7 +22,16 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // Which packages each shared file must be symlinked into. Adding a shared file means
 // adding it here, so the map doubles as the inventory.
 const EXPECTED = {
-	'color.ts': ['flip-dot', 'led-grid', 'neon', 'nixie', 'seven-segment', 'split-flap', 'vfd'],
+	'color.ts': [
+		'crt',
+		'flip-dot',
+		'led-grid',
+		'neon',
+		'nixie',
+		'seven-segment',
+		'split-flap',
+		'vfd'
+	],
 	'sound.ts': ['flip-dot', 'neon', 'split-flap'],
 	'font5x7.ts': ['extras', 'vfd'],
 	'path-parse.ts': ['neon', 'vfd']
