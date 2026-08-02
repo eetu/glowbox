@@ -1,6 +1,6 @@
 // @glowbox/vue — glowbox components for Vue 3:
 //   import { LedGrid, NixieTube, SevenSegment, FlipDots, SplitFlap, NeonSign, VfdPanel } from "@glowbox/vue";
-export { FlipDots } from './FlipDots';
+export { FlipDots, type Frame } from './FlipDots';
 export { LedGrid } from './LedGrid';
 export { NeonSign } from './NeonSign';
 export { NixieTube } from './NixieTube';

@@ -45,7 +45,14 @@ export const NixieTube = defineComponent({
 		ghost: { type: Boolean, default: undefined },
 		pixelRatio: { type: Number, default: undefined },
 		/** Accessible name (`aria-label`); defaults to the lit symbol itself. */
-		label: { type: String, default: undefined }
+		label: { type: String, default: undefined },
+		/** Called with the tube after creation, and with null on teardown — the same
+		 *  contract as the Svelte wrapper. Bind as `:oncreate="fn"` (an `@create`
+		 *  listener would camelize to `onCreate` and miss it). */
+		oncreate: {
+			type: Function as PropType<(tube: NixieTubeHandle | null) => void>,
+			default: undefined
+		}
 	},
 	setup(props, { expose }) {
 		const canvas = ref<HTMLCanvasElement | null>(null);
@@ -65,7 +72,11 @@ export const NixieTube = defineComponent({
 		onMounted(() => {
 			if (!canvas.value) return;
 			tube = createNixieTube(canvas.value, { value: props.value, ...options() });
-			if (!tube) console.warn('NixieTube: 2D canvas unavailable');
+			if (!tube) {
+				console.warn('NixieTube: 2D canvas unavailable');
+				return;
+			}
+			props.oncreate?.(tube);
 		});
 
 		// Live-update the lit symbol.
@@ -76,23 +87,16 @@ export const NixieTube = defineComponent({
 
 		// Live-update appearance when any option changes.
 		watch(
-			() => [
-				props.tubeStyle,
-				props.color,
-				props.glow,
-				props.background,
-				props.mesh,
-				props.ghost,
-				props.pixelRatio,
-				props.label
-			],
+			() => options(),
 			() => tube?.setOptions(options()),
 			{ deep: true }
 		);
 
 		onUnmounted(() => {
-			tube?.dispose();
+			if (!tube) return;
+			tube.dispose();
 			tube = null;
+			props.oncreate?.(null);
 		});
 
 		// Expose the live tube handle for imperative access via the component ref.

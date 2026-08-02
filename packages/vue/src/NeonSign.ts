@@ -82,7 +82,14 @@ export const NeonSign = defineComponent({
 		/** Mains frequency the transformer sings at (50 or 60). */
 		mains: { type: Number as PropType<NeonSignOptions['mains']>, default: undefined },
 		pixelRatio: { type: Number, default: undefined },
-		label: { type: String, default: undefined }
+		label: { type: String, default: undefined },
+		/** Called with the sign after creation, and with null on teardown — the same
+		 *  contract as the Svelte wrapper. Bind as `:oncreate="fn"` (an `@create`
+		 *  listener would camelize to `onCreate` and miss it). */
+		oncreate: {
+			type: Function as PropType<(sign: NeonSignHandle | null) => void>,
+			default: undefined
+		}
 	},
 	setup(props, { expose }) {
 		const canvas = ref<HTMLCanvasElement | null>(null);
@@ -121,7 +128,11 @@ export const NeonSign = defineComponent({
 		onMounted(() => {
 			if (!canvas.value) return;
 			sign = createNeonSign(canvas.value, { ...options(), text: props.text });
-			if (!sign) console.warn('NeonSign: 2D canvas unavailable');
+			if (!sign) {
+				console.warn('NeonSign: 2D canvas unavailable');
+				return;
+			}
+			props.oncreate?.(sign);
 		});
 
 		// Live-update the shown text (a change re-glasses and strikes).
@@ -140,8 +151,10 @@ export const NeonSign = defineComponent({
 		);
 
 		onUnmounted(() => {
-			sign?.dispose();
+			if (!sign) return;
+			sign.dispose();
 			sign = null;
+			props.oncreate?.(null);
 		});
 
 		// Expose the live sign handle for imperative access via the component ref.

@@ -50,7 +50,14 @@ export const SevenSegment = defineComponent({
 		transition: { type: Number, default: undefined },
 		pixelRatio: { type: Number, default: undefined },
 		/** Accessible name (`aria-label`); defaults to the shown symbol itself. */
-		label: { type: String, default: undefined }
+		label: { type: String, default: undefined },
+		/** Called with the display after creation, and with null on teardown — the same
+		 *  contract as the Svelte wrapper. Bind as `:oncreate="fn"` (an `@create`
+		 *  listener would camelize to `onCreate` and miss it). */
+		oncreate: {
+			type: Function as PropType<(display: SevenSegmentDisplay | null) => void>,
+			default: undefined
+		}
 	},
 	setup(props, { expose }) {
 		const canvas = ref<HTMLCanvasElement | null>(null);
@@ -72,7 +79,11 @@ export const SevenSegment = defineComponent({
 		onMounted(() => {
 			if (!canvas.value) return;
 			display = createSevenSegment(canvas.value, { value: props.value, ...options() });
-			if (!display) console.warn('SevenSegment: 2D canvas unavailable');
+			if (!display) {
+				console.warn('SevenSegment: 2D canvas unavailable');
+				return;
+			}
+			props.oncreate?.(display);
 		});
 
 		// Live-update the shown symbol.
@@ -83,25 +94,16 @@ export const SevenSegment = defineComponent({
 
 		// Live-update appearance when any option changes.
 		watch(
-			() => [
-				props.displayStyle,
-				props.dp,
-				props.color,
-				props.glow,
-				props.background,
-				props.ghost,
-				props.age,
-				props.transition,
-				props.pixelRatio,
-				props.label
-			],
+			() => options(),
 			() => display?.setOptions(options()),
 			{ deep: true }
 		);
 
 		onUnmounted(() => {
-			display?.dispose();
+			if (!display) return;
+			display.dispose();
 			display = null;
+			props.oncreate?.(null);
 		});
 
 		// Expose the live display handle for imperative access via the component ref.
