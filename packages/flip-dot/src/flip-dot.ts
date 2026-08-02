@@ -78,6 +78,18 @@ export interface FlipDotBoard {
 	setFrame(frame: ArrayLike<number> | ((x: number, y: number) => number | boolean)): void;
 	clear(): void;
 	fill(): void;
+	/** The dot under a viewport point — pass `e.clientX`/`e.clientY` straight
+	 *  from a pointer event. Cell-granular (a fingertip doesn't aim between
+	 *  discs); null outside the grid. The library owns the layout maths;
+	 *  consumers own the listeners (the board attaches none — it's a display). */
+	dotAt(clientX: number, clientY: number): { x: number; y: number } | null;
+	/** A dot's disc in viewport coordinates (the gap excluded) — position a DOM
+	 *  overlay (a focusable control, a tooltip) over a dot with it. Null out of
+	 *  range. */
+	dotRect(
+		x: number,
+		y: number
+	): { left: number; top: number; width: number; height: number } | null;
 	setOptions(patch: Partial<FlipDotsOptions>): void;
 	resize(): void;
 	snapshot(): string;
@@ -735,6 +747,32 @@ export function createFlipDots(
 		},
 		fill() {
 			this.setFrame(() => true);
+		},
+		dotAt(clientX, clientY) {
+			const r = canvas.getBoundingClientRect();
+			if (!r.width || !r.height || !cell) return null;
+			// Viewport → canvas CSS px → grid: the board is centred at ox/oy.
+			const x = Math.floor((((clientX - r.left) / r.width) * w - ox) / cell);
+			const y = Math.floor((((clientY - r.top) / r.height) * h - oy) / cell);
+			return x >= 0 && x < cols && y >= 0 && y < rows ? { x, y } : null;
+		},
+		dotRect(x, y) {
+			x = Math.floor(x);
+			y = Math.floor(y);
+			if (!(x >= 0 && x < cols) || !(y >= 0 && y < rows)) return null;
+			const r = canvas.getBoundingClientRect();
+			if (!r.width || !r.height || !cell) return null;
+			// The baked metrics live in the canvas's CSS space; scale into the live
+			// rect (the two only differ mid-layout or under CSS transforms).
+			const kx = r.width / w;
+			const ky = r.height / h;
+			const pad = (cell - dot) / 2;
+			return {
+				left: r.left + (ox + x * cell + pad) * kx,
+				top: r.top + (oy + y * cell + pad) * ky,
+				width: dot * kx,
+				height: dot * ky
+			};
 		},
 		setOptions(patch) {
 			let rebake = false;

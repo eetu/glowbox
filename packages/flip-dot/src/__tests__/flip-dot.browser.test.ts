@@ -161,6 +161,36 @@ test('sound: no AudioContext before a user gesture, then exactly one, shared', a
 	}
 });
 
+test('dotAt and dotRect expose the layout maths', () => {
+	const canvas = makeCanvas(280, 140); // 14 × 7 grid of 20px cells, exact fit
+	const board = createFlipDots(canvas, { cols: 14, rows: 7, flipMs: 0 })!;
+	const r = canvas.getBoundingClientRect();
+	expect(board.dotAt(r.left + 5, r.top + 5)).toEqual({ x: 0, y: 0 });
+	expect(board.dotAt(r.right - 5, r.bottom - 5)).toEqual({ x: 13, y: 6 });
+	expect(board.dotAt(r.left - 5, r.top + 5)).toBeNull(); // off the board
+	const c = board.dotRect(3, 2)!;
+	// The disc sits inside its own cell (the gap is excluded)...
+	expect(c.left).toBeGreaterThan(r.left + 3 * 20);
+	expect(c.left + c.width).toBeLessThan(r.left + 4 * 20);
+	expect(c.top).toBeGreaterThan(r.top + 2 * 20);
+	// ...and round-trips: a disc centre is always inside its own cell.
+	expect(board.dotAt(c.left + c.width / 2, c.top + c.height / 2)).toEqual({ x: 3, y: 2 });
+	expect(board.dotRect(14, 0)).toBeNull();
+	expect(board.dotRect(NaN, 0)).toBeNull();
+	board.dispose();
+	canvas.remove();
+
+	// A canvas wider than its grid centres the board — the plastic margin
+	// beside the discs is not a dot.
+	const wide = makeCanvas(320, 140); // same 20px cells, 20px margin each side
+	const b2 = createFlipDots(wide, { cols: 14, rows: 7, flipMs: 0 })!;
+	const r2 = wide.getBoundingClientRect();
+	expect(b2.dotAt(r2.left + 5, r2.top + 70)).toBeNull(); // in the margin
+	expect(b2.dotAt(r2.left + 25, r2.top + 70)).toEqual({ x: 0, y: 3 });
+	b2.dispose();
+	wide.remove();
+});
+
 test('dispose hands the canvas back without ARIA and stops the loop', () => {
 	const canvas = makeCanvas();
 	const board = createFlipDots(canvas, { cols: 4, rows: 2 })!;
