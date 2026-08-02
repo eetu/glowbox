@@ -59,6 +59,7 @@
 			"ignore": [
 				"vue",
 				"@glowbox/flip-dot",
+				"@glowbox/lcd",
 				"@glowbox/neon",
 				"@glowbox/split-flap",
 				"@glowbox/led-grid",

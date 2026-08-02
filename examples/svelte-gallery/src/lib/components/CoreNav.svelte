@@ -5,7 +5,9 @@
 	// siblings of one app rather than separate pages.
 	import { resolve } from '$app/paths';
 
-	let { core }: { core: 'led' | 'nixie' | 'seven' | 'flipdot' | 'splitflap' | 'neon' | 'vfd' } =
+	let {
+		core
+	}: { core: 'led' | 'nixie' | 'seven' | 'flipdot' | 'splitflap' | 'neon' | 'vfd' | 'lcd' } =
 		$props();
 
 	// On a phone the strip scrolls, so the tab you're on can start off-screen —
@@ -29,7 +31,8 @@
 		{ id: 'flipdot', label: 'Flip-dot', path: '/flipdot' },
 		{ id: 'splitflap', label: 'Split-flap', path: '/splitflap' },
 		{ id: 'neon', label: 'Neon', path: '/neon' },
-		{ id: 'vfd', label: 'VFD', path: '/vfd' }
+		{ id: 'vfd', label: 'VFD', path: '/vfd' },
+		{ id: 'lcd', label: 'LCD', path: '/lcd' }
 	] as const;
 </script>
 
