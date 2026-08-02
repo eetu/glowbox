@@ -1,7 +1,7 @@
 {
 	"name": "@glowbox/react",
-	"version": "1.9.0",
-	"description": "glowbox components for React \u2014 <LedGrid> (3D WebGL LED grid), <NixieTube>, <SevenSegment>, <FlipDots>, <SplitFlap>, <NeonSign>, <VfdPanel> and <LcdModule>, over the sibling display cores.",
+	"version": "1.10.0",
+	"description": "glowbox components for React — <LedGrid> (3D WebGL LED grid), <NixieTube>, <SevenSegment>, <FlipDots>, <SplitFlap>, <NeonSign>, <VfdPanel> and <LcdModule>, over the sibling display cores.",
 	"keywords": [
 		"glowbox",
 		"react",
