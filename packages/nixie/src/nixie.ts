@@ -67,6 +67,9 @@ const STYLES: Record<NixieStyle, { sx: number; sy: number; lw: number }> = {
 };
 // Dull-metal colour of the unlit cathode wires behind the glass (dim nickel).
 const WIRE: number[] = [0.52, 0.52, 0.56];
+// The tube's own colours — patching `color`/`background` with null resets to these.
+const DEFAULT_COLOR: Color = [1, 0.45, 0.08];
+const DEFAULT_BG: Color = [0.03, 0.03, 0.045];
 
 const glyphCache = new Map<string, Path2D>();
 // Path2D is a browser-only global, so paths are built lazily on first draw — never at
@@ -92,11 +95,12 @@ export interface NixieOptions {
 	value?: string | number | null;
 	/** Tube style (default 'classic'). */
 	style?: NixieStyle;
-	/** Glow colour (default warm nixie orange). */
+	/** Glow colour (default warm nixie orange). Patch `null` to reset. */
 	color?: Color;
 	/** Glow strength 0..1 (default 0.7). */
 	glow?: number;
-	/** Tube glass colour behind the numerals (default near-black). */
+	/** Tube glass colour behind the numerals (default near-black). Patch `null`
+	 *  to reset. */
 	background?: Color;
 	/** Draw the honeycomb anode mesh over the tube (default true). */
 	mesh?: boolean;
@@ -217,9 +221,9 @@ export function createNixieTube(
 
 	let value = norm(opts.value);
 	let style: NixieStyle = opts.style ?? 'classic';
-	let color = parseColor(opts.color ?? [1, 0.45, 0.08]);
+	let color = parseColor(opts.color ?? DEFAULT_COLOR);
 	let glow = opts.glow ?? 0.7;
-	let bg = parseColor(opts.background ?? [0.03, 0.03, 0.045]);
+	let bg = parseColor(opts.background ?? DEFAULT_BG);
 	let mesh = opts.mesh ?? true;
 	let ghost = opts.ghost ?? true;
 	let pixelRatio = opts.pixelRatio ?? 2;
@@ -503,9 +507,11 @@ export function createNixieTube(
 		},
 		setOptions(patch) {
 			if (patch.style != null) style = patch.style;
-			if (patch.color != null) color = parseColor(patch.color);
+			// `undefined` skips, null resets — seven-segment's contract, so a themed
+			// tube can hand the colour back without knowing the default.
+			if (patch.color !== undefined) color = parseColor(patch.color ?? DEFAULT_COLOR);
 			if (patch.glow != null) glow = patch.glow;
-			if (patch.background != null) bg = parseColor(patch.background);
+			if (patch.background !== undefined) bg = parseColor(patch.background ?? DEFAULT_BG);
 			if (patch.mesh != null) mesh = patch.mesh;
 			if (patch.ghost != null) ghost = patch.ghost;
 			if (patch.bare != null) bare = patch.bare;

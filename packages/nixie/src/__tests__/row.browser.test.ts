@@ -69,6 +69,26 @@ test('setOptions fans appearance out to every tube and relayouts row options', (
 	row.dispose();
 });
 
+test('a row-level null colour patch resets every tube to the default', () => {
+	const el = makeContainer();
+	const row = createNixieRow(el, { value: '88', mesh: false, ghost: false, color: [0, 1, 0] })!;
+	const channels = (c: HTMLCanvasElement) => {
+		const px = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+		let r = 0;
+		let g = 0;
+		for (let i = 0; i < px.length; i += 4) {
+			r += px[i];
+			g += px[i + 1];
+		}
+		return { r, g };
+	};
+	const first = canvases(el)[0];
+	expect(channels(first).g).toBeGreaterThan(channels(first).r);
+	row.setOptions({ color: null as never }); // the tube-level runtime reset, forwarded
+	expect(channels(first).r).toBeGreaterThan(channels(first).g);
+	row.dispose();
+});
+
 test('the decimal-point glyph exists and lights', () => {
 	expect(glyphPath('.')).toBeTruthy();
 	const el = makeContainer(80, 150);

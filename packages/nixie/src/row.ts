@@ -183,9 +183,10 @@ const norm = (v: string | number | null | undefined): string => (v == null ? '' 
 function pickTubeOptions(o: Partial<NixieRowOptions>): Partial<NixieOptions> {
 	const out: Partial<NixieOptions> = {};
 	if (o.style != null) out.style = o.style;
-	if (o.color != null) out.color = o.color;
+	// Forward null too — at the tube it means "reset to the default".
+	if (o.color !== undefined) out.color = o.color;
 	if (o.glow != null) out.glow = o.glow;
-	if (o.background != null) out.background = o.background;
+	if (o.background !== undefined) out.background = o.background;
 	if (o.mesh != null) out.mesh = o.mesh;
 	if (o.ghost != null) out.ghost = o.ghost;
 	if (o.pixelRatio != null) out.pixelRatio = o.pixelRatio;
