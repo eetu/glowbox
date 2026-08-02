@@ -1,7 +1,7 @@
 {
 	"name": "@glowbox/svelte",
-	"version": "1.9.0",
-	"description": "glowbox components for Svelte 5 \u2014 <LedGrid> (3D WebGL LED grid), <NixieTube>, <SevenSegment>, <FlipDots>, <SplitFlap>, <NeonSign>, <VfdPanel> and <LcdModule>, over the sibling display cores.",
+	"version": "1.10.0",
+	"description": "glowbox components for Svelte 5 — <LedGrid> (3D WebGL LED grid), <NixieTube>, <SevenSegment>, <FlipDots>, <SplitFlap>, <NeonSign>, <VfdPanel> and <LcdModule>, over the sibling display cores.",
 	"keywords": [
 		"glowbox",
 		"svelte",
@@ -56,7 +56,7 @@
 	},
 	"size-limit": [
 		{
-			"name": "shipped files (no bundle \u2014 components ship as .svelte source)",
+			"name": "shipped files (no bundle — components ship as .svelte source)",
 			"path": "dist/**/*.{js,svelte}",
 			"limit": "12 kB"
 		}

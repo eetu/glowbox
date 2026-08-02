@@ -4,7 +4,11 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
-## [Unreleased]
+## [1.10.0] — 2026-08-02
+
+The eighth display core — a **character LCD module**, the family's first reflective
+display — plus the **family-alignment pass** that swept all twelve existing public
+API surfaces into one look. Now **thirteen** packages in lockstep.
 
 ### Added — the eighth display core
 
