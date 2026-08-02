@@ -4,6 +4,58 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [Unreleased]
+
+A **family-alignment pass**: a full audit of all twelve public API surfaces found the
+shared bones solid but the wrapper passthrough and a few core seams drifted — the
+packages shipped one at a time and were never swept as a set. Everything here is
+additive or bugfix-level; no breaking changes. One rule the audit produced, now
+documented: **hit-test rect helpers return viewport coordinates** (split-flap's
+`cellRect` contract); vfd's `elementRect` shipped canvas-relative in 1.9.0 and stays —
+the documented exception.
+
+### Added
+
+- **`oncreate` on every React and Vue component** (all seven, both frameworks) — the
+  same contract Svelte always had: called with the core handle after creation and with
+  `null` on teardown. React's forwarded ref and Vue's `expose()`d keys are unchanged;
+  this is the notification they couldn't give. Vue binds it as a prop
+  (`:oncreate="fn"` — an `@create` listener would camelize past it).
+- **Svelte styling passthrough**: every component now takes `class` and `style`,
+  forwarded to its `<canvas>` (React always had `className`/`style`; Vue falls through).
+- **Type exports**: `VfdValue` from `@glowbox/svelte` (was private to the component)
+  and `Frame` from `@glowbox/vue` — both now gated by the publish smoke.
+- **`@glowbox/neon` `sectionRect(section)`** — the rect partner `sectionAt` never had:
+  a tube section's glass bounds in viewport coordinates, `{left, top, width, height}`,
+  for parking a DOM overlay on a tapped tube.
+- **`@glowbox/flip-dot` `dotAt(clientX, clientY)` / `dotRect(x, y)`** — the family
+  hit-test pair (split-flap's `cellAt`/`cellRect`, at dot granularity). `dotAt` is
+  cell-granular (a fingertip doesn't aim between discs); `dotRect` frames the disc.
+- **`@glowbox/crt` joins the family contracts**: `background` now takes the shared
+  `Color` (an `[r,g,b]` triple or any CSS string — strings still pass to `fillStyle`
+  verbatim, alpha included), and the screen handle gained `snapshot()`.
+
+### Fixed
+
+- **`@glowbox/nixie`: patching `color`/`background` with `null` now resets to the tube
+  defaults** (seven-segment's contract) instead of being silently ignored — a themed
+  tube can hand the colour back without knowing the default. `NixieRow` forwards the
+  reset to every tube.
+- **`@glowbox/vfd`: stale doc comments** naming `VfdPanel.bars`/`VfdPanel.blank`
+  (pre-1.9.0 names) now say `setBars`/`clear`; `elementRect`'s coordinate space is
+  spelled out.
+
+### Changed
+
+- `@glowbox/extras`: the audio visualizers' declared return type is the exported
+  `DrawFn` (same shape as before); the audio module, `makeFramePlayer` and the
+  `PlayerControls` transport are now documented in the README.
+- Wrapper READMEs document all seven components (four were missing everywhere), the
+  instance-access contract per framework, and composing with `@glowbox/crt`; the three
+  wrapper `package.json` descriptions/keywords now name every display.
+- `@glowbox/vue` internals: one deep-options watch idiom across all components (two
+  used an explicit prop array); `@glowbox/react` dropped two dead `?? null` coercions.
+
 ## [1.9.0] — 2026-08-01
 
 The seventh display core: a **vacuum-fluorescent display panel** — the front of a

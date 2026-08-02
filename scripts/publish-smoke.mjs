@@ -115,9 +115,9 @@ import { createHum, createNeonSign, HERSHEY_LICENSE, layoutTubes, type NeonSignO
 import { compilePanel, createVfdPanel, layCells, type VfdElement, type VfdPanelOptions } from '@glowbox/vfd';
 import { createCrtScreen, type CrtOptions } from '@glowbox/crt';
 import { makeGifPlayer, text } from '@glowbox/extras';
-import { FlipDots as SvelteFlipDots, LedGrid as SvelteLedGrid, NeonSign as SvelteNeonSign, NixieTube as SvelteNixieTube, SevenSegment as SvelteSevenSegment, SplitFlap as SvelteSplitFlap, VfdPanel as SvelteVfdPanel } from '@glowbox/svelte';
+import { FlipDots as SvelteFlipDots, LedGrid as SvelteLedGrid, NeonSign as SvelteNeonSign, NixieTube as SvelteNixieTube, SevenSegment as SvelteSevenSegment, SplitFlap as SvelteSplitFlap, VfdPanel as SvelteVfdPanel, type VfdValue } from '@glowbox/svelte';
 import { FlipDots as ReactFlipDots, LedGrid as ReactLedGrid, NeonSign as ReactNeonSign, NixieTube as ReactNixieTube, SevenSegment as ReactSevenSegment, SplitFlap as ReactSplitFlap, VfdPanel as ReactVfdPanel } from '@glowbox/react';
-import { FlipDots as VueFlipDots, LedGrid as VueLedGrid, NeonSign as VueNeonSign, NixieTube as VueNixieTube, SevenSegment as VueSevenSegment, SplitFlap as VueSplitFlap, VfdPanel as VueVfdPanel } from '@glowbox/vue';
+import { FlipDots as VueFlipDots, type Frame as VueFrame, LedGrid as VueLedGrid, NeonSign as VueNeonSign, NixieTube as VueNixieTube, SevenSegment as VueSevenSegment, SplitFlap as VueSplitFlap, VfdPanel as VueVfdPanel } from '@glowbox/vue';
 
 const g = createVoxelGrid(4, 4, 4);
 g.plot(1, 2, 3, [1, 0.5, 0]);
@@ -148,7 +148,10 @@ const vfdLayout: VfdElement[] = [
 const vfdOpts: VfdPanelOptions = { frame: [320, 64], layout: vfdLayout, phosphor: 'zn-o', filter: 'green' };
 const vfdPanel = compilePanel([320, 64], vfdLayout);
 const vfdCells = layCells('FM 98.50', 8, 'left', true);
-const crtOpts: CrtOptions = { persistence: 0.5, events: true };
+const crtOpts: CrtOptions = { persistence: 0.5, events: true, background: [1, 0, 0] };
+// The 1.10 family-alignment surface: the wrapper type exports.
+const vfdValues: Record<string, VfdValue> = { track: 'A-12', play: true, spec: [0.4, 0.9] };
+const vueFrame: VueFrame = (x, y) => (x + y) % 2;
 export const used = [
 	createLedDisplay,
 	createNixieTube,
