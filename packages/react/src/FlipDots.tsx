@@ -42,6 +42,10 @@ export interface FlipDotsProps {
 	sound?: boolean | number;
 	pixelRatio?: number;
 	label?: string;
+	/** Called with the board after creation, and with null on teardown — the
+	 *  Svelte wrapper's `oncreate` contract, for consumers who want a signal
+	 *  rather than watching the forwarded ref flip silently. */
+	oncreate?: (board: FlipDotBoard | null) => void;
 	className?: string;
 	style?: CSSProperties;
 }
@@ -112,9 +116,11 @@ export const FlipDots = forwardRef<FlipDotBoard | null, FlipDotsProps>(
 			}
 			if (p.frame) b.setFrame(p.frame);
 			setDots(b);
+			latestRef.current.oncreate?.(b);
 			return () => {
 				b.dispose();
 				setDots(null);
+				latestRef.current.oncreate?.(null);
 			};
 		}, []);
 

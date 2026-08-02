@@ -38,6 +38,10 @@ export interface SplitFlapProps {
 	sound?: boolean | number;
 	pixelRatio?: number;
 	label?: string;
+	/** Called with the board after creation, and with null on teardown — the
+	 *  Svelte wrapper's `oncreate` contract, for consumers who want a signal
+	 *  rather than watching the forwarded ref flip silently. */
+	oncreate?: (board: SplitFlapBoard | null) => void;
 	className?: string;
 	style?: CSSProperties;
 }
@@ -108,9 +112,11 @@ export const SplitFlap = forwardRef<SplitFlapBoard | null, SplitFlapProps>(
 			}
 			if (p.text != null) b.setText(p.text);
 			setFlaps(b);
+			latestRef.current.oncreate?.(b);
 			return () => {
 				b.dispose();
 				setFlaps(null);
+				latestRef.current.oncreate?.(null);
 			};
 		}, []);
 

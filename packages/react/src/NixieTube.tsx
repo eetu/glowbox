@@ -30,6 +30,10 @@ export interface NixieTubeProps {
 	pixelRatio?: number;
 	/** Accessible name (`aria-label`); defaults to the lit symbol itself. */
 	label?: string;
+	/** Called with the tube after creation, and with null on teardown — the
+	 *  Svelte wrapper's `oncreate` contract, for consumers who want a signal
+	 *  rather than watching the forwarded ref flip silently. */
+	oncreate?: (tube: NixieTubeHandle | null) => void;
 	className?: string;
 	style?: CSSProperties;
 }
@@ -71,7 +75,7 @@ export const NixieTube = forwardRef<NixieTubeHandle | null, NixieTubeProps>(
 			if (!canvas) return;
 			const p = latestRef.current;
 			const t = createNixieTube(canvas, {
-				value: p.value ?? null,
+				value: p.value,
 				style: p.tubeStyle,
 				color: p.color,
 				glow: p.glow,
@@ -86,9 +90,11 @@ export const NixieTube = forwardRef<NixieTubeHandle | null, NixieTubeProps>(
 				return;
 			}
 			setTube(t);
+			latestRef.current.oncreate?.(t);
 			return () => {
 				t.dispose();
 				setTube(null);
+				latestRef.current.oncreate?.(null);
 			};
 		}, []);
 
@@ -96,7 +102,7 @@ export const NixieTube = forwardRef<NixieTubeHandle | null, NixieTubeProps>(
 
 		// Live-update the lit symbol.
 		useEffect(() => {
-			tube?.setValue(value ?? null);
+			tube?.setValue(value);
 		}, [tube, value]);
 
 		// Live-update appearance when any option changes.

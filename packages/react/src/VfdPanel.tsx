@@ -59,6 +59,10 @@ export interface VfdPanelProps {
 	selfTest?: boolean;
 	pixelRatio?: number;
 	label?: string;
+	/** Called with the panel after creation, and with null on teardown — the
+	 *  Svelte wrapper's `oncreate` contract, for consumers who want a signal
+	 *  rather than watching the forwarded ref flip silently. */
+	oncreate?: (panel: VfdPanelHandle | null) => void;
 	className?: string;
 	style?: CSSProperties;
 }
@@ -135,9 +139,11 @@ export const VfdPanel = forwardRef<VfdPanelHandle | null, VfdPanelProps>(
 			}
 			pushedRef.current = {};
 			setPanel(created);
+			latestRef.current.oncreate?.(created);
 			return () => {
 				created.dispose();
 				setPanel(null);
+				latestRef.current.oncreate?.(null);
 			};
 		}, []);
 
