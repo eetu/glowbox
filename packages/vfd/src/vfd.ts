@@ -149,8 +149,11 @@ export interface VfdPanel {
 	 *  from a pointer event; null if the point missed, or hit only silkscreen. The core
 	 *  answers geometry and attaches no listeners: consumers own the events. */
 	elementAt(clientX: number, clientY: number): string | null;
-	/** An element's box in CSS pixels relative to the canvas — for parking a tooltip or an
-	 *  overlay control on top of a zone. Same shape as split-flap's `cellRect`. */
+	/** An element's box in CSS pixels RELATIVE TO THE CANVAS — for parking a tooltip or an
+	 *  overlay control on top of a zone. Same `{left, top, width, height}` shape as
+	 *  split-flap's `cellRect`, but a different space: the family's rect helpers return
+	 *  viewport coordinates; this one shipped canvas-relative and stays (add the canvas's
+	 *  `getBoundingClientRect()` offsets for viewport space). */
 	elementRect(name: string): { left: number; top: number; width: number; height: number } | null;
 	/** Patch the envelope: phosphor, windows, dimmer, persistence, wear, power and the rest.
 	 *  Cheap — call it as often as you like. The hardware (`frame`/`layout`) is not here on

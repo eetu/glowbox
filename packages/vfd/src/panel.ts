@@ -674,7 +674,7 @@ export function layCells(
 export interface ElementState {
 	text?: string;
 	on?: boolean;
-	/** `bars`: 0..1 per band. The driver owns this buffer — see `VfdPanel.bars`, which
+	/** `bars`: 0..1 per band. The driver owns this buffer — see `VfdPanel.setBars`, which
 	 *  copies what you hand it rather than holding your array. */
 	levels?: ArrayLike<number>;
 	/** `bars`: the held cap position per band, in rows (fractional; <0 = none). */
@@ -691,7 +691,7 @@ export interface ElementState {
  *  a render loop: each cap is pulled up instantly by a louder band and sags on its own.
  *
  *  A cap of -1 is a band with NO cap — never driven, or driven by something that has since
- *  stopped (see `VfdPanel.blank`). A silent band must not conjure one: that would light the
+ *  stopped (see `VfdPanel.clear`). A silent band must not conjure one: that would light the
  *  floor row of an element nobody is driving, and leave it lit for good. */
 export function fallPeaks(
 	peaks: number[],
