@@ -6,6 +6,7 @@ export { default as NeonSign } from './NeonSign.svelte';
 export { default as NixieTube } from './NixieTube.svelte';
 export { default as SevenSegment } from './SevenSegment.svelte';
 export { default as SplitFlap } from './SplitFlap.svelte';
+export type { VfdValue } from './VfdPanel.svelte';
 export { default as VfdPanel } from './VfdPanel.svelte';
 
 // Re-export the cores' option/handle types so consumers can type against the

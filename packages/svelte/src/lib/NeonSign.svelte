@@ -40,6 +40,8 @@
 		mains,
 		pixelRatio,
 		label,
+		class: className,
+		style,
 		oncreate
 	}: {
 		/** The sign's text; '\n' splits lines. A change re-glasses and strikes on. */
@@ -92,6 +94,10 @@
 		label?: string;
 		/** Called with the sign when created, and null on teardown — imperative escape hatch. */
 		oncreate?: (sign: NeonSignHandle | null) => void;
+		/** Forwarded to the <canvas>. */
+		class?: string;
+		/** Inline style forwarded to the <canvas>; wins over the built-in block/fill sizing. */
+		style?: string;
 	} = $props();
 
 	let canvas = $state<HTMLCanvasElement | null>(null);
@@ -187,7 +193,7 @@
 	});
 </script>
 
-<canvas bind:this={canvas}></canvas>
+<canvas bind:this={canvas} class={className} {style}></canvas>
 
 <style>
 	canvas {
