@@ -2,7 +2,7 @@
 // needs it (see `scripts/check-shared.mjs` and CLAUDE.md → Conventions). Editing it here
 // edits it for every one of them. It is not a package and nothing depends on it at
 // runtime: each bundler inlines it, so the cores stay genuinely zero-dep.
-// Shared by: extras, vfd.
+// Shared by: extras, lcd, vfd.
 //
 // A hand-authored 5×7 dot-matrix face covering printable ASCII (32–126). Glyphs are
 // authored as ASCII art ('#' = lit) — the readable single source of truth — and compiled

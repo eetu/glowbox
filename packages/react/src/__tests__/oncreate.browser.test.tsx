@@ -7,6 +7,7 @@ import { expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
 
 import { FlipDots } from '../FlipDots';
+import { LcdModule } from '../LcdModule';
 import { LedGrid } from '../LedGrid';
 import { NeonSign } from '../NeonSign';
 import { NixieTube } from '../NixieTube';
@@ -25,7 +26,8 @@ const mounts: [string, (fn: (h: unknown) => void) => ReactElement][] = [
 	['FlipDots', (fn) => <FlipDots cols={4} rows={4} flipMs={0} oncreate={fn} />],
 	['SplitFlap', (fn) => <SplitFlap cols={4} text="AB" flipMs={0} oncreate={fn} />],
 	['NeonSign', (fn) => <NeonSign text="hi" strikeMs={0} oncreate={fn} />],
-	['VfdPanel', (fn) => <VfdPanel oncreate={fn} />]
+	['VfdPanel', (fn) => <VfdPanel oncreate={fn} />],
+	['LcdModule', (fn) => <LcdModule text="HI" boot={false} response={0} oncreate={fn} />]
 ];
 
 test('every component hands its core handle to oncreate, and null on teardown', async () => {

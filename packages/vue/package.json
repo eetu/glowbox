@@ -1,7 +1,7 @@
 {
 	"name": "@glowbox/vue",
 	"version": "1.9.0",
-	"description": "glowbox components for Vue 3 — <LedGrid> (3D WebGL LED grid), <NixieTube>, <SevenSegment>, <FlipDots>, <SplitFlap>, <NeonSign> and <VfdPanel>, over the sibling display cores.",
+	"description": "glowbox components for Vue 3 \u2014 <LedGrid> (3D WebGL LED grid), <NixieTube>, <SevenSegment>, <FlipDots>, <SplitFlap>, <NeonSign>, <VfdPanel> and <LcdModule>, over the sibling display cores.",
 	"keywords": [
 		"glowbox",
 		"vue",
@@ -16,6 +16,7 @@
 		"split-flap",
 		"neon",
 		"vfd",
+		"lcd",
 		"retro-display",
 		"component"
 	],
@@ -58,6 +59,7 @@
 			"ignore": [
 				"vue",
 				"@glowbox/flip-dot",
+				"@glowbox/lcd",
 				"@glowbox/neon",
 				"@glowbox/split-flap",
 				"@glowbox/led-grid",
@@ -73,6 +75,7 @@
 	},
 	"dependencies": {
 		"@glowbox/flip-dot": "workspace:^",
+		"@glowbox/lcd": "workspace:^",
 		"@glowbox/led-grid": "workspace:^",
 		"@glowbox/neon": "workspace:^",
 		"@glowbox/nixie": "workspace:^",

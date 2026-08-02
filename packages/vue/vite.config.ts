@@ -26,6 +26,7 @@ export default defineConfig({
 			external: [
 				'vue',
 				'@glowbox/flip-dot',
+				'@glowbox/lcd',
 				'@glowbox/neon',
 				'@glowbox/split-flap',
 				'@glowbox/led-grid',
@@ -38,6 +39,7 @@ export default defineConfig({
 	test: {
 		alias: {
 			'@glowbox/flip-dot': resolve(import.meta.dirname, '../flip-dot/src/index.ts'),
+			'@glowbox/lcd': resolve(import.meta.dirname, '../lcd/src/index.ts'),
 			'@glowbox/neon': resolve(import.meta.dirname, '../neon/src/index.ts'),
 			'@glowbox/split-flap': resolve(import.meta.dirname, '../split-flap/src/index.ts'),
 			'@glowbox/led-grid': coreSrc,

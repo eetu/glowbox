@@ -1,7 +1,7 @@
 {
 	"name": "@glowbox/react",
 	"version": "1.9.0",
-	"description": "glowbox components for React — <LedGrid> (3D WebGL LED grid), <NixieTube>, <SevenSegment>, <FlipDots>, <SplitFlap>, <NeonSign> and <VfdPanel>, over the sibling display cores.",
+	"description": "glowbox components for React \u2014 <LedGrid> (3D WebGL LED grid), <NixieTube>, <SevenSegment>, <FlipDots>, <SplitFlap>, <NeonSign>, <VfdPanel> and <LcdModule>, over the sibling display cores.",
 	"keywords": [
 		"glowbox",
 		"react",
@@ -16,6 +16,7 @@
 		"split-flap",
 		"neon",
 		"vfd",
+		"lcd",
 		"retro-display",
 		"component"
 	],
@@ -60,6 +61,7 @@
 				"react-dom",
 				"react/jsx-runtime",
 				"@glowbox/flip-dot",
+				"@glowbox/lcd",
 				"@glowbox/neon",
 				"@glowbox/split-flap",
 				"@glowbox/led-grid",
@@ -75,6 +77,7 @@
 	},
 	"dependencies": {
 		"@glowbox/flip-dot": "workspace:^",
+		"@glowbox/lcd": "workspace:^",
 		"@glowbox/led-grid": "workspace:^",
 		"@glowbox/neon": "workspace:^",
 		"@glowbox/nixie": "workspace:^",

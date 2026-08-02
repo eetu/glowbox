@@ -84,6 +84,20 @@ torus — `d.torus()` is axis-aligned/single-colour, see the note in `torus.ts`.
    uniform passes over a single `Float32Array` instead of six per-element renderers.
    First core with **no sound module**, deliberately: a VFD has no voice, and the
    muting relay belongs to the receiver.
+   **Character LCD LANDED post-1.9.0 (ships as 1.10.0)** — the third unplanned core,
+   and the family's first REFLECTIVE display: dark ink on a lit pane, light-theme
+   native (the thing neon had to invent `absorb` polarity for, lcd gets for free —
+   it's how the hardware works). The trivial alternative is a div grid + an LCD
+   webfont, so the core is the LIQUID CRYSTAL: slow shutters (per-dot response with
+   asymmetric rise/fall — moving text drags a ghost, power-off drains instead of
+   blanking), the contrast pot with an honest overdrive (past ~0.85 the resting
+   lattice darkens and passive-matrix crosstalk streaks appear — emergent, not
+   scripted), panel presets where STN blue is a negative transmissive image (no
+   backlight, no image), the uninitialised boot row of solid blocks, CGRAM custom
+   glyphs addressed by code points 0–7 exactly like the datasheet, and the wear arc
+   at column-driver granularity (dim → flicker → a dead stripe of bare lattice).
+   Second core with no sound module (an LED-backlit module is silent; the
+   EL-inverter whine of older glass is filed as a niche idea).
    The bar for every core: real wow
    beyond the trivial alternative, or it doesn't ship. Nixie proved the pattern:
    standalone 2D core + wrapper components + a demo page; the 1.0.1 decoupling made

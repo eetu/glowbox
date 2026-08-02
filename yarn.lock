@@ -699,6 +699,22 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@glowbox/lcd@workspace:^, @glowbox/lcd@workspace:packages/lcd":
+  version: 0.0.0-use.local
+  resolution: "@glowbox/lcd@workspace:packages/lcd"
+  dependencies:
+    "@anarkisti/eslint-config": "npm:^1"
+    "@vitest/browser": "npm:^4.1"
+    "@vitest/browser-playwright": "npm:^4.1"
+    eslint: "npm:^10"
+    playwright: "npm:^1.61"
+    typescript: "npm:^6"
+    vite: "npm:^8.1"
+    vite-plugin-dts: "npm:^5"
+    vitest: "npm:^4.1"
+  languageName: unknown
+  linkType: soft
+
 "@glowbox/led-grid@workspace:^, @glowbox/led-grid@workspace:packages/led-grid":
   version: 0.0.0-use.local
   resolution: "@glowbox/led-grid@workspace:packages/led-grid"
@@ -753,6 +769,7 @@ __metadata:
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
     "@glowbox/flip-dot": "workspace:^"
+    "@glowbox/lcd": "workspace:^"
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/neon": "workspace:^"
     "@glowbox/nixie": "workspace:^"
@@ -841,6 +858,7 @@ __metadata:
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
     "@glowbox/flip-dot": "workspace:^"
+    "@glowbox/lcd": "workspace:^"
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/neon": "workspace:^"
     "@glowbox/nixie": "workspace:^"
@@ -888,6 +906,7 @@ __metadata:
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
     "@glowbox/flip-dot": "workspace:^"
+    "@glowbox/lcd": "workspace:^"
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/neon": "workspace:^"
     "@glowbox/nixie": "workspace:^"

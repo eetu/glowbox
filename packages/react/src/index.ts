@@ -1,6 +1,7 @@
 // @glowbox/react — glowbox components for React:
-//   import { LedGrid, NixieTube, SevenSegment, FlipDots, SplitFlap, NeonSign, VfdPanel } from "@glowbox/react";
+//   import { LedGrid, NixieTube, SevenSegment, FlipDots, SplitFlap, NeonSign, VfdPanel, LcdModule } from "@glowbox/react";
 export { FlipDots, type FlipDotsProps } from './FlipDots';
+export { LcdModule, type LcdModuleProps } from './LcdModule';
 export { LedGrid, type LedGridProps } from './LedGrid';
 export { NeonSign, type NeonSignProps } from './NeonSign';
 export { NixieTube, type NixieTubeProps } from './NixieTube';
@@ -18,6 +19,13 @@ export type {
 	FlipDotsOptions,
 	FlipDotStagger
 } from '@glowbox/flip-dot';
+export type {
+	LcdCursor,
+	LcdModule as LcdModuleHandle,
+	LcdModuleOptions,
+	PanelName,
+	PanelSpec
+} from '@glowbox/lcd';
 export type * from '@glowbox/led-grid';
 export type {
 	GasName,

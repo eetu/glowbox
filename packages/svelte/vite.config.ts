@@ -12,6 +12,7 @@ export default defineConfig({
 		// Resolve the sibling cores from source at test time (no prior build needed).
 		alias: {
 			'@glowbox/flip-dot': resolve(import.meta.dirname, '../flip-dot/src/index.ts'),
+			'@glowbox/lcd': resolve(import.meta.dirname, '../lcd/src/index.ts'),
 			'@glowbox/neon': resolve(import.meta.dirname, '../neon/src/index.ts'),
 			'@glowbox/split-flap': resolve(import.meta.dirname, '../split-flap/src/index.ts'),
 			'@glowbox/led-grid': resolve(import.meta.dirname, '../led-grid/src/index.ts'),

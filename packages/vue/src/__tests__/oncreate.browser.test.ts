@@ -6,6 +6,7 @@ import { mount } from '@vue/test-utils';
 import { expect, test, vi } from 'vitest';
 
 import { FlipDots } from '../FlipDots';
+import { LcdModule } from '../LcdModule';
 import { LedGrid } from '../LedGrid';
 import { NeonSign } from '../NeonSign';
 import { NixieTube } from '../NixieTube';
@@ -76,6 +77,15 @@ test('every component hands its core handle to oncreate, and null on unmount', a
 	);
 	fn = vi.fn();
 	await createdThenNull('VfdPanel', mount(VfdPanel, { attachTo: to, props: { oncreate: fn } }), fn);
+	fn = vi.fn();
+	await createdThenNull(
+		'LcdModule',
+		mount(LcdModule, {
+			attachTo: to,
+			props: { text: 'HI', boot: false, response: 0, oncreate: fn }
+		}),
+		fn
+	);
 });
 
 test('oncreate hands out the very handle the component exposes', async () => {

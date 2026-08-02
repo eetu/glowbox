@@ -6,7 +6,44 @@ version and are released together.
 
 ## [Unreleased]
 
-A **family-alignment pass**: a full audit of all twelve public API surfaces found the
+### Added — the eighth display core
+
+- **`@glowbox/lcd` — a character LCD module (HD44780-class), the family's first
+  REFLECTIVE display**: dark ink on a lit pane, native to a light page the way every
+  emissive sibling is native to a dark one. The core is the liquid crystal, not the
+  character grid (a div grid + an LCD webfont does the layout for free):
+  - **Slow shutters**: every dot chases its target over real tens of milliseconds
+    (`response`; rise beats fall, so moving text drags a trailing ghost) — cutting the
+    power drains the ink at crystal speed instead of blanking.
+  - **The contrast pot** saturates through a sweet spot and then overdrives: past
+    ~0.85 the resting dot lattice darkens and passive-matrix **crosstalk** streaks
+    grow down heavily driven columns — emergent, not scripted.
+  - **Panel presets**: `'green'` (STN, readable unlit — reflective means exactly
+    that), `'blue'` (a NEGATIVE transmissive image: no backlight, no image),
+    `'white'` (FSTN).
+  - **Boot** shows the uninitialised top row of solid blocks — the 16×2 symptom.
+  - **CGRAM**: 8 custom glyph slots (`setGlyph`), addressed from text by code points
+    0–7, bit 4 = leftmost — the datasheet's own convention.
+  - **`age`** runs the franchise wear arc at column-driver granularity: dim →
+    flickering column → a dead blank stripe of bare lattice.
+  - Family contract throughout: `setText`/`setLine`/`setCursor`/`power`,
+    `cellAt`/`cellRect` (viewport), `setOptions`/`resize`/`snapshot`/`dispose`,
+    `label` → `role="img"`, factory-returns-null, SSR-safe, zero deps. **No sound
+    module** (an LED-backlit module is silent — vfd's precedent).
+- **`<LcdModule>` in all three wrappers** (svelte/react/vue) with the family
+  component contracts (`oncreate`, styling passthrough, `expose()`d `lcd` handle),
+  and a `/lcd` gallery page: typing under a blinking cursor, a CGRAM bar meter, a
+  scrolling line dragging its ghost, and a power cycle through the boot boxes — on a
+  light stage, where reflective glass belongs.
+
+### Fixed
+
+- **`release.yaml` was missing `vfd` from BOTH of its package loops** (the lockstep
+  version gate and the publish loop) — which is why `@glowbox/vfd@1.9.0` had to be
+  published by hand. The lists now carry `vfd` and `lcd`, and a comment marks them as
+  enumeration that every new package must join.
+
+Also in this release, a **family-alignment pass**: a full audit of all twelve public API surfaces found the
 shared bones solid but the wrapper passthrough and a few core seams drifted — the
 packages shipped one at a time and were never swept as a set. Everything here is
 additive or bugfix-level; no breaking changes. One rule the audit produced, now
@@ -14,7 +51,7 @@ documented: **hit-test rect helpers return viewport coordinates** (split-flap's
 `cellRect` contract); vfd's `elementRect` shipped canvas-relative in 1.9.0 and stays —
 the documented exception.
 
-### Added
+### Added — family alignment
 
 - **`oncreate` on every React and Vue component** (all seven, both frameworks) — the
   same contract Svelte always had: called with the core handle after creation and with
@@ -35,7 +72,7 @@ the documented exception.
   `Color` (an `[r,g,b]` triple or any CSS string — strings still pass to `fillStyle`
   verbatim, alpha included), and the screen handle gained `snapshot()`.
 
-### Fixed
+### Fixed — family alignment
 
 - **`@glowbox/nixie`: patching `color`/`background` with `null` now resets to the tube
   defaults** (seven-segment's contract) instead of being silently ignored — a themed
@@ -45,7 +82,7 @@ the documented exception.
   (pre-1.9.0 names) now say `setBars`/`clear`; `elementRect`'s coordinate space is
   spelled out.
 
-### Changed
+### Changed — family alignment
 
 - `@glowbox/extras`: the audio visualizers' declared return type is the exported
   `DrawFn` (same shape as before); the audio module, `makeFramePlayer` and the
