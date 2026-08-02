@@ -24,6 +24,8 @@
 		interaction,
 		quality,
 		label,
+		class: className,
+		style,
 		oncreate
 	}: {
 		size: [number, number, number];
@@ -38,6 +40,10 @@
 		/** Called with the display when (re)created, and with null on teardown —
 		 *  an escape hatch for imperative access (snapshot(), stats, setCamera…). */
 		oncreate?: (display: LedDisplay | null) => void;
+		/** Forwarded to the <canvas>. */
+		class?: string;
+		/** Inline style forwarded to the <canvas>; wins over the built-in block/fill sizing. */
+		style?: string;
 	} = $props();
 
 	let canvas = $state<HTMLCanvasElement | null>(null);
@@ -104,7 +110,7 @@
 	});
 </script>
 
-<canvas bind:this={canvas}></canvas>
+<canvas bind:this={canvas} class={className} {style}></canvas>
 
 <style>
 	canvas {

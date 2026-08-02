@@ -1,7 +1,7 @@
 {
 	"name": "@glowbox/svelte",
 	"version": "1.9.0",
-	"description": "glowbox components for Svelte 5 — <LedGrid> (3D WebGL LED grid) + <NixieTube> (nixie-tube display).",
+	"description": "glowbox components for Svelte 5 — <LedGrid> (3D WebGL LED grid), <NixieTube>, <SevenSegment>, <FlipDots>, <SplitFlap>, <NeonSign> and <VfdPanel>, over the sibling display cores.",
 	"keywords": [
 		"glowbox",
 		"svelte",
@@ -11,6 +11,12 @@
 		"voxel",
 		"3d",
 		"nixie",
+		"seven-segment",
+		"flip-dot",
+		"split-flap",
+		"neon",
+		"vfd",
+		"retro-display",
 		"component"
 	],
 	"license": "MIT",
@@ -51,7 +57,7 @@
 		{
 			"name": "shipped files (no bundle — components ship as .svelte source)",
 			"path": "dist/**/*.{js,svelte}",
-			"limit": "10 kB"
+			"limit": "10.5 kB"
 		}
 	],
 	"peerDependencies": {

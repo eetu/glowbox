@@ -66,6 +66,10 @@ export interface NeonSignProps {
 	mains?: NeonSignOptions['mains'];
 	pixelRatio?: number;
 	label?: string;
+	/** Called with the sign after creation, and with null on teardown — the
+	 *  Svelte wrapper's `oncreate` contract, for consumers who want a signal
+	 *  rather than watching the forwarded ref flip silently. */
+	oncreate?: (sign: NeonSignHandle | null) => void;
 	className?: string;
 	style?: CSSProperties;
 }
@@ -160,9 +164,11 @@ export const NeonSign = forwardRef<NeonSignHandle | null, NeonSignProps>(
 				return;
 			}
 			setSign(s);
+			latestRef.current.oncreate?.(s);
 			return () => {
 				s.dispose();
 				setSign(null);
+				latestRef.current.oncreate?.(null);
 			};
 		}, []);
 

@@ -63,6 +63,33 @@ test('setValue and setOptions redraw live', () => {
 	tube.dispose();
 });
 
+test('patching color/background null resets to the tube defaults (family contract)', () => {
+	const canvas = makeCanvas();
+	const tube = createNixieTube(canvas, { value: 8, mesh: false, ghost: false, color: [0, 1, 0] })!;
+	const channels = () => {
+		const px = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+		let r = 0;
+		let g = 0;
+		let b = 0;
+		for (let i = 0; i < px.length; i += 4) {
+			r += px[i];
+			g += px[i + 1];
+			b += px[i + 2];
+		}
+		return { r, g, b };
+	};
+	expect(channels().g).toBeGreaterThan(channels().r);
+	// The declared type is `Color` — null is the runtime reset, seven-segment's
+	// contract, so a themed tube can hand the colour back without knowing it.
+	tube.setOptions({ color: null as never });
+	expect(channels().r).toBeGreaterThan(channels().g); // warm nixie orange again
+	tube.setOptions({ background: '#2244cc' });
+	const tinted = channels().b;
+	tube.setOptions({ background: null as never });
+	expect(channels().b).toBeLessThan(tinted / 2); // near-black glass again
+	tube.dispose();
+});
+
 test('survives absurdly small canvases (regression: negative glass inset threw)', () => {
 	// A sub-9px box used to feed roundRect a negative radius (IndexSizeError).
 	for (const [cw, cy] of [

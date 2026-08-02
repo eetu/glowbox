@@ -1,3 +1,8 @@
+<script lang="ts" module>
+	/** What a panel element can be told to show, dispatched by the value's own type. */
+	export type VfdValue = string | number | boolean | number[];
+</script>
+
 <script lang="ts">
 	// Svelte wrapper around @glowbox/vfd's canvas panel. Declare the hardware once
 	// (`frame` + `layout`) and drive the content — either declaratively through
@@ -12,9 +17,6 @@
 		type VfdPanelOptions
 	} from '@glowbox/vfd';
 	import { untrack } from 'svelte';
-
-	/** What a panel element can be told to show, dispatched by the value's own type. */
-	type VfdValue = string | number | boolean | number[];
 
 	let {
 		frame,
@@ -35,6 +37,8 @@
 		selfTest,
 		pixelRatio,
 		label,
+		class: className,
+		style,
 		oncreate
 	}: {
 		/** The panel design frame, `[width, height]` — the units every element box is in. */
@@ -77,6 +81,10 @@
 		/** Called with the panel when created, and null on teardown — the imperative
 		 *  escape hatch, and the right way to drive a spectrum at frame rate. */
 		oncreate?: (panel: VfdPanelHandle | null) => void;
+		/** Forwarded to the <canvas>. */
+		class?: string;
+		/** Inline style forwarded to the <canvas>; wins over the built-in block/fill sizing. */
+		style?: string;
 	} = $props();
 
 	let canvas = $state<HTMLCanvasElement | null>(null);
@@ -170,7 +178,7 @@
 	});
 </script>
 
-<canvas bind:this={canvas}></canvas>
+<canvas bind:this={canvas} class={className} {style}></canvas>
 
 <style>
 	canvas {

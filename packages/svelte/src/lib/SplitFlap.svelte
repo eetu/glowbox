@@ -25,6 +25,8 @@
 		sound,
 		pixelRatio,
 		label,
+		class: className,
+		style,
 		oncreate
 	}: {
 		/** The shown text: a string (newlines split rows) or one string per row.
@@ -53,6 +55,10 @@
 		label?: string;
 		/** Called with the board when created, and null on teardown — imperative escape hatch. */
 		oncreate?: (board: SplitFlapBoard | null) => void;
+		/** Forwarded to the <canvas>. */
+		class?: string;
+		/** Inline style forwarded to the <canvas>; wins over the built-in block/fill sizing. */
+		style?: string;
 	} = $props();
 
 	let canvas = $state<HTMLCanvasElement | null>(null);
@@ -126,7 +132,7 @@
 	});
 </script>
 
-<canvas bind:this={canvas}></canvas>
+<canvas bind:this={canvas} class={className} {style}></canvas>
 
 <style>
 	canvas {

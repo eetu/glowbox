@@ -24,7 +24,8 @@ import {
 // The canvas fills its parent by default; give the parent a size.
 const baseStyle: StyleValue = { display: 'block', width: '100%', height: '100%' };
 
-type Frame = ArrayLike<number> | ((x: number, y: number) => number | boolean);
+/** What `<FlipDots frame>` accepts: row-major 0/1 bits or an (x, y) => on function. */
+export type Frame = ArrayLike<number> | ((x: number, y: number) => number | boolean);
 
 /**
  * `<FlipDots>` mounts a flip-dot board. `expose()`s the imperative `FlipDotBoard`
@@ -59,7 +60,14 @@ export const FlipDots = defineComponent({
 		/** Solenoid click: true (= 0.5) or a 0..1 volume. */
 		sound: { type: [Boolean, Number], default: undefined },
 		pixelRatio: { type: Number, default: undefined },
-		label: { type: String, default: undefined }
+		label: { type: String, default: undefined },
+		/** Called with the board after creation, and with null on teardown — the same
+		 *  contract as the Svelte wrapper. Bind as `:oncreate="fn"` (an `@create`
+		 *  listener would camelize to `onCreate` and miss it). */
+		oncreate: {
+			type: Function as PropType<(board: FlipDotBoard | null) => void>,
+			default: undefined
+		}
 	},
 	setup(props, { expose }) {
 		const canvas = ref<HTMLCanvasElement | null>(null);
@@ -91,6 +99,7 @@ export const FlipDots = defineComponent({
 				return;
 			}
 			if (props.frame) dots.setFrame(props.frame);
+			props.oncreate?.(dots);
 		});
 
 		// Live-update the shown frame.
@@ -109,8 +118,10 @@ export const FlipDots = defineComponent({
 		);
 
 		onUnmounted(() => {
-			dots?.dispose();
+			if (!dots) return;
+			dots.dispose();
 			dots = null;
+			props.oncreate?.(null);
 		});
 
 		// Expose the live board handle for imperative access via the component ref.

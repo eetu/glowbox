@@ -21,6 +21,8 @@
 		ghost,
 		pixelRatio,
 		label,
+		class: className,
+		style,
 		oncreate
 	}: {
 		/** The lit symbol: a char `0`–`9`, `:`, `-`, or null/'' for all-cathodes-dark. */
@@ -37,6 +39,10 @@
 		label?: string;
 		/** Called with the tube when created, and null on teardown — imperative escape hatch. */
 		oncreate?: (tube: NixieTube | null) => void;
+		/** Forwarded to the <canvas>. */
+		class?: string;
+		/** Inline style forwarded to the <canvas>; wins over the built-in block/fill sizing. */
+		style?: string;
 	} = $props();
 
 	let canvas = $state<HTMLCanvasElement | null>(null);
@@ -85,7 +91,7 @@
 	});
 </script>
 
-<canvas bind:this={canvas}></canvas>
+<canvas bind:this={canvas} class={className} {style}></canvas>
 
 <style>
 	canvas {

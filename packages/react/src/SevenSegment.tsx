@@ -35,6 +35,10 @@ export interface SevenSegmentProps {
 	pixelRatio?: number;
 	/** Accessible name (`aria-label`); defaults to the shown symbol itself. */
 	label?: string;
+	/** Called with the display after creation, and with null on teardown — the
+	 *  Svelte wrapper's `oncreate` contract, for consumers who want a signal
+	 *  rather than watching the forwarded ref flip silently. */
+	oncreate?: (display: SevenSegmentDisplay | null) => void;
 	className?: string;
 	style?: CSSProperties;
 }
@@ -78,7 +82,7 @@ export const SevenSegment = forwardRef<SevenSegmentDisplay | null, SevenSegmentP
 			if (!canvas) return;
 			const p = latestRef.current;
 			const d = createSevenSegment(canvas, {
-				value: p.value ?? null,
+				value: p.value,
 				style: p.displayStyle,
 				dp: p.dp,
 				color: p.color,
@@ -95,9 +99,11 @@ export const SevenSegment = forwardRef<SevenSegmentDisplay | null, SevenSegmentP
 				return;
 			}
 			setDisplay(d);
+			latestRef.current.oncreate?.(d);
 			return () => {
 				d.dispose();
 				setDisplay(null);
+				latestRef.current.oncreate?.(null);
 			};
 		}, []);
 
@@ -109,7 +115,7 @@ export const SevenSegment = forwardRef<SevenSegmentDisplay | null, SevenSegmentP
 
 		// Live-update the shown symbol.
 		useEffect(() => {
-			display?.setValue(value ?? null);
+			display?.setValue(value);
 		}, [display, value]);
 
 		// Live-update appearance when any option changes.

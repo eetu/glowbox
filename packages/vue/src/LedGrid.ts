@@ -49,7 +49,14 @@ export const LedGrid = defineComponent({
 		interaction: { type: Object as PropType<InteractionOptions>, default: undefined },
 		quality: { type: Object as PropType<QualityOptions>, default: undefined },
 		/** Accessible name for the canvas (`aria-label`; default 'LED grid'). */
-		label: { type: String, default: undefined }
+		label: { type: String, default: undefined },
+		/** Called with the display after creation, and with null on teardown — the same
+		 *  contract as the Svelte wrapper. Bind as `:oncreate="fn"` (an `@create`
+		 *  listener would camelize to `onCreate` and miss it). */
+		oncreate: {
+			type: Function as PropType<(display: LedDisplay | null) => void>,
+			default: undefined
+		}
 	},
 	setup(props, { expose }) {
 		const canvas = ref<HTMLCanvasElement | null>(null);
@@ -78,6 +85,7 @@ export const LedGrid = defineComponent({
 				return;
 			}
 			bindDraw();
+			props.oncreate?.(display);
 		});
 
 		// Resize the grid in place when the dimensions change (no remount / context loss).
@@ -130,9 +138,11 @@ export const LedGrid = defineComponent({
 		);
 
 		onUnmounted(() => {
+			if (!display) return;
 			stopFrame?.();
-			display?.dispose();
+			display.dispose();
 			display = null;
+			props.oncreate?.(null);
 		});
 
 		// Expose the live display handle for imperative access via the component ref.

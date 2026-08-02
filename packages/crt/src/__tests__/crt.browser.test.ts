@@ -230,6 +230,47 @@ test('element mode: the container background colour is the face floor', async ()
 	crt.dispose();
 });
 
+test('an [r,g,b] background is a face floor too (family Color contract)', async () => {
+	const box = document.createElement('div');
+	box.style.cssText = 'width:120px;height:90px';
+	const small = document.createElement('canvas');
+	small.width = 20;
+	small.height = 20;
+	small.style.cssText = 'position:absolute;left:0;top:0;width:20px;height:20px';
+	box.appendChild(small);
+	document.body.appendChild(box);
+	const crt = createCrtScreen(box, {
+		curvature: 0,
+		noise: 0,
+		flicker: 0,
+		vignette: 0,
+		background: [1, 0, 0]
+	});
+	if (!crt) return;
+	crt.resize();
+	await frame();
+	const gl = crt.canvas.getContext('webgl')!;
+	const px = new Uint8Array(4);
+	gl.readPixels(crt.canvas.width >> 1, crt.canvas.height >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+	expect(px[0]).toBeGreaterThan(120); // the triple serialized into a red floor
+	expect(px[1]).toBeLessThan(60);
+	crt.dispose();
+});
+
+test('snapshot returns a PNG of the current frame', async () => {
+	const src = makeSource();
+	const crt = createCrtScreen(src, { noise: 0, flicker: 0 })!;
+	mountOutput(crt);
+	crt.resize();
+	await frame();
+	const url = crt.snapshot();
+	expect(url.startsWith('data:image/png')).toBe(true);
+	// The context has no preserveDrawingBuffer — a non-trivial payload proves the
+	// forced redraw shared the encode's task instead of reading a cleared buffer.
+	expect(url.length).toBeGreaterThan(2000);
+	crt.dispose();
+});
+
 test('dispose releases the WebGL context (per-page context budget)', () => {
 	const src = makeSource();
 	const crt = createCrtScreen(src);

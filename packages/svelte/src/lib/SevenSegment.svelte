@@ -24,6 +24,8 @@
 		transition,
 		pixelRatio,
 		label,
+		class: className,
+		style,
 		oncreate
 	}: {
 		/** The shown symbol: `0`–`9`, `-`, hex `A b C d E F`, `:`, or null/'' for dark. */
@@ -45,6 +47,10 @@
 		label?: string;
 		/** Called with the display when created, and null on teardown — imperative escape hatch. */
 		oncreate?: (display: SevenSegmentDisplay | null) => void;
+		/** Forwarded to the <canvas>. */
+		class?: string;
+		/** Inline style forwarded to the <canvas>; wins over the built-in block/fill sizing. */
+		style?: string;
 	} = $props();
 
 	let canvas = $state<HTMLCanvasElement | null>(null);
@@ -106,7 +112,7 @@
 	});
 </script>
 
-<canvas bind:this={canvas}></canvas>
+<canvas bind:this={canvas} class={className} {style}></canvas>
 
 <style>
 	canvas {

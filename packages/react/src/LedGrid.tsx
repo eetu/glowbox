@@ -32,6 +32,10 @@ export interface LedGridProps {
 	quality?: QualityOptions;
 	/** Accessible name for the canvas (`aria-label`; default 'LED grid'). */
 	label?: string;
+	/** Called with the display after creation, and with null on teardown — the
+	 *  Svelte wrapper's `oncreate` contract, for consumers who want a signal
+	 *  rather than watching the forwarded ref flip silently. */
+	oncreate?: (display: LedDisplay | null) => void;
 	className?: string;
 	style?: CSSProperties;
 }
@@ -81,9 +85,11 @@ export const LedGrid = forwardRef<LedDisplay | null, LedGridProps>(function LedG
 			return;
 		}
 		setDisplay(d);
+		latestRef.current.oncreate?.(d);
 		return () => {
 			d.dispose();
 			setDisplay(null);
+			latestRef.current.oncreate?.(null);
 		};
 	}, []);
 

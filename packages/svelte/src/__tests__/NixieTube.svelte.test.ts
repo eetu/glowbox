@@ -35,6 +35,18 @@ test('mounts a canvas, lights the numeral, and exposes the tube handle', async (
 	expect(tube!.snapshot().startsWith('data:image/png')).toBe(true);
 });
 
+test('class and style land on the canvas (the styling passthrough)', async () => {
+	const screen = await render(NixieTubeComp, {
+		value: 8,
+		class: 'crt-face',
+		style: 'outline: 1px solid red'
+	});
+	await tick();
+	const canvas = screen.container.querySelector('canvas')!;
+	expect(canvas.classList.contains('crt-face')).toBe(true);
+	expect(canvas.style.outline).toContain('1px');
+});
+
 test('the value prop drives setValue live (blank → lit)', async () => {
 	let tube: NixieTube | null = null;
 	const screen = await render(NixieTubeComp, {

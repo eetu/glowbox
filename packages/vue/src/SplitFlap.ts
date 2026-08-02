@@ -51,7 +51,14 @@ export const SplitFlap = defineComponent({
 		/** Card slap: true (= 0.5) or a 0..1 volume. */
 		sound: { type: [Boolean, Number], default: undefined },
 		pixelRatio: { type: Number, default: undefined },
-		label: { type: String, default: undefined }
+		label: { type: String, default: undefined },
+		/** Called with the board after creation, and with null on teardown — the same
+		 *  contract as the Svelte wrapper. Bind as `:oncreate="fn"` (an `@create`
+		 *  listener would camelize to `onCreate` and miss it). */
+		oncreate: {
+			type: Function as PropType<(board: SplitFlapBoard | null) => void>,
+			default: undefined
+		}
 	},
 	setup(props, { expose }) {
 		const canvas = ref<HTMLCanvasElement | null>(null);
@@ -83,6 +90,7 @@ export const SplitFlap = defineComponent({
 				return;
 			}
 			if (props.text != null) flaps.setText(props.text);
+			props.oncreate?.(flaps);
 		});
 
 		// Live-update the shown text.
@@ -101,8 +109,10 @@ export const SplitFlap = defineComponent({
 		);
 
 		onUnmounted(() => {
-			flaps?.dispose();
+			if (!flaps) return;
+			flaps.dispose();
 			flaps = null;
+			props.oncreate?.(null);
 		});
 
 		// Expose the live board handle for imperative access via the component ref.

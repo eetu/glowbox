@@ -2,10 +2,11 @@
 
 Content helpers for **[@glowbox/led-grid](https://www.npmjs.com/package/@glowbox/led-grid)** — the opt-in content layer the core
 deliberately ships without. Headlined by a **GIF / image animation player**, a **text**
-helper with a bundled **5×7 bitmap LED font**, and a **text scroller** (marquee). Each
-helper works with any wrapper: the players and the scroller return a `(d, dt) => void`
-draw callback; `text()` draws once. They operate on the plain `VoxelGrid` /
-`LedDisplay`, so they also run headlessly.
+helper with a bundled **5×7 bitmap LED font**, a **text scroller** (marquee) and
+**audio-reactive visualizers**. Each helper works with any wrapper: the players, the
+scroller and the visualizers return a `DrawFn` (`(d, dt) => void`) draw callback;
+`text()` draws once. They operate on the plain `VoxelGrid` / `LedDisplay`, so they also
+run headlessly.
 
 ```sh
 yarn add @glowbox/extras   # @glowbox/led-grid comes along
@@ -42,6 +43,16 @@ With a framework wrapper, hand the callback to the `draw` prop:
 asynchronously and draw nothing until ready; GIFs advance by their frame delays and
 loop. GIF frames are decoded with [`gifuct-js`](https://github.com/matt-way/gifuct-js)
 and composited (honouring frame disposal) into full RGBA snapshots.
+`makeFramePlayer(frames, opts)` plays frames you already decoded (via `decodeGif` /
+`framesFromBuffer`) — same callback, no fetch.
+
+### Transport (`PlayerControls`)
+
+Every player's draw callback doubles as a transport: `pause()` / `play()`, `seek(seconds)`,
+a writable `rate` (1 = natural speed, negative plays backwards), a readonly `paused`, and
+`ready` — a promise resolving `true` once decoded (`false` on a load failure, which only
+warns; the callback just keeps drawing nothing). The still-image player accepts the same
+calls as no-ops, so the two are interchangeable.
 
 ### Options (`PlayerOptions`)
 
@@ -85,6 +96,31 @@ string **or a getter** (`() => string`) so a live UI can retype without recreati
 | `fontFamily`                | sans-serif     | system font family — string or getter                            |
 | `fontSize`                  | ~85% of height | system font size in cells                                        |
 | `plane` / `depth` / `clear` | —              | as in `PlayerOptions`                                            |
+
+## Audio
+
+Audio-reactive helpers over any WebAudio `AnalyserNode` — microphone, `<audio>` element,
+or your own synth graph (this module never touches an `AudioContext` itself).
+
+```ts
+import { makeAudioBands, makeBarsVisualizer } from '@glowbox/extras';
+
+const analyser = audioCtx.createAnalyser();
+sourceNode.connect(analyser);
+display.onFrame(makeBarsVisualizer(makeAudioBands(analyser)));
+```
+
+`makeAudioBands(analyser, opts)` distils the FFT into a few log-spaced, smoothed 0..1
+bands. Options (`AudioBandsOptions`): `bands` (default 16), `minFreq` (40), `maxFreq`
+(12000, clamped to Nyquist), `release` (0.72 — rises are instant, decays glide). The
+returned `AudioBands` carries `bands` (a `Float32Array`), `level`, a decaying `peak`,
+and `update()` — call it once per frame, unless a canned visualizer does it for you.
+
+`makeBarsVisualizer(audio, opts)` (classic spectrum columns) and
+`makeRadialVisualizer(audio, opts)` (spokes from the plane's centre) → a `DrawFn`.
+Options (`VisualizerOptions`): `plane` / `depth` / `clear` as in `PlayerOptions`,
+`gain` (default 1), and `color` — a `Color` or a `(band, height) => Color` for
+gradients (default: a warm orange→pink ramp up each column).
 
 ## Building blocks
 

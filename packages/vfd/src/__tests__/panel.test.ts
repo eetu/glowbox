@@ -424,7 +424,7 @@ describe('driveElement — value to lit anodes', () => {
 	it('leaves a capless band capless when it is silent', () => {
 		// -1 is "no cap". Resting one on row 0 because the level is 0 would light the floor row
 		// of an element nobody is driving — and keep it lit, since the cap never falls further.
-		// That is what `VfdPanel.blank` would otherwise be unable to clear.
+		// That is what `VfdPanel.clear` would otherwise be unable to clear.
 		const peaks = [-1, -1];
 		fallPeaks(peaks, [0, 0.5], 8, 4, 0.5);
 		expect(peaks[0]).toBe(-1);

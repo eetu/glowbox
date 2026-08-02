@@ -162,6 +162,10 @@ export interface NeonSign {
 	 *  library owns the tube maths; consumers own the listeners (the sign
 	 *  attaches none — it's a display). */
 	sectionAt(clientX: number, clientY: number): number | null;
+	/** A tube section's glass bounds in viewport coordinates — position a DOM
+	 *  overlay (a focusable control, a tooltip) over the tube a tap named. Null
+	 *  out of range or before the first layout. */
+	sectionRect(section: number): { left: number; top: number; width: number; height: number } | null;
 	setOptions(patch: Partial<NeonSignOptions>): void;
 	resize(): void;
 	snapshot(): string;
@@ -957,6 +961,38 @@ export function createNeonSign(
 				}
 			}
 			return best;
+		},
+		sectionRect(section) {
+			const s = Math.floor(section);
+			if (!(s >= 0 && s < n) || !w || !h || !(fitS > 0)) return null;
+			const r = canvas.getBoundingClientRect();
+			if (!r.width || !r.height) return null;
+			let minX = Infinity;
+			let minY = Infinity;
+			let maxX = -Infinity;
+			let maxY = -Infinity;
+			for (const stroke of lay.sections[s].strokes) {
+				for (const [px, py] of stroke) {
+					if (px < minX) minX = px;
+					if (py < minY) minY = py;
+					if (px > maxX) maxX = px;
+					if (py > maxY) maxY = py;
+				}
+			}
+			if (minX > maxX) return null;
+			// The centreline box, padded to the glass edge — the widest drawn pass
+			// is the unlit tube at `T * 1.25` wide, so half of that each side.
+			const pad = T * 0.625;
+			// Sign units → canvas CSS px (the fit the last frame drew with) →
+			// viewport, scaled into the live rect like split-flap's `cellRect`.
+			const kx = r.width / w;
+			const ky = r.height / h;
+			return {
+				left: r.left + ((minX - pad) * fitS + fitTx) * kx,
+				top: r.top + ((minY - pad) * fitS + fitTy) * ky,
+				width: (maxX - minX + pad * 2) * fitS * kx,
+				height: (maxY - minY + pad * 2) * fitS * ky
+			};
 		},
 		power(v) {
 			if (v === on) return;

@@ -74,7 +74,14 @@ export const VfdPanel = defineComponent({
 		/** Light every anode for ~1 s on power-on before settling. */
 		selfTest: { type: Boolean, default: undefined },
 		pixelRatio: { type: Number, default: undefined },
-		label: { type: String, default: undefined }
+		label: { type: String, default: undefined },
+		/** Called with the panel after creation, and with null on teardown — the same
+		 *  contract as the Svelte wrapper. Bind as `:oncreate="fn"` (an `@create`
+		 *  listener would camelize to `onCreate` and miss it). */
+		oncreate: {
+			type: Function as PropType<(panel: VfdPanelHandle | null) => void>,
+			default: undefined
+		}
 	},
 	setup(props, { expose }) {
 		const canvas = ref<HTMLCanvasElement | null>(null);
@@ -129,6 +136,7 @@ export const VfdPanel = defineComponent({
 			}
 			pushed = {};
 			pushValues();
+			props.oncreate?.(panel);
 		});
 
 		watch(() => props.values, pushValues, { deep: true });
@@ -149,8 +157,10 @@ export const VfdPanel = defineComponent({
 		);
 
 		onUnmounted(() => {
-			panel?.dispose();
+			if (!panel) return;
+			panel.dispose();
 			panel = null;
+			props.oncreate?.(null);
 		});
 
 		// Expose the live panel handle for imperative access via the component ref.
