@@ -49,6 +49,35 @@ test('tapping the glass keeps the module alive (the cursor tap wiring)', async (
 		.toBeGreaterThan(150);
 });
 
+test('type mode: keystrokes land on the glass', async ({ page }) => {
+	await page.goto('/lcd');
+	const glass = page.locator('.stage canvas');
+	await expect(glass).toBeVisible();
+	await page.getByRole('group', { name: 'mode' }).getByText('Type').click();
+	// The bench: one input per module row; the bound value drives setText.
+	await page.getByLabel('module row 1').fill('WOMBAT 123');
+	// The module reads as what it shows — the typed line lands in the aria-label...
+	await expect(glass).toHaveAttribute('aria-label', /WOMBAT 123/);
+	// ...and the crystals chase it onto the glass.
+	await expect
+		.poll(async () => (await glass.evaluate(sample)).dark, { timeout: 15_000 })
+		.toBeGreaterThan(100);
+});
+
+test('the 20×4 module regrids and keeps writing', async ({ page }) => {
+	await page.goto('/lcd');
+	const glass = page.locator('.stage canvas');
+	await expect
+		.poll(async () => (await glass.evaluate(sample)).dark, { timeout: 15_000 })
+		.toBeGreaterThan(150);
+	// cols/rows are a setOptions patch: same glass, more cells; the attract loop
+	// reads the width live and keeps writing.
+	await page.getByRole('group', { name: 'module size' }).getByText('20×4').click();
+	await expect
+		.poll(async () => (await glass.evaluate(sample)).dark, { timeout: 15_000 })
+		.toBeGreaterThan(150);
+});
+
 test('the STN blue glass flips the image to light-through ink', async ({ page }) => {
 	await page.goto('/lcd');
 	const glass = page.locator('.stage canvas');

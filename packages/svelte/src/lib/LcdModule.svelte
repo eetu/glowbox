@@ -19,6 +19,7 @@
 		ghost,
 		cursor,
 		age,
+		glyphs,
 		on,
 		boot,
 		bezel,
@@ -47,6 +48,9 @@
 		cursor?: LcdModuleOptions['cursor'];
 		/** Wear 0..1: dimming, then a flickering column, then a dead column. */
 		age?: number;
+		/** Extension glyphs over the vendored ASCII face — character → 5×7 ASCII art
+		 *  (the core exports LATIN_5X7 ready-made); null resets to the plain face. */
+		glyphs?: LcdModuleOptions['glyphs'];
 		/** Power — off drains the ink at crystal speed. */
 		on?: boolean;
 		/** The uninitialised boot row of solid blocks on power-up. */
@@ -85,6 +89,7 @@
 				ghost,
 				cursor,
 				age,
+				glyphs,
 				on,
 				boot,
 				bezel,
@@ -122,6 +127,7 @@
 			ghost,
 			cursor,
 			age,
+			glyphs,
 			on,
 			boot,
 			bezel,

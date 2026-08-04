@@ -38,6 +38,9 @@ export interface LcdModuleProps {
 	cursor?: LcdModuleOptions['cursor'];
 	/** Wear 0..1: dimming, then a flickering column, then a dead column. */
 	age?: number;
+	/** Extension glyphs over the vendored ASCII face — character → 5×7 ASCII art
+	 *  (the core exports LATIN_5X7 ready-made); null resets to the plain face. */
+	glyphs?: LcdModuleOptions['glyphs'];
 	/** Power — off drains the ink at crystal speed. */
 	on?: boolean;
 	/** The uninitialised boot row of solid blocks on power-up. */
@@ -76,6 +79,7 @@ export const LcdModule = forwardRef<LcdModuleHandle | null, LcdModuleProps>(
 			ghost,
 			cursor,
 			age,
+			glyphs,
 			on,
 			boot,
 			bezel,
@@ -107,6 +111,7 @@ export const LcdModule = forwardRef<LcdModuleHandle | null, LcdModuleProps>(
 				ghost: p.ghost,
 				cursor: p.cursor,
 				age: p.age,
+				glyphs: p.glyphs,
 				on: p.on,
 				boot: p.boot,
 				bezel: p.bezel,
@@ -145,6 +150,7 @@ export const LcdModule = forwardRef<LcdModuleHandle | null, LcdModuleProps>(
 				ghost,
 				cursor,
 				age,
+				glyphs,
 				on,
 				boot,
 				bezel,
@@ -162,6 +168,7 @@ export const LcdModule = forwardRef<LcdModuleHandle | null, LcdModuleProps>(
 			ghost,
 			cursor,
 			age,
+			glyphs,
 			on,
 			boot,
 			bezel,

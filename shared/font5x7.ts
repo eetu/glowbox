@@ -821,3 +821,14 @@ const FALLBACK = compile(FALLBACK_ART);
 export function glyph5x7(ch: string): readonly number[] {
 	return GLYPHS.get(ch) ?? FALLBACK;
 }
+
+/** Compile one glyph of 5×7 ASCII art ('#' = ink, 7 rows of 5 — this face's own
+ *  authoring format) into the row bitmasks `glyph5x7` returns. The format the
+ *  cores' extension-glyph options accept. */
+export const compile5x7 = compile;
+
+/** Every character the built-in face covers, in author order — for repertoire
+ *  marches and coverage checks. */
+export function repertoire5x7(): readonly string[] {
+	return [...GLYPHS.keys()];
+}

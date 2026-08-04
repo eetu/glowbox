@@ -47,7 +47,7 @@
 	},
 	"size-limit": [
 		{
-			"name": "esm (core + panel presets + vendored 5×7 face)",
+			"name": "esm (core + panel presets + vendored 5×7 face + opt-in latin table)",
 			"path": "dist/index.js",
 			"limit": "5 kB"
 		}

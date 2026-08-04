@@ -4,6 +4,34 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [Unreleased]
+
+### Added
+
+- **`@glowbox/lcd`: extension faces — a `glyphs` option and the `LATIN_5X7` table.**
+  Inject glyphs over the vendored ASCII font as character → 5×7 ASCII art (the
+  face's own authoring format); CGRAM code points 0–7 still win, and patching
+  `glyphs: null` hands back the plain face (nixie's null-reset contract).
+  `LATIN_5X7` is the ready Western-European/Nordic table (Å Ä Ö å ä ö Ø ø Æ æ Ü ü
+  ß É é Ñ ñ Ç ç °) — the A02 ROM's territory, where the ubiquitous A00 ROM had
+  katakana and accents were a CGRAM job. Opt-in by import and tree-shakeable, so
+  the core costs nothing more; `repertoire5x7()` and `compile5x7` are exported for
+  repertoire checks and custom tables. The `glyphs` prop mirrors into `<LcdModule>`
+  in all three wrappers (svelte/react/vue) — the wrappers enumerate their props, so
+  a new core option has to join each by hand.
+- **svelte-gallery `/lcd`: a Type mode.** An
+  attract/type toggle in the header; the bench is one input per module row where
+  the input caret IS the module cursor (`selectionStart` → `setCursor`), and a tap
+  on the glass parks the caret on that cell (`cellAt`, padding the row out to the
+  tapped column — DDRAM addressing doesn't care that nothing was written on the way
+  there). Presets include a CGRAM bar ramp — printable block characters in the
+  bench, translated to code points 0–7 at the seam — plus a line/block cursor
+  toggle. Also new on the page: a POWER chip (watch the ink drain
+  at crystal speed and the boot row replay on demand), the catalogue module
+  sizes (8×1 / 16×2 / 20×4) — the `cols`/`rows` regrid the gallery never exposed —
+  and the page injects `LATIN_5X7` (an ÄÄKKÖSET preset types it) with a
+  font-showcase attract scene that marches the whole repertoire page by page.
+
 ## [1.10.0] — 2026-08-02
 
 The eighth display core — a **character LCD module**, the family's first reflective

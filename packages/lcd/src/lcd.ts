@@ -28,7 +28,7 @@
 // Give it a canvas + text; drive it with setText/setLine/setGlyph/setCursor/power.
 // Import-safe under node/SSR (no browser globals at module scope).
 import { type Color, parseColor, type RGB } from './color';
-import { FONT_5X7, glyph5x7 } from './font5x7';
+import { compile5x7, FONT_5X7, glyph5x7 } from './font5x7';
 import { type PanelName, PANELS, type PanelSpec } from './panels';
 
 /** The cursor the controller draws over a cell: none, the steady underline, or the
@@ -43,6 +43,11 @@ export interface LcdModuleOptions {
 	/** The shown text; '\n' splits rows, or one string per row. Longer lines are
 	 *  truncated, missing rows blank — a module has exactly the cells it has. */
 	text?: string | string[];
+	/** Extension glyphs layered over the vendored ASCII face — character → 5×7
+	 *  ASCII art ('#' = ink, 7 rows of 5, the face's own authoring format). Import
+	 *  a ready table (`LATIN_5X7`) or draw your own; CGRAM code points 0–7 still
+	 *  win. Patch with null to reset to the plain face. */
+	glyphs?: Record<string, string> | null;
 	/** The glass: 'green' (STN yellow-green, dark ink, readable unlit), 'blue'
 	 *  (STN negative — light ink that needs its backlight), 'white' (FSTN).
 	 *  Default 'green'. */
@@ -184,6 +189,14 @@ export function createLcdModule(
 	let bezelOn = opts.bezel !== null;
 	let pixelRatio = opts.pixelRatio ?? 2;
 	let label = opts.label ?? 'lcd display';
+	// The extension face, compiled once per table — null means the plain face.
+	const compileGlyphs = (t: Record<string, string> | null | undefined) => {
+		if (!t) return null;
+		const m = new Map<string, readonly number[]>();
+		for (const [ch, art] of Object.entries(t)) m.set(ch, compile5x7(art));
+		return m.size ? m : null;
+	};
+	let extra = compileGlyphs(opts.glyphs);
 
 	const reduced =
 		typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -243,7 +256,7 @@ export function createLcdModule(
 		const code = ch.codePointAt(0) ?? 32;
 		if (code < 8) return cgram[code * CELL_H + r]; // CGRAM slot
 		if (r >= FONT_5X7.height) return 0; // the descender/cursor row is the font's gap
-		return glyph5x7(ch)[r];
+		return (extra?.get(ch) ?? glyph5x7(ch))[r];
 	};
 
 	function retarget() {
@@ -629,6 +642,10 @@ export function createLcdModule(
 			if (patch.cursor != null && patch.cursor !== cursorStyle) {
 				cursorStyle = patch.cursor;
 				syncBlink();
+				if (!booting) retarget();
+			}
+			if (patch.glyphs !== undefined) {
+				extra = compileGlyphs(patch.glyphs);
 				if (!booting) retarget();
 			}
 			if (patch.text !== undefined) this.setText(patch.text ?? '');
