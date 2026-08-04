@@ -1,14 +1,23 @@
 <script lang="ts">
-	// A 16×2 character LCD on @glowbox/lcd — the family's first reflective display,
+	// A character LCD on @glowbox/lcd — the family's first reflective display,
 	// shown on a LIGHT stage on purpose. The attract loop cycles the physics a webfont
 	// can't fake: typing under a blinking block cursor, a CGRAM bar meter (the custom-
 	// glyph party trick), a scrolling line dragging its crystal ghost, and a power
-	// cycle through the uninitialised row of boot boxes. Tap the glass to park the
-	// cursor on a cell (cellAt — the module answers geometry; the page owns the tap).
-	import { createLcdModule, type LcdModule, type PanelName } from '@glowbox/lcd';
+	// cycle through the uninitialised row of boot boxes. Type mode hands the module
+	// over: one input per row where the caret IS the cursor (selectionStart →
+	// setCursor), and a tap on the glass parks the caret on that cell (cellAt —
+	// the module answers geometry; the page owns the tap).
+	import {
+		createLcdModule,
+		LATIN_5X7,
+		type LcdCursor,
+		type LcdModule,
+		type PanelName,
+		repertoire5x7
+	} from '@glowbox/lcd';
 	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
 	import X from '@lucide/svelte/icons/x';
-	import { untrack } from 'svelte';
+	import { tick, untrack } from 'svelte';
 
 	import CoreNav from '$lib/components/CoreNav.svelte';
 	import Segmented from '$lib/components/Segmented.svelte';
@@ -16,12 +25,15 @@
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import ToggleChip from '$lib/components/ToggleChip.svelte';
 
+	let mode = $state<'attract' | 'type'>('attract');
 	let panel = $state<PanelName>('green');
 	let backlight = $state(1);
 	let contrast = $state(0.8);
 	let response = $state(0.4);
 	let ghost = $state(true);
 	let age = $state(0);
+	let on = $state(true);
+	let cursorStyle = $state<LcdCursor>('block');
 	let moduleW = $state(480);
 	let moduleH = $state(150);
 	// Reflective glass belongs on a light wall — the opposite default to every
@@ -32,26 +44,48 @@
 		if (e.key === 'Escape' && panelOpen) panelOpen = false;
 	};
 
-	let canvas = $state<HTMLCanvasElement>();
-	let lcd: LcdModule | null = null;
+	// The catalogue module sizes — cols/rows regrid the same glass via setOptions.
+	type ModuleSize = '8x1' | '16x2' | '20x4';
+	const DIMS: Record<ModuleSize, [number, number]> = {
+		'8x1': [8, 1],
+		'16x2': [16, 2],
+		'20x4': [20, 4]
+	};
+	const MAX_ROWS = 4;
+	let dims = $state<ModuleSize>('16x2');
+	const modCols = $derived(DIMS[dims][0]);
+	const modRows = $derived(DIMS[dims][1]);
 
-	// --- the attract loop: one scene clock, four scenes -------------------------
-	const TYPED = ['GLOWBOX LCD 16X2', 'READY>'];
-	const SCROLL = 'THE CRYSTALS ARE SLOW AND THAT IS THE POINT - WATCH THE TRAIL...   ';
-	let timer: ReturnType<typeof setInterval> | undefined;
-	function startProgram(m: LcdModule) {
-		// CGRAM: eight bar glyphs, slot n = n+1 rows of ink from the floor.
+	let canvas = $state<HTMLCanvasElement>();
+	let lcd = $state.raw<LcdModule | null>(null);
+
+	// CGRAM: eight bar glyphs, slot n = n+1 rows of ink from the floor — programmed
+	// once at creation, so the attract meter and typed code points 0–7 read the same
+	// slots.
+	function programGlyphs(m: LcdModule) {
 		for (let slot = 0; slot < 8; slot++) {
 			const rows = Array.from({ length: 8 }, (_, r) => (r >= 7 - slot ? 0b11111 : 0));
 			m.setGlyph(slot, rows);
 		}
+	}
+
+	// --- the attract loop: one scene clock, five scenes -------------------------
+	const TYPED = ['GLOWBOX LCD 16X2', 'READY>'];
+	const SCROLL = 'THE CRYSTALS ARE SLOW AND THAT IS THE POINT - WATCH THE TRAIL...   ';
+	// The font showcase: everything the face can draw — the vendored ASCII
+	// repertoire plus the injected Latin/Nordic extension table.
+	const CHARSET = [...repertoire5x7().filter((c) => c !== ' '), ...Object.keys(LATIN_5X7)].join('');
+	let timer: ReturnType<typeof setInterval> | undefined;
+	function startProgram(m: LcdModule) {
 		let tick = 0;
-		let scene = 0; // 0 type · 1 meter · 2 scroll · 3 power cycle
+		let scene = 0; // 0 type · 1 meter · 2 charset · 3 scroll · 4 power cycle
 		let sceneT = 0;
 		clearInterval(timer);
 		timer = setInterval(() => {
 			tick++;
 			sceneT++;
+			// Read the width live: a regrid mid-programme just narrows the scenes.
+			const cols = m.cols;
 			if (scene === 0) {
 				// Typing: the block cursor leads, the crystals chase.
 				const n = Math.min(sceneT, TYPED[0].length + TYPED[1].length);
@@ -60,16 +94,19 @@
 				m.setText([l0, l1]);
 				const done = n >= TYPED[0].length + TYPED[1].length;
 				m.setOptions({ cursor: 'block' });
-				m.setCursor(done ? l1.length : Math.min(15, (l1 ? l1 : l0).length), l1 || done ? 1 : 0);
+				m.setCursor(
+					Math.min(cols - 1, done ? l1.length : (l1 ? l1 : l0).length),
+					l1 || done ? 1 : 0
+				);
 				if (sceneT > 55) {
 					scene = 1;
 					sceneT = 0;
 					m.setOptions({ cursor: 'none' });
 				}
 			} else if (scene === 1) {
-				// The CGRAM meter: sixteen bar columns breathing on a sine field.
+				// The CGRAM meter: bar columns breathing on a sine field.
 				let bars = '';
-				for (let x = 0; x < 16; x++) {
+				for (let x = 0; x < cols; x++) {
 					const level = 0.5 + 0.5 * Math.sin(tick * 0.35 + x * 0.55) * Math.sin(tick * 0.11 + x);
 					bars += String.fromCharCode(Math.max(0, Math.min(7, Math.round(level * 7))));
 				}
@@ -79,11 +116,27 @@
 					sceneT = 0;
 				}
 			} else if (scene === 2) {
+				// The font showcase: march the repertoire across the glass, page by page.
+				const perPage = cols * m.rows;
+				const start = Math.floor(sceneT / 22) * perPage;
+				if (start >= CHARSET.length) {
+					scene = 3;
+					sceneT = 0;
+				} else {
+					const page: string[] = [];
+					for (let r = 0; r < m.rows; r++)
+						page.push(CHARSET.slice(start + r * cols, start + (r + 1) * cols));
+					m.setText(page);
+				}
+			} else if (scene === 3) {
 				// The scroll: motion is where the response smear lives.
-				const win = (SCROLL + SCROLL).slice(sceneT % SCROLL.length, (sceneT % SCROLL.length) + 16);
+				const win = (SCROLL + SCROLL).slice(
+					sceneT % SCROLL.length,
+					(sceneT % SCROLL.length) + cols
+				);
 				m.setText([win, 'CRYSTAL SPEED >>']);
 				if (sceneT > 70) {
-					scene = 3;
+					scene = 4;
 					sceneT = 0;
 					m.power(false);
 				}
@@ -100,21 +153,46 @@
 		const el = canvas;
 		if (!el) return;
 		const m = untrack(() =>
-			createLcdModule(el, { panel, backlight, contrast, response, ghost, age })
+			createLcdModule(el, {
+				panel,
+				backlight,
+				contrast,
+				response,
+				ghost,
+				age,
+				on,
+				cols: modCols,
+				rows: modRows,
+				// The Latin/Nordic extension face, injected the opt-in way (import + option).
+				glyphs: LATIN_5X7
+			})
 		);
 		if (!m) return;
+		programGlyphs(m);
 		lcd = m;
-		untrack(() => startProgram(m));
 		return () => {
-			clearInterval(timer);
 			m.dispose();
 			lcd = null;
 		};
 	});
 
-	// Live-update the envelope; the program owns text/cursor/power.
+	// Live-update the envelope (a cols/rows change regrids the same glass).
 	$effect(() => {
-		lcd?.setOptions({ panel, backlight, contrast, response, ghost, age });
+		lcd?.setOptions({
+			panel,
+			backlight,
+			contrast,
+			response,
+			ghost,
+			age,
+			cols: modCols,
+			rows: modRows
+		});
+	});
+	// The power switch on its own effect: the attract loop's power-cycle scene flips
+	// the module internally, and folding `on` into the envelope patch would fight it.
+	$effect(() => {
+		lcd?.power(on);
 	});
 	$effect(() => {
 		void moduleW;
@@ -122,12 +200,90 @@
 		lcd?.resize();
 	});
 
-	// Tap the glass: park the cursor on the cell under the finger.
-	function onTap(e: MouseEvent) {
-		const cell = lcd?.cellAt(e.clientX, e.clientY);
-		if (!cell) return;
-		lcd?.setOptions({ cursor: 'block' });
-		lcd?.setCursor(cell.x, cell.y);
+	// The attract programme runs only while it owns the glass — type mode and
+	// STANDBY both take the wheel.
+	$effect(() => {
+		const m = lcd;
+		if (!m || mode !== 'attract' || !on) return;
+		untrack(() => startProgram(m));
+		return () => clearInterval(timer);
+	});
+
+	// --- type mode: the bench --------------------------------------------------
+	// One string per possible row (a geometry change never loses text); the module
+	// shows the first `rows` of them.
+	let typedLines = $state(['', '', '', '']);
+	const lineEls: (HTMLInputElement | null)[] = [];
+
+	// CGRAM at the bench: the inputs hold printable block elements (control
+	// characters render as tofu in a text field) and this seam translates them to
+	// the code points 0–7 that address the CGRAM slots on the glass. One code unit
+	// each, so caret positions stay 1:1.
+	const CGRAM_KEYS = '▁▂▃▄▅▆▇█';
+	const toModule = (line: string) =>
+		Array.from(line, (ch) => {
+			const slot = CGRAM_KEYS.indexOf(ch);
+			return slot >= 0 ? String.fromCharCode(slot) : ch;
+		}).join('');
+
+	$effect(() => {
+		const m = lcd;
+		if (!m || mode !== 'type') return;
+		m.setOptions({ cursor: cursorStyle });
+		m.setText(typedLines.slice(0, modRows).map(toModule));
+	});
+
+	// The input caret is the module cursor — HD44780 semantics for free.
+	function syncCaret(r: number) {
+		const el = lineEls[r];
+		if (!el) return;
+		lcd?.setCursor(Math.min(el.selectionStart ?? 0, modCols - 1), r);
+	}
+
+	// The preset ramp: bars up and back down, in the printable form.
+	const RAMP = CGRAM_KEYS + [...CGRAM_KEYS].reverse().join('');
+	const PRESETS: { label: string; lines: string[] }[] = [
+		{ label: 'HELLO, WORLD', lines: ['HELLO, WORLD'] },
+		{
+			label: 'CGRAM ▁▃▅█',
+			lines: ['INPUT LEVEL', RAMP]
+		},
+		{ label: 'DISK ERROR', lines: ['DISK B: READ ERR', 'RETRY?  >YES  NO'] },
+		{ label: 'ÄÄKKÖSET', lines: ['ÄÄKKÖSET ÅÄÖ åäö', 'øæß üé çñ 21.5°C'] },
+		{ label: 'clear', lines: [] }
+	];
+	async function applyPreset(lines: string[]) {
+		typedLines = Array.from({ length: MAX_ROWS }, (_, r) => (lines[r] ?? '').slice(0, modCols));
+		await tick(); // the caret can only land once the bound values have flushed
+		const el = lineEls[0];
+		el?.focus();
+		el?.setSelectionRange(typedLines[0].length, typedLines[0].length);
+		syncCaret(0);
+	}
+
+	// Tap the glass: park the caret on the cell under the finger. In type mode the
+	// row is padded out to the tapped column — DDRAM addressing doesn't care that
+	// nothing was written on the way there.
+	async function onTap(e: MouseEvent) {
+		const m = lcd;
+		const cell = m?.cellAt(e.clientX, e.clientY);
+		if (!m || !cell) return;
+		if (mode === 'type') {
+			const el = lineEls[cell.y];
+			if (!el) return;
+			if (typedLines[cell.y].length < cell.x)
+				typedLines[cell.y] = typedLines[cell.y].padEnd(cell.x, ' ');
+			// setSelectionRange clamps to the input's CURRENT value — the padding has
+			// to flush into the DOM first, or the caret (and the glass cursor synced
+			// from it) snaps back to the old end of the text.
+			await tick();
+			el.focus();
+			el.setSelectionRange(cell.x, cell.x);
+			syncCaret(cell.y);
+		} else {
+			m.setOptions({ cursor: 'block' });
+			m.setCursor(cell.x, cell.y);
+		}
 	}
 </script>
 
@@ -140,6 +296,17 @@
 <div class="app">
 	<header>
 		<CoreNav core="lcd" />
+		<label class="hdr-field"
+			>mode
+			<Segmented
+				bind:value={mode}
+				ariaLabel="mode"
+				options={[
+					{ value: 'attract', label: 'Attract' },
+					{ value: 'type', label: 'Type' }
+				]}
+			/>
+		</label>
 		<label class="hdr-field"
 			>glass
 			<Segmented
@@ -166,8 +333,46 @@
 	</header>
 
 	<div class="stage" style="background: {backdrop}">
-		<canvas bind:this={canvas} style="width: {moduleW}px; height: {moduleH}px" onclick={onTap}
-		></canvas>
+		<div class="module">
+			<canvas bind:this={canvas} style="width: {moduleW}px; height: {moduleH}px" onclick={onTap}
+			></canvas>
+			{#if mode === 'type'}
+				<div class="bench" style="width: {moduleW}px">
+					{#each typedLines.slice(0, modRows) as _, r (r)}
+						<!-- svelte-ignore a11y_autofocus -->
+						<input
+							bind:this={lineEls[r]}
+							bind:value={typedLines[r]}
+							maxlength={modCols}
+							autofocus={r === 0}
+							spellcheck="false"
+							autocomplete="off"
+							aria-label={`module row ${r + 1}`}
+							placeholder={r === 0 ? 'type here' : ''}
+							oninput={() => syncCaret(r)}
+							onkeyup={() => syncCaret(r)}
+							onclick={() => syncCaret(r)}
+							onfocus={() => syncCaret(r)}
+						/>
+					{/each}
+					<div class="bench-row">
+						<div class="presets">
+							{#each PRESETS as p (p.label)}
+								<button onclick={() => applyPreset(p.lines)}>{p.label}</button>
+							{/each}
+						</div>
+						<Segmented
+							bind:value={cursorStyle}
+							ariaLabel="cursor style"
+							options={[
+								{ value: 'line', label: 'line' },
+								{ value: 'block', label: 'block' }
+							]}
+						/>
+					</div>
+				</div>
+			{/if}
+		</div>
 	</div>
 
 	<button
@@ -221,11 +426,24 @@
 			/>
 			<div class="row">
 				<ToggleChip bind:checked={ghost} label="dot lattice" />
+				<ToggleChip bind:checked={on} label="power" />
 			</div>
 		</section>
 
 		<section>
 			<h2>size</h2>
+			<label class="field"
+				>module
+				<Segmented
+					bind:value={dims}
+					ariaLabel="module size"
+					options={[
+						{ value: '8x1', label: '8×1' },
+						{ value: '16x2', label: '16×2' },
+						{ value: '20x4', label: '20×4' }
+					]}
+				/>
+			</label>
 			<Slider
 				bind:value={moduleW}
 				label="width"
@@ -275,12 +493,16 @@
 	}
 	.hdr-field {
 		display: inline-flex;
+		/* Never squeezed: a segmented control broken across two rows reads as a
+		   mistake. The hint takes the hit instead — prose is allowed to wrap. */
+		flex: none;
 		align-items: center;
 		gap: 8px;
 		font-size: 13px;
 		color: var(--halo-text-muted);
 	}
 	.hint {
+		min-width: 0;
 		margin-left: auto;
 		font-size: 12px;
 		color: var(--halo-text-muted);
@@ -311,6 +533,63 @@
 	}
 	.stage canvas {
 		cursor: pointer;
+	}
+	.module {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 10px;
+		min-width: 0;
+		max-width: 100%;
+	}
+
+	/* The bench row — the inputs sit under the glass like a keypad ribbon cable. */
+	.bench {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		max-width: 100%;
+	}
+	.bench input {
+		padding: 7px 10px;
+		font-family: var(--halo-font-mono, monospace);
+		font-size: 13px;
+		letter-spacing: 0.08em;
+		color: var(--halo-text-main);
+		background: var(--halo-bg-main);
+		border: 1px solid var(--halo-border);
+		border-radius: var(--halo-radius);
+	}
+	.bench input:focus-visible {
+		border-color: var(--halo-accent);
+		outline: none;
+	}
+	.bench-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 6px;
+	}
+	.presets {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+	.presets button {
+		padding: 6px 8px;
+		font-family: var(--halo-font-mono, monospace);
+		font-size: 11px;
+		letter-spacing: 0.06em;
+		color: var(--halo-text-muted);
+		background: var(--halo-bg-main);
+		border: 1px solid var(--halo-border);
+		border-radius: var(--halo-radius);
+		cursor: pointer;
+	}
+	.presets button:hover {
+		color: var(--halo-text-main);
+		border-color: var(--halo-accent);
 	}
 
 	.panel {
@@ -352,6 +631,15 @@
 		font-size: 11px;
 		letter-spacing: 0.04em;
 		color: var(--halo-text-muted);
+	}
+	.field {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		margin-bottom: 12px;
+		font-size: 13px;
+		color: var(--halo-text-main);
 	}
 	.row {
 		display: flex;

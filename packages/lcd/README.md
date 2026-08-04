@@ -48,6 +48,7 @@ lcd?.setOptions({ cursor: 'block' });
 | `ghost`      | `true`          | the resting dot lattice                                                                        |
 | `cursor`     | `'none'`        | `'line'` (steady underline) · `'block'` (blinking); position via `setCursor`                   |
 | `age`        | `0`             | wear 0..1: dim → flickering column → dead column                                               |
+| `glyphs`     | —               | extension face over the vendored ASCII font (see below); `null` resets                         |
 | `on`         | `true`          | power; off drains the ink, then the pane sits unlit                                            |
 | `boot`       | `true`          | the uninitialised boot row (skipped under reduced motion)                                      |
 | `bezel`      | dark plastic    | `Color`; `null` = transparent outside the glass                                                |
@@ -72,6 +73,24 @@ canvas gets `role="img"` and an `aria-label` that reads what the module says.
 lcd.setGlyph(0, [0, 0, 0, 0b11111, 0b11111, 0b11111, 0b11111, 0]);
 lcd.setText('LEVEL ' + '\u0000'.repeat(5)); // text addresses CGRAM by code point
 ```
+
+### Extension faces (`glyphs`)
+
+The vendored face covers printable ASCII (`repertoire5x7()` lists it). Teach the
+module more by injecting a glyph table — character → 5×7 ASCII art (`'#'` = ink,
+7 rows of 5), the face's own authoring format:
+
+```ts
+import { createLcdModule, LATIN_5X7 } from '@glowbox/lcd';
+createLcdModule(canvas, { glyphs: LATIN_5X7 }); // Å Ä Ö å ä ö Ø ø Æ æ Ü ü ß É é Ñ ñ Ç ç °
+```
+
+`LATIN_5X7` is the Western-European/Nordic table — the A02 ROM's territory (the
+ubiquitous A00 ROM had katakana here and no accents at all; that's what CGRAM was
+for). It ships in the package but tree-shakes away unless imported. CGRAM code
+points 0–7 always win over injected glyphs; patch `glyphs: null` to hand back the
+plain face. Author your own table in the same art format (`compile5x7` gives the
+raw masks if you need them).
 
 ## No sound
 

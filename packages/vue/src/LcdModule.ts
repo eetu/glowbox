@@ -54,6 +54,12 @@ export const LcdModule = defineComponent({
 		cursor: { type: String as PropType<LcdCursor>, default: undefined },
 		/** Wear 0..1: dimming, then a flickering column, then a dead column. */
 		age: { type: Number, default: undefined },
+		/** Extension glyphs over the vendored ASCII face — character → 5×7 ASCII art
+		 *  (the core exports LATIN_5X7 ready-made); null resets to the plain face. */
+		glyphs: {
+			type: [Object, null] as PropType<LcdModuleOptions['glyphs']>,
+			default: undefined
+		},
 		/** Power — off drains the ink at crystal speed. */
 		on: { type: Boolean, default: undefined },
 		/** The uninitialised boot row of solid blocks on power-up. */
@@ -87,6 +93,7 @@ export const LcdModule = defineComponent({
 			ghost: props.ghost,
 			cursor: props.cursor,
 			age: props.age,
+			glyphs: props.glyphs,
 			on: props.on,
 			boot: props.boot,
 			bezel: props.bezel,

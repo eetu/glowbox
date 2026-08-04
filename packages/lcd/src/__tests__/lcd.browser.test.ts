@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 
+import { LATIN_5X7 } from '../latin';
 import { createLcdModule } from '../lcd';
 
 const makeCanvas = (w = 320, h = 100) => {
@@ -167,6 +168,21 @@ test('CGRAM glyphs drive dots and the block cursor inks its cell', () => {
 		1
 	).data;
 	expect(probe[0] + probe[1] + probe[2]).toBeLessThan(300);
+	lcd.dispose();
+	canvas.remove();
+});
+
+test('the glyphs option teaches the face new characters and resets with null', () => {
+	const canvas = makeCanvas();
+	const lcd = createLcdModule(canvas, { ...quiet, text: 'ÄÄNI 21°' })!;
+	// Without the table the accents render as the hollow fallback box.
+	const boxes = lcd.snapshot();
+	lcd.setOptions({ glyphs: LATIN_5X7 });
+	const latin = lcd.snapshot();
+	expect(latin).not.toBe(boxes);
+	// Handing the table back restores the plain face exactly (nixie's null-reset contract).
+	lcd.setOptions({ glyphs: null });
+	expect(lcd.snapshot()).toBe(boxes);
 	lcd.dispose();
 	canvas.remove();
 });
