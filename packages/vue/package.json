@@ -90,7 +90,7 @@
 		"@vue/compiler-dom": "^3.5",
 		"@vue/test-utils": "^2.4",
 		"eslint": "^10",
-		"playwright": "^1.61",
+		"playwright": "^1.62",
 		"typescript": "^6",
 		"vite": "^8.1",
 		"vite-plugin-dts": "^5",
