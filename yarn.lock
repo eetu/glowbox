@@ -4079,7 +4079,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"size-limit@npm:13.0.1, size-limit@npm:^13":
+"size-limit@npm:13.0.1":
   version: 13.0.1
   resolution: "size-limit@npm:13.0.1"
   dependencies:
@@ -4090,6 +4090,19 @@ __metadata:
   bin:
     size-limit: bin.js
   checksum: 10/6c65e62ad8132b5c878ffdb9b6838daff5a7ca12c4db3f20cb1d9d88d57d789e3830f6d6d8d0599960a89db2a86753267ea3e1b2344ca8ebe37a4db9d215cede
+  languageName: node
+  linkType: hard
+
+"size-limit@npm:^13":
+  version: 13.0.3
+  resolution: "size-limit@npm:13.0.3"
+  dependencies:
+    bytes-iec: "npm:^3.1.1"
+    lilconfig: "npm:^3.1.3"
+    nanospinner: "npm:^1.2.2"
+  bin:
+    size-limit: bin.js
+  checksum: 10/440de38f1b8bc7724d007defb632ab8518f71c220dd082732dc5a2321deb43a14333697fa2c6b7c066cf81e302c3017f1ebf878b673be722fa8466d9c72c48ee
   languageName: node
   linkType: hard
 
