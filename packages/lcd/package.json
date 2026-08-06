@@ -57,7 +57,7 @@
 		"@vitest/browser": "^4.1",
 		"@vitest/browser-playwright": "^4.1",
 		"eslint": "^10",
-		"playwright": "^1.61",
+		"playwright": "^1.62",
 		"typescript": "^6",
 		"vite": "^8.1",
 		"vite-plugin-dts": "^5",
