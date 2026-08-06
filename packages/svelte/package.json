@@ -82,7 +82,7 @@
 		"@vitest/browser": "^4.1",
 		"@vitest/browser-playwright": "^4.1",
 		"eslint": "^10",
-		"playwright": "^1.61",
+		"playwright": "^1.62",
 		"size-limit": "^13",
 		"svelte": "^5.56",
 		"svelte-check": "^4.7",

@@ -93,7 +93,7 @@
 		"@vitest/browser": "^4.1",
 		"@vitest/browser-playwright": "^4.1",
 		"eslint": "^10",
-		"playwright": "^1.61",
+		"playwright": "^1.62",
 		"react": "^19",
 		"react-dom": "^19",
 		"typescript": "^6",
