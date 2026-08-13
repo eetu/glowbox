@@ -59,7 +59,7 @@
 		"eslint": "^10",
 		"playwright": "^1.62",
 		"typescript": "^6",
-		"vite": "^8.1",
+		"vite": "^8.2",
 		"vite-plugin-dts": "^5",
 		"vitest": "^4.1"
 	}
