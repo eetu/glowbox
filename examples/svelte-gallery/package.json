@@ -18,7 +18,7 @@
 		"@glowbox/led-grid": "workspace:^",
 		"@glowbox/nixie": "workspace:^",
 		"@glowbox/svelte": "workspace:^",
-		"@lucide/svelte": "^1.27",
+		"@lucide/svelte": "^1.28",
 		"three": "^0.185.1"
 	},
 	"devDependencies": {
@@ -28,7 +28,7 @@
 		"@sveltejs/kit": "^2.70",
 		"@sveltejs/vite-plugin-svelte": "^7",
 		"@types/node": "^26",
-		"@types/three": "^0.185.3",
+		"@types/three": "^0.185.4",
 		"eslint": "^10",
 		"svelte": "^5.56",
 		"svelte-check": "^4.7",
