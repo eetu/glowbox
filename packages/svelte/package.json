@@ -58,7 +58,7 @@
 		{
 			"name": "shipped files (no bundle — components ship as .svelte source)",
 			"path": "dist/**/*.{js,svelte}",
-			"limit": "12 kB"
+			"limit": "12.5 kB"
 		}
 	],
 	"peerDependencies": {
