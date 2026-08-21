@@ -74,6 +74,34 @@ screen over any of them (or any canvas at all).
 
 ![The @glowbox/neon demo: a rising rose cursive Cocktails across a gold martini glass with an open mouth and a leaning swizzle stick, two green olives cutting the bowl line](media/neon.png)
 
+## Light or dark
+
+Every core takes `theme: 'dark' | 'light' | 'auto'` — a bundle of colour **defaults**
+(never a render path), with `'auto'` following the page's `prefers-color-scheme`. Any
+colour you set yourself stays yours when the theme moves. What "light" means is the
+core's own answer, and it is only sometimes an inversion:
+
+![The @glowbox/flip-dot demo in its light theme: near-black discs standing out of a bone-white panel, showing a 13:04 clock — the same board with the paint the other way round](media/flipdot-light.png)
+
+A disc is painted on both faces, so **flip-dot** and **split-flap** invert honestly:
+black discs on a bone panel, or a bone strip printed in near-black.
+
+![The @glowbox/neon demo in its light theme: the Cocktails sign inked into a pale wall in dark rose and ochre instead of glowing, olives in deep green](media/neon-light.png)
+
+**neon** cannot — a bloom has nothing to read against on white — so it switches to
+`polarity: 'absorb'`: the tubes **ink** a pale wall instead of lighting a dark one,
+halation, hot core and all. It is the one invented element in the family.
+
+![The @glowbox/vfd demo in its light theme: a brushed-silver faceplate around two dark glass windows, green segments and a spectrum analyser inside, in a light room](media/vfd-light.png)
+
+The emissive cores stay **dark objects** in both themes, because a phosphor anode or a
+lit filament needs a dark window: for **vfd** the theme is the faceplate — the brushed
+silver of a 70s receiver — and for **nixie** and **seven-segment** it is a heavier drop
+shadow and a brighter rim, so the module sits on a pale page instead of floating on it.
+**led-grid** switches the look instead (`comic`'s opaque ink-outlined LEDs), and **lcd**
+was light-native all along: a reflective pane is dark ink on a lit surface, so only its
+plastic moves.
+
 ## Quickstart
 
 ```svelte
