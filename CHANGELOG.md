@@ -29,13 +29,17 @@ version and are released together.
   `Theme` type. The resolution, the listener and the who-owns-this-colour bookkeeping
   live in `shared/theme.ts`, symlinked into all eight (guarded by `check-shared`).
 
-- **svelte-gallery: a display-theme switch on every route** — _Page_ (follow the header
-  toggle, handing the core `'auto'` when the page is on auto), _Dark_, _Light_. The stage
-  follows the display, because dark ink on a dark stage is invisible. Where a page has
-  its own swatch for a colour the theme owns (split-flap's card/ink/board, flip-dot's
-  discs, neon's polarity + wall, the lcd plastic, the vfd plate, led-grid's look), the
-  switch moves those controls instead, using the core's own palette — a named colour is
-  not the theme's to move, and the demo shows that rather than hiding it.
+- **svelte-gallery: the header theme button drives the displays too**, so a route is one
+  theme all the way down — page chrome, stage and hardware. It is **dark or light, and it
+  opens dark**: no `auto`, because these are glowing retro displays and most of them are
+  at their best in the dark, so the gallery makes the choice rather than asking the OS.
+  (The cores still take `theme: 'auto'` — an app that wants `prefers-color-scheme` just
+  passes it.) Where a page has its own swatch for a colour the theme owns (split-flap's
+  card/ink/board, flip-dot's discs, neon's polarity + wall, the lcd plastic, the vfd
+  plate, led-grid's look), the button moves those controls, using the core's own palette
+  — a named colour is not the theme's to move, and the demo shows that rather than
+  hiding it. The vfd page repaints its own chassis and room to match, because a silver
+  faceplate screwed into a black case reads as a mistake.
 - **`@glowbox/lcd`: extension faces — a `glyphs` option and the `LATIN_5X7` table.**
   Inject glyphs over the vendored ASCII font as character → 5×7 ASCII art (the
   face's own authoring format); CGRAM code points 0–7 still win, and patching
@@ -89,6 +93,16 @@ version and are released together.
 
 ### Fixed
 
+- **`@glowbox/split-flap`: a no-op resize no longer throws the sprite cache away.** A
+  ResizeObserver fires for observations that changed nothing, and `resize()` re-baked
+  regardless — clearing every flap sprite and, by assigning `canvas.width`, the frame
+  on screen. At startup that baked the whole drum twice; during a window drag it
+  re-baked continuously. It now returns early when the box and the pixel ratio are
+  unchanged, and the two throwaway canvases each face used to allocate (the card and
+  its glyph layer) are one reused scratch apiece. Canvases allocated over a
+  three-second run of the gallery board: 182 → 90. Frame rate is unchanged — it was
+  never allocation-bound, it is fill-rate bound, which is what
+  `node scripts/bench-split-flap.mjs` is now there to show.
 - **`@glowbox/split-flap`: the print is registered against the card's seam.** Two
   faults, one cause — the artwork sat where a shared baseline happened to put it. A
   colon's upper dot straddled the cut and came apart as the card fell, and every

@@ -327,15 +327,9 @@ export function createSplitFlap(
 	// the other, then the halves are sliced off into the sprites that are actually kept.
 	// A drum is up to fifty-odd characters, so allocating a throwaway pair per face is
 	// fifty-odd canvases of garbage per bake — and a bake happens on every resize.
-	let scratchCard: HTMLCanvasElement | null = null;
-	let scratchInk: HTMLCanvasElement | null = null;
+	const pads: Record<'card' | 'ink', HTMLCanvasElement | null> = { card: null, ink: null };
 	const scratch = (which: 'card' | 'ink', W: number, H: number) => {
-		let c = which === 'card' ? scratchCard : scratchInk;
-		if (!c) {
-			c = document.createElement('canvas');
-			if (which === 'card') scratchCard = c;
-			else scratchInk = c;
-		}
+		const c = (pads[which] ??= document.createElement('canvas'));
 		if (c.width !== W || c.height !== H) {
 			c.width = W;
 			c.height = H;

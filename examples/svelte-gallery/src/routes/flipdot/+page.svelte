@@ -21,13 +21,8 @@
 	import Slider from '$lib/components/Slider.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import ToggleChip from '$lib/components/ToggleChip.svelte';
-	import {
-		coreTheme,
-		DISPLAY_THEME_OPTIONS,
-		displayScheme,
-		type DisplayThemeChoice
-	} from '$lib/displayTheme.svelte';
 	import { FLIP_SHOWS, type FlipShow } from '$lib/examples/flipdot';
+	import { theme } from '$lib/theme.svelte';
 
 	let show = $state<FlipShow>('clock');
 	let soundOn = $state(false);
@@ -76,9 +71,8 @@
 	let backdrop = $state('#0a0a0e');
 	// Does the hardware follow the page's theme toggle, or is it pinned? The
 	// stage follows the display, because dark ink on a dark stage is invisible.
-	let displayTheme = $state<DisplayThemeChoice>('page');
 	let backdropNamed = false;
-	const scheme = $derived(displayScheme(displayTheme));
+	const scheme = $derived(theme.mode);
 	// This page has a swatch for every colour the core's `theme` owns, and a named
 	// colour stops being the theme's — so the switch moves the swatches, using the
 	// core's own palette. Pick a colour afterwards and it stays until you flip again.
@@ -119,7 +113,7 @@
 				onColor,
 				offColor,
 				board: panelOn ? boardColor : null,
-				theme: coreTheme(displayTheme)
+				theme: theme.mode
 			}))
 		);
 		board = b;
@@ -142,7 +136,7 @@
 			onColor,
 			offColor,
 			board: panelOn ? boardColor : null,
-			theme: coreTheme(displayTheme)
+			theme: theme.mode
 		});
 	});
 
@@ -365,14 +359,6 @@
 			<div class="row">
 				<ToggleChip bind:checked={panelOn} label="panel" />
 			</div>
-			<label class="field"
-				>theme
-				<Segmented
-					bind:value={displayTheme}
-					ariaLabel="colour theme"
-					options={DISPLAY_THEME_OPTIONS}
-				/>
-			</label>
 			<div class="row">
 				<span class="rlabel">backdrop</span>
 				<input
@@ -493,15 +479,6 @@
 		font-size: 11px;
 		letter-spacing: 0.04em;
 		color: var(--halo-text-muted);
-	}
-	.field {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 10px;
-		margin-bottom: 12px;
-		font-size: 13px;
-		color: var(--halo-text-main);
 	}
 	.row {
 		display: flex;

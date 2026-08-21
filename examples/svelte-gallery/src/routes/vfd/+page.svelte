@@ -24,12 +24,6 @@
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import ToggleChip from '$lib/components/ToggleChip.svelte';
 	import {
-		coreTheme,
-		DISPLAY_THEME_OPTIONS,
-		displayScheme,
-		type DisplayThemeChoice
-	} from '$lib/displayTheme.svelte';
-	import {
 		ANALYSER_FRAME,
 		analyserLayout,
 		createAnalyserShow,
@@ -40,6 +34,7 @@
 		stereoLayout,
 		type StereoSource
 	} from '$lib/examples/vfd';
+	import { theme } from '$lib/theme.svelte';
 
 	let source = $state<StereoSource>('auto');
 	// The bench mode's text. Read every frame by the show, so typing lands live.
@@ -66,8 +61,7 @@
 	let panelOpen = $state(false);
 	// The faceplate: off is `bezel: null` — glass and anodes on a transparent canvas.
 	// Does the chassis follow the page's theme toggle, or is it pinned?
-	let displayTheme = $state<DisplayThemeChoice>('page');
-	const scheme = $derived(displayScheme(displayTheme));
+	const scheme = $derived(theme.mode);
 	// The room and the case the panel is screwed into, per scheme: a brushed-silver
 	// faceplate against a black chassis reads as a mistake rather than a receiver.
 	const roomStyle = $derived(
@@ -124,7 +118,7 @@
 				grid,
 				on,
 				bezel: plateOn ? plateColor : null,
-				theme: coreTheme(displayTheme),
+				theme: theme.mode,
 				label: 'mini-system display panel'
 			})
 		);
@@ -151,7 +145,7 @@
 			grid,
 			on,
 			bezel: plateOn ? plateColor : null,
-			theme: coreTheme(displayTheme)
+			theme: theme.mode
 		});
 	});
 
@@ -177,7 +171,7 @@
 		grid,
 		on,
 		bezel: plateOn ? plateColor : null,
-		theme: coreTheme(displayTheme)
+		theme: theme.mode
 	});
 
 	let analyserCanvas = $state<HTMLCanvasElement>();
@@ -460,14 +454,6 @@
 			<div class="row">
 				<ToggleChip bind:checked={plateOn} label="faceplate" />
 			</div>
-			<label class="field"
-				>theme
-				<Segmented
-					bind:value={displayTheme}
-					ariaLabel="colour theme"
-					options={DISPLAY_THEME_OPTIONS}
-				/>
-			</label>
 		</section>
 
 		<section>

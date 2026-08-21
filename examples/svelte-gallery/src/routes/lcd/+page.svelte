@@ -24,12 +24,7 @@
 	import Slider from '$lib/components/Slider.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import ToggleChip from '$lib/components/ToggleChip.svelte';
-	import {
-		coreTheme,
-		DISPLAY_THEME_OPTIONS,
-		displayScheme,
-		type DisplayThemeChoice
-	} from '$lib/displayTheme.svelte';
+	import { theme } from '$lib/theme.svelte';
 
 	let mode = $state<'attract' | 'type'>('attract');
 	let panel = $state<PanelName>('green');
@@ -52,9 +47,8 @@
 	let backdrop = $state('#e9e7e1');
 	// Does the hardware follow the page's theme toggle, or is it pinned? The
 	// stage follows the display, because dark ink on a dark stage is invisible.
-	let displayTheme = $state<DisplayThemeChoice>('page');
 	let backdropNamed = false;
-	const scheme = $derived(displayScheme(displayTheme));
+	const scheme = $derived(theme.mode);
 	// This page has a swatch for every colour the core's `theme` owns, and a named
 	// colour stops being the theme's — so the switch moves the swatches, using the
 	// core's own palette. Pick a colour afterwards and it stays until you flip again.
@@ -188,7 +182,7 @@
 				age,
 				on,
 				bezel: bezelOn ? bezelColor : null,
-				theme: coreTheme(displayTheme),
+				theme: theme.mode,
 				bezelWidth,
 				cols: modCols,
 				rows: modRows,
@@ -509,14 +503,6 @@
 				<ToggleChip bind:checked={bezelOn} label="plastic" />
 				<input type="color" bind:value={bezelColor} disabled={!bezelOn} aria-label="bezel colour" />
 			</div>
-			<label class="field"
-				>theme
-				<Segmented
-					bind:value={displayTheme}
-					ariaLabel="colour theme"
-					options={DISPLAY_THEME_OPTIONS}
-				/>
-			</label>
 			<div class="row">
 				<span class="rlabel">backdrop</span>
 				<input

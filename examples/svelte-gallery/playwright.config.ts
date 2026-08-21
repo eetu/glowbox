@@ -9,11 +9,7 @@ export default defineConfig({
 	forbidOnly: !!process.env.CI,
 	retries: process.env.CI ? 1 : 0,
 	use: {
-		baseURL: 'http://localhost:4173',
-		// The displays follow the page's scheme now, and every spec here measures lit
-		// pixels against a dark stage — so pin the scheme instead of letting the
-		// runner's default decide what the demo looks like.
-		colorScheme: 'dark'
+		baseURL: 'http://localhost:4173'
 	},
 	projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 	webServer: {

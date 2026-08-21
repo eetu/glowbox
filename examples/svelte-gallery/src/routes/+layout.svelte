@@ -5,12 +5,10 @@
 
 	let { children } = $props();
 
-	// Force the chosen theme via `data-theme` on <html>; in `auto` we remove the
-	// attribute so the `prefers-color-scheme` media query follows the OS live.
+	// The chosen theme is always forced via `data-theme` on <html> — the gallery opens
+	// dark by choice, not by asking the OS (see $lib/theme.svelte).
 	$effect(() => {
-		const root = document.documentElement;
-		if (theme.mode === 'auto') delete root.dataset.theme;
-		else root.dataset.theme = theme.mode;
+		document.documentElement.dataset.theme = theme.mode;
 	});
 </script>
 
