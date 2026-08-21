@@ -9,7 +9,7 @@
 // continuous bent wire, not a filled glyph. Each digit also carries a small fixed
 // NUDGE: in a real tube the cathodes sit at slightly different positions/depths, so the
 // glowing number shifts a hair off dead-centre and jitters as the value changes.
-import { type Color, parseColor } from './color';
+import { type Color, parseColor, type RGB } from './color';
 
 const TAU = Math.PI * 2;
 const VB_W = 60;
@@ -66,7 +66,7 @@ const STYLES: Record<NixieStyle, { sx: number; sy: number; lw: number }> = {
 	tall: { sx: 0.9, sy: 1.16, lw: 3.7 }
 };
 // Dull-metal colour of the unlit cathode wires behind the glass (dim nickel).
-const WIRE: number[] = [0.52, 0.52, 0.56];
+const WIRE: RGB = [0.52, 0.52, 0.56];
 // The tube's own colours — patching `color`/`background` with null resets to these.
 const DEFAULT_COLOR: Color = [1, 0.45, 0.08];
 const DEFAULT_BG: Color = [0.03, 0.03, 0.045];
@@ -106,6 +106,9 @@ export interface NixieOptions {
 	mesh?: boolean;
 	/** Draw the other, unlit cathodes faintly behind — the stacked-numeral depth (default true). */
 	ghost?: boolean;
+	/** Unlit cathode-wire colour — the filament stack behind the glass (default a
+	 *  dull nickel, `NIXIE_WIRE_COLOR`). Patch `null` to reset. */
+	wire?: Color;
 	/** Cap on devicePixelRatio (default 2). */
 	pixelRatio?: number;
 	/** Accessible name for the canvas (`aria-label`). Defaults to the lit symbol itself;
@@ -226,6 +229,7 @@ export function createNixieTube(
 	let bg = parseColor(opts.background ?? DEFAULT_BG);
 	let mesh = opts.mesh ?? true;
 	let ghost = opts.ghost ?? true;
+	let wire = parseColor(opts.wire ?? WIRE);
 	let pixelRatio = opts.pixelRatio ?? 2;
 	let bare = opts.bare ?? false;
 	let label = opts.label ?? '';
@@ -394,7 +398,7 @@ export function createNixieTube(
 				const p = pathFor(ch);
 				if (!p) continue;
 				const back = DEPTH[ch] / 9; // 0 front .. 1 back → farther wires dimmer
-				g.strokeStyle = rgba(WIRE, 0.3 - back * 0.19);
+				g.strokeStyle = rgba(wire, 0.3 - back * 0.19);
 				g.lineWidth = st.lw * 0.72;
 				place(p, ch);
 			}
@@ -514,6 +518,7 @@ export function createNixieTube(
 			if (patch.background !== undefined) bg = parseColor(patch.background ?? DEFAULT_BG);
 			if (patch.mesh != null) mesh = patch.mesh;
 			if (patch.ghost != null) ghost = patch.ghost;
+			if (patch.wire !== undefined) wire = parseColor(patch.wire ?? WIRE);
 			if (patch.bare != null) bare = patch.bare;
 			if (patch.value !== undefined) value = norm(patch.value);
 			if (patch.label !== undefined) label = patch.label;

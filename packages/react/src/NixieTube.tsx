@@ -27,6 +27,8 @@ export interface NixieTubeProps {
 	background?: NixieOptions['background'];
 	mesh?: boolean;
 	ghost?: boolean;
+	/** Unlit cathode-wire colour — the filament stack behind the glass. */
+	wire?: NixieOptions['wire'];
 	pixelRatio?: number;
 	/** Accessible name (`aria-label`); defaults to the lit symbol itself. */
 	label?: string;
@@ -57,6 +59,7 @@ export const NixieTube = forwardRef<NixieTubeHandle | null, NixieTubeProps>(
 			background,
 			mesh,
 			ghost,
+			wire,
 			pixelRatio,
 			label,
 			className,
@@ -82,6 +85,7 @@ export const NixieTube = forwardRef<NixieTubeHandle | null, NixieTubeProps>(
 				background: p.background,
 				mesh: p.mesh,
 				ghost: p.ghost,
+				wire: p.wire,
 				pixelRatio: p.pixelRatio,
 				label: p.label
 			});
@@ -114,10 +118,11 @@ export const NixieTube = forwardRef<NixieTubeHandle | null, NixieTubeProps>(
 				background,
 				mesh,
 				ghost,
+				wire,
 				pixelRatio,
 				label
 			});
-		}, [tube, tubeStyle, color, glow, background, mesh, ghost, pixelRatio, label]);
+		}, [tube, tubeStyle, color, glow, background, mesh, ghost, wire, pixelRatio, label]);
 
 		return <canvas ref={canvasRef} className={className} style={{ ...baseStyle, ...style }} />;
 	}

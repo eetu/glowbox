@@ -43,6 +43,8 @@ export const NixieTube = defineComponent({
 		// defaults (mesh/ghost = true) apply when the prop is omitted.
 		mesh: { type: Boolean, default: undefined },
 		ghost: { type: Boolean, default: undefined },
+		/** Unlit cathode-wire colour — the filament stack behind the glass. */
+		wire: { type: [String, Array] as PropType<NixieOptions['wire']>, default: undefined },
 		pixelRatio: { type: Number, default: undefined },
 		/** Accessible name (`aria-label`); defaults to the lit symbol itself. */
 		label: { type: String, default: undefined },
@@ -65,6 +67,7 @@ export const NixieTube = defineComponent({
 			background: props.background,
 			mesh: props.mesh,
 			ghost: props.ghost,
+			wire: props.wire,
 			pixelRatio: props.pixelRatio,
 			label: props.label
 		});

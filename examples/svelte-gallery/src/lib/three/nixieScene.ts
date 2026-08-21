@@ -2,12 +2,12 @@
 // orbiting. Everything nixie-specific comes from @glowbox/nixie — the full cathode stack
 // (`nixieCathodes`, every numeral present, one lit), the wire thickness + squash
 // (`nixieStyle`), the honeycomb anode grille (`nixieMesh`), the separator paths
-// (`glyphPath`) and the wire colour (`NIXIE_WIRE_COLOR`). This file only owns the 3D part
+// (`glyphPath`). The unlit wire colour comes in as an option, so the page can drive it.
+// This file only owns the 3D part
 // the component can't: extruding those paths into geometry, the glass, and the bloom.
 import {
 	GLYPH_VIEWBOX,
 	glyphPath,
-	NIXIE_WIRE_COLOR,
 	nixieCathodes,
 	nixieMesh,
 	nixieStyle
@@ -28,6 +28,8 @@ export interface NixieSceneOptions {
 	color: string;
 	/** Glass tint (CSS string). */
 	glass: string;
+	/** Unlit cathode-wire colour (CSS string) — the component's `wire`. */
+	wire: string;
 	/** Scene backdrop (CSS string). */
 	backdrop: string;
 	/** Tube proportions, matching the 2D control. */
@@ -209,7 +211,7 @@ export function createNixieScene(container: HTMLElement, opts: NixieSceneOptions
 	// reads as a faint ghost behind the one lit numeral instead of a bright tangle (it catches
 	// too much of the environment otherwise, drowning the glow).
 	const wireMat = new THREE.MeshStandardMaterial({
-		color: new THREE.Color(...NIXIE_WIRE_COLOR).multiplyScalar(0.11),
+		color: new THREE.Color(opts.wire).multiplyScalar(0.11),
 		roughness: 0.82,
 		metalness: 0.2,
 		envMapIntensity: 0.14
@@ -421,6 +423,10 @@ export function createNixieScene(container: HTMLElement, opts: NixieSceneOptions
 			if (patch.glass) {
 				glassMat.attenuationColor.set(patch.glass);
 				opts.glass = patch.glass;
+			}
+			if (patch.wire) {
+				wireMat.color.set(patch.wire).multiplyScalar(0.11);
+				opts.wire = patch.wire;
 			}
 			if (patch.backdrop) {
 				scene.background = darkBackdrop(patch.backdrop);

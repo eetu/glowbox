@@ -24,6 +24,9 @@
 	let strikeMs = $state(900);
 	let speed = $state(1);
 	let wallColor = $state('#0b0b0e');
+	// The wall itself: off is `wall: null` — tubes on a transparent canvas. An
+	// absorbing sign inks a wall, so it has to have one; the switch is emit-only.
+	let wallOn = $state(true);
 	let backdrop = $state('#0a0a0e');
 	// The invented element: tubes that ink a pale wall instead of lighting a dark
 	// one. Flipping it drags the scene colours along — dark ink on a dark wall is
@@ -69,7 +72,7 @@
 				strikeMs,
 				speed,
 				padding,
-				wall: wallColor,
+				wall: wallOn || polarity === 'absorb' ? wallColor : null,
 				polarity,
 				sound: soundOn ? volume : 0
 			}))
@@ -85,7 +88,7 @@
 			glow,
 			strikeMs,
 			speed,
-			wall: wallColor,
+			wall: wallOn || polarity === 'absorb' ? wallColor : null,
 			polarity,
 			sound: soundOn ? volume : 0
 		});
@@ -306,8 +309,18 @@
 			</div>
 			<div class="row">
 				<span class="rlabel">wall</span>
-				<input type="color" bind:value={wallColor} aria-label="wall colour" />
+				<input
+					type="color"
+					bind:value={wallColor}
+					disabled={!wallOn && polarity === 'emit'}
+					aria-label="wall colour"
+				/>
 			</div>
+			{#if polarity === 'emit'}
+				<div class="row">
+					<ToggleChip bind:checked={wallOn} label="wall" />
+				</div>
+			{/if}
 			<div class="row">
 				<span class="rlabel">backdrop</span>
 				<input type="color" bind:value={backdrop} aria-label="backdrop colour" />

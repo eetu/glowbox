@@ -19,6 +19,7 @@
 		background,
 		mesh,
 		ghost,
+		wire,
 		pixelRatio,
 		label,
 		class: className,
@@ -34,6 +35,8 @@
 		background?: NixieOptions['background'];
 		mesh?: boolean;
 		ghost?: boolean;
+		/** Unlit cathode-wire colour — the filament stack behind the glass. */
+		wire?: NixieOptions['wire'];
 		pixelRatio?: number;
 		/** Accessible name (`aria-label`); defaults to the lit symbol itself. */
 		label?: string;
@@ -63,6 +66,7 @@
 				background,
 				mesh,
 				ghost,
+				wire,
 				pixelRatio,
 				label
 			})
@@ -87,7 +91,17 @@
 
 	// Live-update appearance when any option changes.
 	$effect(() => {
-		tube?.setOptions({ style: tubeStyle, color, glow, background, mesh, ghost, pixelRatio, label });
+		tube?.setOptions({
+			style: tubeStyle,
+			color,
+			glow,
+			background,
+			mesh,
+			ghost,
+			wire,
+			pixelRatio,
+			label
+		});
 	});
 </script>
 

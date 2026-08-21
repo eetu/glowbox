@@ -14,11 +14,15 @@
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Slider from '$lib/components/Slider.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+	import ToggleChip from '$lib/components/ToggleChip.svelte';
 
 	let style = $state<NixieStyle>('classic');
 	let color = $state('#ff6a12'); // glow / lit-numeral colour
 	let glass = $state('#08080c'); // the tube's own glass — the glow needs it dark to bloom
+	let filament = $state('#85858f'); // the unlit cathode wires behind the glass
 	let backdrop = $state('#0a0806'); // the stage behind the tubes (they sit on any bg)
+	// The glass module: off is `bare` — numerals alone on a transparent canvas.
+	let glassOn = $state(true);
 	// 2D = flat <NixieTube> canvases; 3D = real bent-wire cathodes in refractive glass
 	// tubes (three.js), extruded from the same glyph paths via @glowbox/nixie's glyphPath.
 	let mode = $state<'2d' | '3d'>('2d');
@@ -60,6 +64,8 @@
 				style,
 				color,
 				background: glass,
+				wire: filament,
+				bare: !glassOn,
 				digitAspect: tubeW / tubeH
 			}))
 		);
@@ -69,7 +75,14 @@
 		};
 	});
 	$effect(() => {
-		row?.setOptions({ style, color, background: glass, digitAspect: tubeW / tubeH });
+		row?.setOptions({
+			style,
+			color,
+			background: glass,
+			wire: filament,
+			bare: !glassOn,
+			digitAspect: tubeW / tubeH
+		});
 	});
 	$effect(() => {
 		row?.setValue(time);
@@ -127,7 +140,7 @@
 
 	<div class="stage" style="background: {backdrop}">
 		{#if mode === '3d'}
-			<NixieScene3D {digits} {color} {glass} {backdrop} {style} />
+			<NixieScene3D {digits} {color} {glass} wire={filament} {backdrop} {style} />
 		{:else}
 			<div class="clock" bind:this={rowEl} style="height: {tubeH}px"></div>
 		{/if}
@@ -184,7 +197,19 @@
 			</div>
 			<div class="row">
 				<span class="rlabel">glass</span>
-				<input type="color" bind:value={glass} aria-label="tube glass colour" />
+				<input
+					type="color"
+					bind:value={glass}
+					disabled={!glassOn || mode === '3d'}
+					aria-label="tube glass colour"
+				/>
+			</div>
+			<div class="row">
+				<ToggleChip bind:checked={glassOn} label="glass module" />
+			</div>
+			<div class="row">
+				<span class="rlabel">filament</span>
+				<input type="color" bind:value={filament} aria-label="filament colour" />
 			</div>
 			<div class="row">
 				<span class="rlabel">backdrop</span>

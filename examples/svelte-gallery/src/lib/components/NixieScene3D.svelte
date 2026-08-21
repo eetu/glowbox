@@ -10,12 +10,14 @@
 		digits,
 		color,
 		glass,
+		wire,
 		backdrop,
 		style
 	}: {
 		digits: string[];
 		color: string;
 		glass: string;
+		wire: string;
 		backdrop: string;
 		style: NixieSceneOptions['style'];
 	} = $props();
@@ -24,7 +26,7 @@
 	let scene: NixieScene | null = null;
 
 	onMount(() => {
-		scene = createNixieScene(container, { digits, color, glass, backdrop, style });
+		scene = createNixieScene(container, { digits, color, glass, wire, backdrop, style });
 		return () => {
 			scene?.dispose();
 			scene = null;
@@ -36,7 +38,7 @@
 		scene?.setDigits(digits);
 	});
 	$effect(() => {
-		scene?.setOptions({ color, glass, backdrop, style });
+		scene?.setOptions({ color, glass, wire, backdrop, style });
 	});
 </script>
 

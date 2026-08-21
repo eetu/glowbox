@@ -38,8 +38,19 @@ version and are released together.
 - **svelte-gallery `/lcd`: bezel controls.** A width slider plus a plastic chip and
   colour swatch under _size_ — thickness, colour, or no frame at all, where the glass
   takes the whole canvas.
+- **svelte-gallery: every housing is switchable, on every route.** A chip beside the
+  colour swatch drops the housing and shows the page through it — _glass module_
+  (nixie), _window_ (7-seg), _panel_ (flip-dot), _frame_ (split-flap), _wall_ (neon,
+  emit only: an absorbing sign needs a wall to ink), _faceplate_ (vfd, which had no
+  bezel control at all). Turn the backdrop pale and a display composites onto it.
+- **svelte-gallery `/nixie`: a filament swatch.** The unlit cathode wires, driving the
+  core's new `wire` in 2D and the three.js wire material in 3D.
 - **`board: null` on `@glowbox/flip-dot` and `@glowbox/split-flap`.** No plastic at
   all: bare discs, or cards over your own scene.
+- **`wire` on `@glowbox/nixie`.** The unlit cathode-wire colour — the filament stack
+  behind the glass, which was the one part of the tube fixed at a dull nickel. Patch
+  `null` to reset; mirrored into `<NixieTube>` in all three wrappers. `createNixieRow`
+  also forwards `bare` now, so a whole clock can composite onto your own scene.
 - **`bare` on `@glowbox/seven-segment`.** Segments alone on a transparent canvas — no
   window tint, vignette, rim or shadow — the same contract and name as nixie's `bare`,
   for a housing of your own. Mirrored into `<SevenSegment>` in all three wrappers.

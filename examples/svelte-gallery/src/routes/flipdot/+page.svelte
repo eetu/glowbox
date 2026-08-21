@@ -65,6 +65,8 @@
 	let onColor = $state('#d5e138');
 	let offColor = $state('#17181a');
 	let boardColor = $state('#101114');
+	// The panel behind the discs: off is `board: null` — bare discs on the page.
+	let panelOn = $state(true);
 	let backdrop = $state('#0a0a0e');
 	let crtOn = $state(false);
 	let panelOpen = $state(false);
@@ -93,7 +95,7 @@
 				sound: soundOn ? volume : 0,
 				onColor,
 				offColor,
-				board: boardColor
+				board: panelOn ? boardColor : null
 			}))
 		);
 		board = b;
@@ -115,7 +117,7 @@
 			sound: soundOn && show !== 'gif' ? volume : 0,
 			onColor,
 			offColor,
-			board: boardColor
+			board: panelOn ? boardColor : null
 		});
 	});
 
@@ -333,7 +335,10 @@
 			</div>
 			<div class="row">
 				<span class="rlabel">board</span>
-				<input type="color" bind:value={boardColor} aria-label="board colour" />
+				<input type="color" bind:value={boardColor} disabled={!panelOn} aria-label="board colour" />
+			</div>
+			<div class="row">
+				<ToggleChip bind:checked={panelOn} label="panel" />
 			</div>
 			<div class="row">
 				<span class="rlabel">backdrop</span>
