@@ -27,6 +27,7 @@
 import { type Color, parseColor, type RGB } from './color';
 import { DEFAULT_CHARSET, flapIndex, flapsOf, padCells } from './drum';
 import { createMechSound, type MechSound } from './sound';
+import { resolveTheme, type Theme, themeOwner, watchTheme } from './theme';
 
 /** A rectangle of modules carrying a different drum than the board `charset`. */
 export interface DrumZone {
@@ -70,11 +71,16 @@ export interface SplitFlapOptions {
 	 *  same letter twice in different colours, the way real boards kept a red
 	 *  duplicate alphabet for DELAYED and CANCELLED. */
 	palette?: Record<string, Color | FlapFace>;
-	/** Flap card colour (default near-black plastic). */
+	/** Colour bundle: `'dark'` (default — near-black cards, warm-white print),
+	 *  `'light'` (a bone-white strip printed in near-black, the way the pale Solari
+	 *  boards read) or `'auto'` to follow the page's `prefers-color-scheme`. Any
+	 *  colour you set yourself stays yours when the theme moves. */
+	theme?: Theme;
+	/** Flap card colour (default per `theme`). */
 	card?: Color;
-	/** Printed character colour (default warm white). */
+	/** Printed character colour (default per `theme`). */
 	ink?: Color;
-	/** Frame behind/between the modules (default '#0c0c0f'); `null` leaves the
+	/** Frame behind/between the modules (default per `theme`); `null` leaves the
 	 *  canvas transparent behind them, to compose the board over your own scene. */
 	board?: Color | null;
 	/** Gap around each module as a fraction of the cell, 0..0.4 (default 0.08). */
@@ -202,9 +208,29 @@ export function createSplitFlap(
 	let charset = opts.charset ?? DEFAULT_CHARSET;
 	let zones = opts.drums;
 	let palette = opts.palette;
-	let card = parseColor(opts.card ?? '#1b1c1f');
-	let ink = parseColor(opts.ink ?? '#f4f4ef');
-	let board = opts.board === null ? null : parseColor(opts.board ?? '#0c0c0f');
+	// A split-flap card is PAINT, so the light theme is an honest inversion: the pale
+	// strip printed in near-black is a real board, not a filter over a dark one.
+	const PALETTE = {
+		dark: { card: '#1b1c1f', ink: '#f4f4ef', board: '#0c0c0f' },
+		light: { card: '#f1efe8', ink: '#1b1c1f', board: '#d6d2c8' }
+	} as const;
+	const themed = themeOwner(['card', 'ink', 'board'] as const);
+	themed.mark(opts);
+	let theme = opts.theme ?? 'dark';
+	let scheme = resolveTheme(theme);
+	let card = parseColor(PALETTE[scheme].card);
+	let ink = parseColor(PALETTE[scheme].ink);
+	let board: RGB | null = parseColor(PALETTE[scheme].board);
+	if (opts.card !== undefined) card = parseColor(opts.card);
+	if (opts.ink !== undefined) ink = parseColor(opts.ink);
+	if (opts.board !== undefined) board = opts.board === null ? null : parseColor(opts.board);
+	/** Move every colour the theme still owns to the resolved scheme. */
+	function applyTheme() {
+		const p = PALETTE[scheme];
+		if (themed.owns('card')) card = parseColor(p.card);
+		if (themed.owns('ink')) ink = parseColor(p.ink);
+		if (themed.owns('board')) board = parseColor(p.board);
+	}
 	let gap = Math.max(0, Math.min(0.4, opts.gap ?? 0.08));
 	let font = opts.font ?? "'Helvetica Neue', Helvetica, Arial, sans-serif";
 	let shaded = opts.shaded ?? false;
@@ -805,6 +831,14 @@ export function createSplitFlap(
 
 	applyAria();
 	const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => resize()) : null;
+	// `theme: 'auto'` follows the page, so the board repaints when the scheme flips.
+	const repaintTheme = (next: 'dark' | 'light') => {
+		scheme = next;
+		applyTheme();
+		bake();
+		draw();
+	};
+	let stopTheme = watchTheme(theme, repaintTheme);
 	ro?.observe(canvas);
 	resize();
 
@@ -880,6 +914,17 @@ export function createSplitFlap(
 		setOptions(patch) {
 			let rebake = false;
 			let regrid = false;
+			// A colour named in this patch becomes the consumer's for good, so mark it
+			// before the theme gets a chance to move it.
+			themed.mark(patch);
+			if (patch.theme !== undefined && patch.theme !== theme) {
+				theme = patch.theme;
+				scheme = resolveTheme(theme);
+				stopTheme();
+				stopTheme = watchTheme(theme, repaintTheme);
+				applyTheme();
+				rebake = true;
+			}
 			if (patch.cols != null && Math.floor(patch.cols) !== cols) {
 				cols = Math.max(1, Math.floor(patch.cols));
 				regrid = true;
@@ -985,6 +1030,7 @@ export function createSplitFlap(
 		},
 		dispose() {
 			ro?.disconnect();
+			stopTheme();
 			if (raf) cancelAnimationFrame(raf);
 			snd?.dispose();
 			// Hand the consumer's canvas back without our ARIA (it may be reused).

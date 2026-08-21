@@ -225,6 +225,34 @@ test('the panel hugs the dot field, and board: null paints no plastic', () => {
 	bare.remove();
 });
 
+test('theme light repaints the board in the other paint job', () => {
+	const canvas = makeCanvas(280, 140);
+	const mean = () => {
+		const d = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+		let n = 0;
+		for (let i = 0; i < d.length; i += 4) n += d[i] + d[i + 1] + d[i + 2];
+		return n / (d.length / 4);
+	};
+	const board = createFlipDots(canvas, { cols: 14, rows: 7, flipMs: 0, theme: 'light' })!;
+	board.setFrame((x, y) => (x + y) % 2);
+	const light = mean();
+	board.setOptions({ theme: 'dark' });
+	expect(mean()).toBeLessThan(light);
+	// A dot colour the consumer named is theirs through every later theme move.
+	board.setOptions({ onColor: '#ff0000', theme: 'light' });
+	const red = () => {
+		const d = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+		let n = 0;
+		for (let i = 0; i < d.length; i += 4) if (d[i] > 200 && d[i + 1] < 90) n++;
+		return n;
+	};
+	expect(red()).toBeGreaterThan(0);
+	board.setOptions({ theme: 'dark' });
+	expect(red()).toBeGreaterThan(0);
+	board.dispose();
+	canvas.remove();
+});
+
 test('dispose hands the canvas back without ARIA and stops the loop', () => {
 	const canvas = makeCanvas();
 	const board = createFlipDots(canvas, { cols: 4, rows: 2 })!;

@@ -278,6 +278,35 @@ test('board: null leaves the canvas behind the modules transparent', () => {
 	canvas.remove();
 });
 
+test('theme light inverts the paint, and a named colour stays named', () => {
+	const canvas = mount(240, 80);
+	// Mean luminance over the whole board: a pale strip reads brighter than a dark one.
+	const mean = () => {
+		const d = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+		let n = 0;
+		for (let i = 0; i < d.length; i += 4) n += d[i] + d[i + 1] + d[i + 2];
+		return n / (d.length / 4);
+	};
+	const board = createSplitFlap(canvas, { cols: 4, rows: 1, flipMs: 0, theme: 'light' })!;
+	board.setText('AB');
+	const light = mean();
+	board.setOptions({ theme: 'dark' });
+	expect(mean()).toBeLessThan(light);
+	// An ink the consumer named survives every theme move after it.
+	board.setOptions({ ink: '#ff0000', theme: 'light' });
+	const red = () => {
+		const d = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+		let n = 0;
+		for (let i = 0; i < d.length; i += 4) if (d[i] > 200 && d[i + 1] < 80) n++;
+		return n;
+	};
+	expect(red()).toBeGreaterThan(0);
+	board.setOptions({ theme: 'dark' });
+	expect(red()).toBeGreaterThan(0);
+	board.dispose();
+	canvas.remove();
+});
+
 test('sound: true is safe before any user gesture', () => {
 	const canvas = mount();
 	const board = createSplitFlap(canvas, { cols: 4, rows: 1, flipMs: 0, sound: true })!;

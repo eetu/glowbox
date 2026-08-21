@@ -18,6 +18,7 @@
 // node/SSR (no browser globals at module scope).
 import { type Color, parseColor, type RGB } from './color';
 import { createMechSound, type MechSound } from './sound';
+import { resolveTheme, type Theme, themeOwner, watchTheme } from './theme';
 
 /** How a frame change spreads across the board. */
 export type FlipDotStagger = 'scan' | 'random' | 'none';
@@ -31,11 +32,16 @@ export interface FlipDotsOptions {
 	/** Grid size (default 28×14 — one classic Alfa-Zeta panel). */
 	cols?: number;
 	rows?: number;
-	/** Lit disc face (default the fluorescent yellow-green of the real boards). */
+	/** Colour bundle: `'dark'` (default — fluorescent discs on a near-black panel),
+	 *  `'light'` (near-black discs on a bone panel, the paint job the other way round)
+	 *  or `'auto'` to follow the page's `prefers-color-scheme`. A disc is PAINT, so
+	 *  either way round is real hardware. Any colour you set yourself stays yours. */
+	theme?: Theme;
+	/** Lit disc face (default per `theme`). */
 	onColor?: Color;
-	/** Dark disc face (default near-black with a sheen). */
+	/** Resting disc face (default per `theme`). */
 	offColor?: Color;
-	/** Board plastic behind the discs (default '#101114'): a panel hugging the dot
+	/** Board plastic behind the discs (default per `theme`): a panel hugging the dot
 	 *  field, so canvas past it stays transparent. `null` leaves the discs bare. */
 	board?: Color | null;
 	/** Gap around each disc as a fraction of the cell, 0..0.45 (default 0.14). */
@@ -117,9 +123,29 @@ export function createFlipDots(
 
 	let cols = Math.max(1, Math.floor(opts.cols ?? 28));
 	let rows = Math.max(1, Math.floor(opts.rows ?? 14));
-	let onColor = parseColor(opts.onColor ?? '#d5e138');
-	let offColor = parseColor(opts.offColor ?? '#17181a');
-	let board = opts.board === null ? null : parseColor(opts.board ?? '#101114');
+	// The dots are painted discs, so the light theme is the same board with the paint
+	// the other way round: near-black discs standing out of a bone-white panel.
+	const PALETTE = {
+		dark: { onColor: '#d5e138', offColor: '#17181a', board: '#101114' },
+		light: { onColor: '#1b1c20', offColor: '#ded9cd', board: '#eeebe3' }
+	} as const;
+	const themed = themeOwner(['onColor', 'offColor', 'board'] as const);
+	themed.mark(opts);
+	let theme = opts.theme ?? 'dark';
+	let scheme = resolveTheme(theme);
+	let onColor = parseColor(PALETTE[scheme].onColor);
+	let offColor = parseColor(PALETTE[scheme].offColor);
+	let board: RGB | null = parseColor(PALETTE[scheme].board);
+	if (opts.onColor !== undefined) onColor = parseColor(opts.onColor);
+	if (opts.offColor !== undefined) offColor = parseColor(opts.offColor);
+	if (opts.board !== undefined) board = opts.board === null ? null : parseColor(opts.board);
+	/** Move every colour the theme still owns to the resolved scheme. */
+	function applyTheme() {
+		const p = PALETTE[scheme];
+		if (themed.owns('onColor')) onColor = parseColor(p.onColor);
+		if (themed.owns('offColor')) offColor = parseColor(p.offColor);
+		if (themed.owns('board')) board = parseColor(p.board);
+	}
 	let gap = Math.max(0, Math.min(0.45, opts.gap ?? 0.14));
 	let shape: FlipDotShape = opts.shape ?? 'disc';
 	let shaded = opts.shaded ?? false;
@@ -729,6 +755,14 @@ export function createFlipDots(
 	applyAria();
 
 	const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => resize()) : null;
+	// `theme: 'auto'` follows the page, so the board repaints when the scheme flips.
+	const repaintTheme = (next: 'dark' | 'light') => {
+		scheme = next;
+		applyTheme();
+		bake();
+		draw();
+	};
+	let stopTheme = watchTheme(theme, repaintTheme);
 	ro?.observe(canvas);
 	resize();
 
@@ -796,6 +830,17 @@ export function createFlipDots(
 		setOptions(patch) {
 			let rebake = false;
 			let regrid = false;
+			// A colour named in this patch becomes the consumer's for good, so mark it
+			// before the theme gets a chance to move it.
+			themed.mark(patch);
+			if (patch.theme !== undefined && patch.theme !== theme) {
+				theme = patch.theme;
+				scheme = resolveTheme(theme);
+				stopTheme();
+				stopTheme = watchTheme(theme, repaintTheme);
+				applyTheme();
+				rebake = true;
+			}
 			if (patch.cols != null && Math.floor(patch.cols) !== cols) {
 				cols = Math.max(1, Math.floor(patch.cols));
 				regrid = true;
@@ -870,6 +915,7 @@ export function createFlipDots(
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			stopTheme();
 			ro?.disconnect();
 			if (raf) cancelAnimationFrame(raf);
 			snd?.dispose();
