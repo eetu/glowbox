@@ -200,12 +200,12 @@
 				<input
 					type="color"
 					bind:value={glass}
-					disabled={!glassOn || mode === '3d'}
+					disabled={!glassOn && mode === '2d'}
 					aria-label="tube glass colour"
 				/>
 			</div>
 			<div class="row">
-				<ToggleChip bind:checked={glassOn} label="glass module" />
+				<ToggleChip bind:checked={glassOn} label="glass module" disabled={mode === '3d'} />
 			</div>
 			<div class="row">
 				<span class="rlabel">filament</span>

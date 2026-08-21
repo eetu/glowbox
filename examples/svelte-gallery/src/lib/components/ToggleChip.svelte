@@ -7,17 +7,20 @@
 		checked = $bindable(),
 		label,
 		icon,
-		ariaLabel
+		ariaLabel,
+		disabled = false
 	}: {
 		checked: boolean;
 		label: string;
 		icon?: Component;
 		ariaLabel?: string;
+		/** For a switch that doesn't apply to the current mode — greyed and inert. */
+		disabled?: boolean;
 	} = $props();
 </script>
 
-<label class="chip" class:on={checked}>
-	<input type="checkbox" bind:checked aria-label={ariaLabel ?? label} />
+<label class="chip" class:on={checked && !disabled} class:disabled>
+	<input type="checkbox" bind:checked {disabled} aria-label={ariaLabel ?? label} />
 	{#if icon}
 		{@const Icon = icon}
 		<Icon size={16} />
@@ -43,9 +46,13 @@
 			color var(--halo-d-fast) ease-out,
 			border-color var(--halo-d-fast) ease-out;
 	}
-	.chip:hover {
+	.chip:hover:not(.disabled) {
 		border-color: var(--halo-text-muted);
 		color: var(--halo-text-main);
+	}
+	.chip.disabled {
+		opacity: 0.4;
+		cursor: default;
 	}
 	.chip.on {
 		background: var(--halo-accent-soft);

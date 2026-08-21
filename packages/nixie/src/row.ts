@@ -189,6 +189,7 @@ function pickTubeOptions(o: Partial<NixieRowOptions>): Partial<NixieOptions> {
 	if (o.background !== undefined) out.background = o.background;
 	if (o.mesh != null) out.mesh = o.mesh;
 	if (o.ghost != null) out.ghost = o.ghost;
+	if (o.wire !== undefined) out.wire = o.wire;
 	if (o.bare != null) out.bare = o.bare;
 	if (o.pixelRatio != null) out.pixelRatio = o.pixelRatio;
 	return out;
