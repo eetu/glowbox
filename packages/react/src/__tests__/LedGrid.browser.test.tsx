@@ -73,8 +73,8 @@ test('StrictMode double-mount recreates on the same canvas and still paints', as
 });
 
 test('the theme prop updates the live display, not just the created one', async () => {
-	// The regression: <LedGrid> passes grouped option bags, so `theme` needs its own
-	// update effect — it once reached creation and then went nowhere.
+	// <LedGrid> passes grouped option bags with one update effect per group, so `theme`
+	// needs its own — a prop flip after mount has to reach the live display.
 	const corner = (canvas: HTMLCanvasElement) => {
 		const gl = canvas.getContext('webgl')!;
 		const px = new Uint8Array(4);

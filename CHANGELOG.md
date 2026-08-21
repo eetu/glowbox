@@ -83,8 +83,8 @@ version and are released together.
   all: bare discs, or cards over your own scene.
 - **`wire` on `@glowbox/nixie`.** The unlit cathode-wire colour — the filament stack
   behind the glass, which was the one part of the tube fixed at a dull nickel. Patch
-  `null` to reset; mirrored into `<NixieTube>` in all three wrappers. `createNixieRow`
-  also forwards `bare` now, so a whole clock can composite onto your own scene.
+  `null` to reset; mirrored into `<NixieTube>` in all three wrappers, and forwarded by
+  `createNixieRow` along with `bare`, so a whole clock can composite onto your scene.
 - **`bare` on `@glowbox/seven-segment`.** Segments alone on a transparent canvas — no
   window tint, vignette, rim or shadow — the same contract and name as nixie's `bare`,
   for a housing of your own. Mirrored into `<SevenSegment>` in all three wrappers.
@@ -93,15 +93,6 @@ version and are released together.
 
 ### Fixed
 
-- **`<LedGrid>` in react and vue applies a `theme` change, not just the first one.**
-  Unlike the seven flat-bag wrappers, LedGrid passes grouped option bags with one
-  update path per group — so the new `theme` prop reached creation and then went
-  nowhere. It has its own update effect (react) and watch (vue) now, with a browser
-  test per wrapper that flips the prop and reads the ground back.
-- **`@glowbox/flip-dot` gets split-flap's no-op-resize guard.** Its `resize()` re-baked
-  on every ResizeObserver ping too — and a flip-dot bake is the board layer, both face
-  sprites and the whole squash atlas (up to 64 canvases on a dense board). Unchanged
-  box and pixel ratio now return early.
 - **`@glowbox/split-flap`: a no-op resize no longer throws the sprite cache away.** A
   ResizeObserver fires for observations that changed nothing, and `resize()` re-baked
   regardless — clearing every flap sprite and, by assigning `canvas.width`, the frame
@@ -111,7 +102,9 @@ version and are released together.
   its glyph layer) are one reused scratch apiece. Canvases allocated over a
   three-second run of the gallery board: 182 → 90. Frame rate is unchanged — it was
   never allocation-bound, it is fill-rate bound, which is what
-  `node scripts/bench-split-flap.mjs` is now there to show.
+  `node scripts/bench-split-flap.mjs` is now there to show. **`@glowbox/flip-dot` gets
+  the same guard** — its bake is heavier still (the board layer, both face sprites and
+  the whole squash atlas, up to 64 canvases on a dense board).
 - **`@glowbox/split-flap`: the print is registered against the card's seam.** Two
   faults, one cause — the artwork sat where a shared baseline happened to put it. A
   colon's upper dot straddled the cut and came apart as the card fell, and every

@@ -738,7 +738,8 @@ export function createFlipDots(
 		const nextH = Math.max(1, r.height || canvas.clientHeight || 1);
 		// A ResizeObserver fires for observations that changed nothing, and re-baking
 		// throws away the board layer, both face sprites and the whole squash atlas —
-		// and, by assigning canvas.width, the frame on screen (split-flap's lesson).
+		// and, by assigning canvas.width, the frame on screen. Same box, same ratio:
+		// there is nothing to re-fit.
 		if (nextW === w && nextH === h && nextDpr === dpr) return;
 		dpr = nextDpr;
 		w = nextW;

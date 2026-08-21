@@ -52,8 +52,8 @@ test('exposes the imperative display handle', async () => {
 });
 
 test('the theme prop updates the live display, not just the created one', async () => {
-	// The regression: <LedGrid> watches grouped option bags, so `theme` needs its own
-	// watch — it once reached creation and then went nowhere.
+	// <LedGrid> watches grouped option bags, one watch per group, so `theme` needs its
+	// own — a prop flip after mount has to reach the live display.
 	const corner = (canvas: HTMLCanvasElement) => {
 		const gl = canvas.getContext('webgl')!;
 		const px = new Uint8Array(4);
