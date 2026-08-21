@@ -50,3 +50,30 @@ test('exposes the imperative display handle', async () => {
 	expect(display?.snapshot().startsWith('data:image/png')).toBe(true);
 	wrapper.unmount();
 });
+
+test('the theme prop updates the live display, not just the created one', async () => {
+	// The regression: <LedGrid> watches grouped option bags, so `theme` needs its own
+	// watch — it once reached creation and then went nowhere.
+	const corner = (canvas: HTMLCanvasElement) => {
+		const gl = canvas.getContext('webgl')!;
+		const px = new Uint8Array(4);
+		gl.readPixels(1, 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+		return px[0] + px[1] + px[2];
+	};
+	const wrapper = mount(LedGrid, {
+		attachTo: document.body,
+		props: {
+			size: [4, 4, 4] as [number, number, number],
+			camera: { autoOrbit: false },
+			theme: 'light' as const
+		}
+	});
+	const canvas = wrapper.element as HTMLCanvasElement;
+	await nextFrame();
+	const pale = corner(canvas);
+	expect(pale).toBeGreaterThan(400); // the light theme's bone ground
+	await wrapper.setProps({ theme: 'dark' });
+	await nextFrame();
+	expect(corner(canvas)).toBeLessThan(pale);
+	wrapper.unmount();
+});

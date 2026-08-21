@@ -732,10 +732,17 @@ export function createFlipDots(
 
 	function resize() {
 		const cap = pixelRatio > 0 ? pixelRatio : 1;
-		dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, cap);
+		const nextDpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, cap);
 		const r = canvas.getBoundingClientRect();
-		w = Math.max(1, r.width || canvas.clientWidth || 1);
-		h = Math.max(1, r.height || canvas.clientHeight || 1);
+		const nextW = Math.max(1, r.width || canvas.clientWidth || 1);
+		const nextH = Math.max(1, r.height || canvas.clientHeight || 1);
+		// A ResizeObserver fires for observations that changed nothing, and re-baking
+		// throws away the board layer, both face sprites and the whole squash atlas —
+		// and, by assigning canvas.width, the frame on screen (split-flap's lesson).
+		if (nextW === w && nextH === h && nextDpr === dpr) return;
+		dpr = nextDpr;
+		w = nextW;
+		h = nextH;
 		canvas.width = Math.max(1, Math.round(w * dpr));
 		canvas.height = Math.max(1, Math.round(h * dpr));
 		bake();

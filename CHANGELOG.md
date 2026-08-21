@@ -93,6 +93,15 @@ version and are released together.
 
 ### Fixed
 
+- **`<LedGrid>` in react and vue applies a `theme` change, not just the first one.**
+  Unlike the seven flat-bag wrappers, LedGrid passes grouped option bags with one
+  update path per group — so the new `theme` prop reached creation and then went
+  nowhere. It has its own update effect (react) and watch (vue) now, with a browser
+  test per wrapper that flips the prop and reads the ground back.
+- **`@glowbox/flip-dot` gets split-flap's no-op-resize guard.** Its `resize()` re-baked
+  on every ResizeObserver ping too — and a flip-dot bake is the board layer, both face
+  sprites and the whole squash atlas (up to 64 canvases on a dense board). Unchanged
+  box and pixel ratio now return early.
 - **`@glowbox/split-flap`: a no-op resize no longer throws the sprite cache away.** A
   ResizeObserver fires for observations that changed nothing, and `resize()` re-baked
   regardless — clearing every flap sprite and, by assigning `canvas.width`, the frame
