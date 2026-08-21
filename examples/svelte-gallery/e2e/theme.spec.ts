@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-// The display-theme switch, end to end in the built app: every route has one, and it
-// really repaints the hardware rather than just the page around it. Assertions read the
-// canvas back, so they cover the whole chain — control, core option, render.
+// The theme control, end to end in the built app: one button in the header drives the
+// page chrome AND every display on it. Assertions read the canvas back, so they cover
+// the whole chain — button, page state, core option, render.
 
 /** Mean luminance over a canvas: a light-theme display reads brighter than a dark one. */
 const meanLuma = (el: Element) => {
@@ -15,7 +15,20 @@ const meanLuma = (el: Element) => {
 	return n / (d.length / 4);
 };
 
-test('the light theme repaints the hardware, on the cores that invert', async ({ page }) => {
+test('the gallery opens dark whatever the OS says, and the button flips it', async ({ page }) => {
+	// The runner's scheme is light here on purpose: the choice is the gallery's, not the
+	// visitor's OS — these displays are at their best in the dark.
+	await page.emulateMedia({ colorScheme: 'light' });
+	await page.goto('/splitflap');
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+	await page.getByRole('button', { name: /switch to the light theme/i }).click();
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+	// And it sticks across a navigation (localStorage).
+	await page.goto('/flipdot');
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+});
+
+test('the theme button repaints the hardware, not just the page', async ({ page }) => {
 	for (const [route, selector] of [
 		['/splitflap', '.board-wrap canvas'],
 		['/flipdot', '.board-wrap canvas']
@@ -25,14 +38,16 @@ test('the light theme repaints the hardware, on the cores that invert', async ({
 		await expect(canvas).toBeVisible();
 		await expect.poll(() => canvas.evaluate(meanLuma), { timeout: 15_000 }).toBeGreaterThan(0);
 		const dark = await canvas.evaluate(meanLuma);
-		await page.locator('button[title="light"]').click();
+		await page.getByRole('button', { name: /switch to the light theme/i }).click();
 		await expect
 			.poll(() => canvas.evaluate(meanLuma), { timeout: 10_000 })
 			.toBeGreaterThan(dark * 1.5);
+		// Back to dark for the next route (the choice is persisted).
+		await page.getByRole('button', { name: /switch to the dark theme/i }).click();
 	}
 });
 
-test('every route offers the switch, and Page follows the header toggle', async ({ page }) => {
+test('every route ships the one control, and no route has its own', async ({ page }) => {
 	for (const route of [
 		'/',
 		'/nixie',
@@ -44,12 +59,8 @@ test('every route offers the switch, and Page follows the header toggle', async 
 		'/lcd'
 	]) {
 		await page.goto(route);
-		const group = page.getByRole('group', { name: 'colour theme' });
-		await expect(group).toBeVisible();
-		// Page is the default, so the display is whatever the page is (dark here — the
-		// project pins the scheme).
-		// The buttons carry their value as a title — a stable handle whatever the
-		// surrounding label contributes to the accessible name.
-		await expect(group.locator('button[title="page"]')).toHaveAttribute('aria-pressed', 'true');
+		await expect(page.getByRole('button', { name: /switch to the .* theme/i })).toHaveCount(1);
+		// The per-route Segmented is gone: one theme per page, decided in the header.
+		await expect(page.getByRole('group', { name: 'colour theme' })).toHaveCount(0);
 	}
 });

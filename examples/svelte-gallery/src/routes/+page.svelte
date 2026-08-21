@@ -29,12 +29,6 @@
 	import Slider from '$lib/components/Slider.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import ToggleChip from '$lib/components/ToggleChip.svelte';
-	import {
-		coreTheme,
-		DISPLAY_THEME_OPTIONS,
-		displayScheme,
-		type DisplayThemeChoice
-	} from '$lib/displayTheme.svelte';
 	import { makeAttractor } from '$lib/examples/attractor';
 	import { makeGifDraw } from '$lib/examples/gif';
 	import { makeXwing } from '$lib/examples/model';
@@ -46,6 +40,7 @@
 	import { makeTorusDraw } from '$lib/examples/torus';
 	import { makeWave } from '$lib/examples/wave';
 	import { makeWormhole } from '$lib/examples/wormhole';
+	import { theme } from '$lib/theme.svelte';
 
 	type Size = [number, number, number];
 	// Optional per-example camera framing (e.g. the Wormhole flies POV down the tube).
@@ -191,9 +186,8 @@
 	// This page names both knobs the core's theme owns (the look and the ground),
 	// because it has a control for each — so the switch moves the page's OWN knobs,
 	// which is what the option bundles in one word. Pick either afterwards to keep it.
-	let displayTheme = $state<DisplayThemeChoice>('page');
 	$effect(() => {
-		const light = displayScheme(displayTheme) === 'light';
+		const light = theme.mode === 'light';
 		style = light ? 'comic' : 'hologram';
 		background = light ? '#ecebe4' : '#05050c';
 	});
@@ -393,7 +387,7 @@
 						}}
 						interaction={{ zoom, zoomLimits: [0.35, 12] }}
 						color={{ background }}
-						theme={coreTheme(displayTheme)}
+						theme={theme.mode}
 						quality={{ fps: fpsCapNum, alpha: transparent }}
 						oncreate={(d) => (display = d)}
 					/>
@@ -581,14 +575,6 @@
 
 		<section>
 			<h2>scene</h2>
-			<label class="field"
-				>theme
-				<Segmented
-					bind:value={displayTheme}
-					ariaLabel="colour theme"
-					options={DISPLAY_THEME_OPTIONS}
-				/>
-			</label>
 			<div class="row">
 				<span class="rlabel">background</span>
 				<span class="swatch">

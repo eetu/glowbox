@@ -323,6 +323,25 @@ export function createSplitFlap(
 	let hwLayer: HTMLCanvasElement | null = null; // hinge clips, in front of them
 	type Faces = { top: HTMLCanvasElement; bottom: HTMLCanvasElement };
 	const faces = new Map<string, Faces>();
+	// Two scratch cards, reused by every bake: the card is drawn on one and its print on
+	// the other, then the halves are sliced off into the sprites that are actually kept.
+	// A drum is up to fifty-odd characters, so allocating a throwaway pair per face is
+	// fifty-odd canvases of garbage per bake — and a bake happens on every resize.
+	const pads: Record<'card' | 'ink', HTMLCanvasElement | null> = { card: null, ink: null };
+	const scratch = (which: 'card' | 'ink', W: number, H: number) => {
+		const c = (pads[which] ??= document.createElement('canvas'));
+		if (c.width !== W || c.height !== H) {
+			c.width = W;
+			c.height = H;
+		}
+		const g = c.getContext('2d')!;
+		// A reused canvas carries the last face's pixels and state; hand back a clean one.
+		g.setTransform(1, 0, 0, 1, 0, 0);
+		g.globalCompositeOperation = 'source-over';
+		g.globalAlpha = 1;
+		g.clearRect(0, 0, W, H);
+		return { canvas: c, g };
+	};
 
 	// Perspective: the viewer sits D half-card heights from the hinge plane. The
 	// falling card's free edge swings toward the eye, so near edge-on it projects
@@ -458,10 +477,7 @@ export function createSplitFlap(
 		// pixel height — an odd sprite hands one row to the top half and reads as a
 		// print sitting slightly high.
 		const H = Math.max(2, 2 * Math.round((cardH * dpr) / 2));
-		const full = document.createElement('canvas');
-		full.width = W;
-		full.height = H;
-		const g = full.getContext('2d')!;
+		const { canvas: full, g } = scratch('card', W, H);
 		// A plain-colour palette entry is a chroma flap: paint, not print. A face
 		// spec re-prints the flap — its own glyph, ink and card colour.
 		const spec = palette?.[ch];
@@ -487,10 +503,7 @@ export function createSplitFlap(
 			// The letterform: large, slightly condensed, centred on the FULL card so
 			// the two halves meet exactly at the split. Its own layer, registered
 			// against the seam (seamNudge) as it goes down on the card.
-			const gl = document.createElement('canvas');
-			gl.width = W;
-			gl.height = H;
-			const lg = gl.getContext('2d')!;
+			const { canvas: gl, g: lg } = scratch('ink', W, H);
 			lg.fillStyle = rgba(glyphInk, 1);
 			let fontPx = Math.round(H * 0.74);
 			lg.font = `600 ${fontPx}px ${font}`;
@@ -819,10 +832,17 @@ export function createSplitFlap(
 
 	function resize() {
 		const cap = pixelRatio > 0 ? pixelRatio : 1;
-		dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, cap);
+		const nextDpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, cap);
 		const r = canvas.getBoundingClientRect();
-		w = Math.max(1, r.width || canvas.clientWidth || 1);
-		h = Math.max(1, r.height || canvas.clientHeight || 1);
+		const nextW = Math.max(1, r.width || canvas.clientWidth || 1);
+		const nextH = Math.max(1, r.height || canvas.clientHeight || 1);
+		// A ResizeObserver fires for observations that changed nothing, and re-baking
+		// throws away every flap sprite (and, by assigning canvas.width, the frame on
+		// screen). Same box, same ratio: there is nothing to re-fit.
+		if (nextW === w && nextH === h && nextDpr === dpr) return;
+		dpr = nextDpr;
+		w = nextW;
+		h = nextH;
 		canvas.width = Math.max(1, Math.round(w * dpr));
 		canvas.height = Math.max(1, Math.round(h * dpr));
 		bake();

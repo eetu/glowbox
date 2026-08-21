@@ -1,20 +1,21 @@
 <script lang="ts">
-	// Header theme control: one button that cycles auto → light → dark, showing the
-	// current mode's icon. Shared by both demos so theming reads as one app.
-	import Monitor from '@lucide/svelte/icons/monitor';
+	// Header theme control: one button that flips dark <-> light, showing the theme it
+	// would switch TO. It drives the page chrome AND every display on the page, so a
+	// route is one theme all the way down.
 	import Moon from '@lucide/svelte/icons/moon';
 	import Sun from '@lucide/svelte/icons/sun';
 
 	import { cycleTheme, theme } from '$lib/theme.svelte';
 
-	const Icon = $derived(theme.mode === 'light' ? Sun : theme.mode === 'dark' ? Moon : Monitor);
+	const next = $derived(theme.mode === 'dark' ? 'light' : 'dark');
+	const Icon = $derived(theme.mode === 'dark' ? Sun : Moon);
 </script>
 
 <button
 	class="theme-toggle"
 	onclick={cycleTheme}
-	title="theme: {theme.mode} (click to change)"
-	aria-label="theme: {theme.mode}, click to change"
+	title="{next} theme"
+	aria-label="switch to the {next} theme"
 >
 	<Icon size={18} />
 </button>

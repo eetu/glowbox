@@ -14,12 +14,8 @@
 	import Slider from '$lib/components/Slider.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import ToggleChip from '$lib/components/ToggleChip.svelte';
-	import {
-		DISPLAY_THEME_OPTIONS,
-		displayScheme,
-		type DisplayThemeChoice
-	} from '$lib/displayTheme.svelte';
 	import { NEON_SHOWS, type NeonShow } from '$lib/examples/neon';
+	import { theme } from '$lib/theme.svelte';
 
 	let show = $state<NeonShow>('cocktails');
 
@@ -37,8 +33,7 @@
 	// controls for BOTH knobs the core's `theme` owns — the polarity and the wall — and
 	// a colour the consumer names stops being the theme's, so the switch moves these
 	// controls instead of the option: the same result, visible in the panel.
-	let displayTheme = $state<DisplayThemeChoice>('page');
-	const scheme = $derived(displayScheme(displayTheme));
+	const scheme = $derived(theme.mode);
 	// The invented element: tubes that ink a pale wall instead of lighting a dark
 	// one. Flipping it drags the scene colours along — dark ink on a dark wall is
 	// invisible, and that trap isn't worth making the visitor discover. It starts from
@@ -333,14 +328,6 @@
 					<ToggleChip bind:checked={wallOn} label="wall" />
 				</div>
 			{/if}
-			<label class="field"
-				>theme
-				<Segmented
-					bind:value={displayTheme}
-					ariaLabel="colour theme"
-					options={DISPLAY_THEME_OPTIONS}
-				/>
-			</label>
 			<div class="row">
 				<span class="rlabel">backdrop</span>
 				<input type="color" bind:value={backdrop} aria-label="backdrop colour" />
@@ -454,15 +441,6 @@
 		font-size: 11px;
 		letter-spacing: 0.04em;
 		color: var(--halo-text-muted);
-	}
-	.field {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 10px;
-		margin-bottom: 12px;
-		font-size: 13px;
-		color: var(--halo-text-main);
 	}
 	.row {
 		display: flex;

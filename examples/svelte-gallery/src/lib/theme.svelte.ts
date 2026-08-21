@@ -1,16 +1,19 @@
-// Theme preference: auto / light / dark. `auto` (the default) follows the OS via the
-// halo.css `prefers-color-scheme` media query; `light`/`dark` force it by setting
-// `data-theme` on <html> (applied in +layout.svelte, keyed off by the halo tokens).
-// The choice is persisted; the header ThemeToggle cycles through the three modes.
-
-export type ThemeMode = 'auto' | 'light' | 'dark';
+// Theme preference: dark (the default) or light, forced by setting `data-theme` on
+// <html> (applied in +layout.svelte, keyed off by the halo tokens) and handed to every
+// display core as its `theme` option, so the page and the hardware never disagree.
+//
+// No `auto` on purpose. These displays are glowing retro hardware and most of them are
+// at their best in the dark, so the gallery opens dark whatever the visitor's OS says,
+// and light is a deliberate choice one click away. The cores themselves DO take
+// `theme: 'auto'` — an app that wants to follow `prefers-color-scheme` just passes it.
+export type ThemeMode = 'dark' | 'light';
 
 const KEY = 'glowbox:theme';
 
 function initialMode(): ThemeMode {
-	if (typeof localStorage === 'undefined') return 'auto';
-	const v = localStorage.getItem(KEY);
-	return v === 'light' || v === 'dark' || v === 'auto' ? v : 'auto';
+	if (typeof localStorage === 'undefined') return 'dark';
+	// 'auto' is a value older visits may have stored; it reads as the new default.
+	return localStorage.getItem(KEY) === 'light' ? 'light' : 'dark';
 }
 
 export const theme = $state<{ mode: ThemeMode }>({ mode: initialMode() });
@@ -20,8 +23,7 @@ export function setTheme(mode: ThemeMode) {
 	if (typeof localStorage !== 'undefined') localStorage.setItem(KEY, mode);
 }
 
-// Single cycling button: auto → light → dark → auto.
-const ORDER: ThemeMode[] = ['auto', 'light', 'dark'];
+/** The header button: one press, the other theme. */
 export function cycleTheme() {
-	setTheme(ORDER[(ORDER.indexOf(theme.mode) + 1) % ORDER.length]);
+	setTheme(theme.mode === 'dark' ? 'light' : 'dark');
 }
