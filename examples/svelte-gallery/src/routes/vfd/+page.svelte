@@ -58,6 +58,9 @@
 	let on = $state(true);
 	let panelWidth = $state(680);
 	let panelOpen = $state(false);
+	// The faceplate: off is `bezel: null` — glass and anodes on a transparent canvas.
+	let plateOn = $state(true);
+	let plateColor = $state('#15171a');
 	// Which element the last tap landed on — the geometry contract, with the page (not
 	// the library) owning the listener.
 	let tapped = $state<string | null>(null);
@@ -97,6 +100,7 @@
 				filament,
 				grid,
 				on,
+				bezel: plateOn ? plateColor : null,
 				label: 'mini-system display panel'
 			})
 		);
@@ -112,7 +116,18 @@
 
 	// Live appearance. `setOptions` doesn't take hardware, so a slider tick cannot re-compile.
 	$effect(() => {
-		panel?.setOptions({ phosphor, filter, brightness, persistence, age, glow, filament, grid, on });
+		panel?.setOptions({
+			phosphor,
+			filter,
+			brightness,
+			persistence,
+			age,
+			glow,
+			filament,
+			grid,
+			on,
+			bezel: plateOn ? plateColor : null
+		});
 	});
 
 	// The hardware, on its own effect and its own call: swapping the main field's repertoire
@@ -135,7 +150,8 @@
 		glow,
 		filament,
 		grid,
-		on
+		on,
+		bezel: plateOn ? plateColor : null
 	});
 
 	let analyserCanvas = $state<HTMLCanvasElement>();
@@ -403,6 +419,22 @@
 		</section>
 
 		<section>
+			<h2>the chassis</h2>
+			<div class="row">
+				<span class="rlabel">faceplate</span>
+				<input
+					type="color"
+					bind:value={plateColor}
+					disabled={!plateOn}
+					aria-label="faceplate colour"
+				/>
+			</div>
+			<div class="row">
+				<ToggleChip bind:checked={plateOn} label="faceplate" />
+			</div>
+		</section>
+
+		<section>
 			<h2>size</h2>
 			<Slider
 				bind:value={panelWidth}
@@ -647,6 +679,23 @@
 		justify-content: space-between;
 		gap: 10px;
 		margin-bottom: 12px;
+	}
+	.rlabel {
+		font-size: 13px;
+		color: var(--halo-text-main);
+	}
+	.row input[type='color'] {
+		width: 28px;
+		height: 28px;
+		padding: 0;
+		border: 1px solid var(--halo-border);
+		border-radius: var(--halo-radius);
+		background: none;
+		cursor: pointer;
+	}
+	.row input[type='color']:disabled {
+		opacity: 0.35;
+		cursor: default;
 	}
 	.note {
 		margin: 4px 0 0;

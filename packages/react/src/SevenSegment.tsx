@@ -28,6 +28,8 @@ export interface SevenSegmentProps {
 	glow?: number;
 	background?: SevenSegmentOptions['background'];
 	ghost?: boolean;
+	/** Drop the window module — segments on a transparent canvas. */
+	bare?: boolean;
 	/** Wear 0..1 — per-segment dimming, then flicker, then a dead segment. */
 	age?: number;
 	/** Per-segment cross-fade ms on value changes. */
@@ -62,6 +64,7 @@ export const SevenSegment = forwardRef<SevenSegmentDisplay | null, SevenSegmentP
 			glow,
 			background,
 			ghost,
+			bare,
 			age,
 			transition,
 			pixelRatio,
@@ -89,6 +92,7 @@ export const SevenSegment = forwardRef<SevenSegmentDisplay | null, SevenSegmentP
 				glow: p.glow,
 				background: p.background,
 				ghost: p.ghost,
+				bare: p.bare,
 				age: p.age,
 				transition: p.transition,
 				pixelRatio: p.pixelRatio,
@@ -127,6 +131,7 @@ export const SevenSegment = forwardRef<SevenSegmentDisplay | null, SevenSegmentP
 				glow,
 				background,
 				ghost,
+				bare,
 				age,
 				transition,
 				pixelRatio,
@@ -140,6 +145,7 @@ export const SevenSegment = forwardRef<SevenSegmentDisplay | null, SevenSegmentP
 			glow,
 			background,
 			ghost,
+			bare,
 			age,
 			transition,
 			pixelRatio,

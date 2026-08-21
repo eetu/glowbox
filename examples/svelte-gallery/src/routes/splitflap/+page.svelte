@@ -57,6 +57,8 @@
 	let cardColor = $state('#1b1c1f');
 	let inkColor = $state('#f4f4ef');
 	let boardColor = $state('#0c0c0f');
+	// The frame behind the modules: off is `board: null` — cards on the page.
+	let frameOn = $state(true);
 	let backdrop = $state('#0a0a0e');
 	let crtOn = $state(false);
 	let panelOpen = $state(false);
@@ -84,7 +86,7 @@
 				sound: soundOn ? volume : 0,
 				card: cardColor,
 				ink: inkColor,
-				board: boardColor
+				board: frameOn ? boardColor : null
 			}))
 		);
 		board = b;
@@ -100,7 +102,7 @@
 			sound: soundOn ? volume : 0,
 			card: cardColor,
 			ink: inkColor,
-			board: boardColor
+			board: frameOn ? boardColor : null
 		});
 	});
 
@@ -282,7 +284,10 @@
 			</div>
 			<div class="row">
 				<span class="rlabel">board</span>
-				<input type="color" bind:value={boardColor} aria-label="board colour" />
+				<input type="color" bind:value={boardColor} disabled={!frameOn} aria-label="board colour" />
+			</div>
+			<div class="row">
+				<ToggleChip bind:checked={frameOn} label="frame" />
 			</div>
 			<div class="row">
 				<span class="rlabel">backdrop</span>

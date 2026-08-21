@@ -44,6 +44,8 @@ export const SevenSegment = defineComponent({
 			default: undefined
 		},
 		ghost: { type: Boolean, default: undefined },
+		/** Drop the window module — segments on a transparent canvas. */
+		bare: { type: Boolean, default: undefined },
 		/** Wear 0..1 — per-segment dimming, then flicker, then a dead segment. */
 		age: { type: Number, default: undefined },
 		/** Per-segment cross-fade ms on value changes. */
@@ -70,6 +72,7 @@ export const SevenSegment = defineComponent({
 			glow: props.glow,
 			background: props.background,
 			ghost: props.ghost,
+			bare: props.bare,
 			age: props.age,
 			transition: props.transition,
 			pixelRatio: props.pixelRatio,

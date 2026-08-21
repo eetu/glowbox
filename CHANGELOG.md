@@ -31,6 +31,56 @@ version and are released together.
   sizes (8×1 / 16×2 / 20×4) — the `cols`/`rows` regrid the gallery never exposed —
   and the page injects `LATIN_5X7` (an ÄÄKKÖSET preset types it) with a
   font-showcase attract scene that marches the whole repertoire page by page.
+- **`@glowbox/lcd`: a `bezelWidth` option.** Frame thickness in dot pitches
+  (default 3, max 16), so the plastic holds its proportions at any canvas size; 0 is
+  the frameless module, same as `bezel: null`. Mirrored into `<LcdModule>` in all
+  three wrappers.
+- **svelte-gallery `/lcd`: bezel controls.** A width slider plus a plastic chip and
+  colour swatch under _size_ — thickness, colour, or no frame at all, where the glass
+  takes the whole canvas.
+- **svelte-gallery: every housing is switchable, on every route.** A chip beside the
+  colour swatch drops the housing and shows the page through it — _glass module_
+  (nixie), _window module_ (7-seg), _panel_ (flip-dot), _frame_ (split-flap), _wall_
+  (neon, emit only: an absorbing sign needs a wall to ink), _faceplate_ (vfd, which had
+  no bezel control at all), _plastic_ (lcd). Turn the backdrop pale and a display
+  composites onto it. All of them sit in the same place — the _scene_ group, next to
+  the backdrop swatch — so the switch is where the last page left it.
+- **svelte-gallery `/nixie`: a filament swatch.** The unlit cathode wires, driving the
+  core's new `wire` in 2D and the three.js wire material in 3D.
+- **`board: null` on `@glowbox/flip-dot` and `@glowbox/split-flap`.** No plastic at
+  all: bare discs, or cards over your own scene.
+- **`wire` on `@glowbox/nixie`.** The unlit cathode-wire colour — the filament stack
+  behind the glass, which was the one part of the tube fixed at a dull nickel. Patch
+  `null` to reset; mirrored into `<NixieTube>` in all three wrappers. `createNixieRow`
+  also forwards `bare` now, so a whole clock can composite onto your own scene.
+- **`bare` on `@glowbox/seven-segment`.** Segments alone on a transparent canvas — no
+  window tint, vignette, rim or shadow — the same contract and name as nixie's `bare`,
+  for a housing of your own. Mirrored into `<SevenSegment>` in all three wrappers.
+  With it, every core's housing can be dropped: `bezel`/`wall`/`board` take `null`,
+  nixie and seven-segment take `bare`, led-grid takes a transparent context.
+
+### Fixed
+
+- **`@glowbox/split-flap`: the print is registered against the card's seam.** Two
+  faults, one cause — the artwork sat where a shared baseline happened to put it. A
+  colon's upper dot straddled the cut and came apart as the card fell, and every
+  letter was cut a little above its middle, so the two halves never matched. The card
+  is now registered on the cut: the drum's cap band is centred on it, measured from
+  the font in use (so a `font` of your own registers too), and the sprite is an even
+  number of device pixels so the two flaps are the same height. Glyphs whose ink
+  leaves a gap at the cut — a colon, a hyphen — shift up to 5% of the card to put the
+  cut in the middle of that gap; letterforms have no gap and are cut through the
+  middle, which is the display's signature.
+- **Every housing is a frame, not a letterbox — `@glowbox/lcd`, `@glowbox/vfd`,
+  `@glowbox/flip-dot`.** A core whose content keeps its aspect used to fill the whole
+  canvas with its plastic, so a module in a box of a different shape sat in bars of
+  bezel — badly wrong for the family's one reflective, light-theme-native core, and
+  not much better on the others. Each housing is now a strip hugging its content
+  (lcd's `bezelWidth` of glass margins, vfd's fitted faceplate, flip-dot's panel
+  margin of 0.35 cells), and canvas past it stays transparent — the model nixie and
+  seven-segment already had, and where neon's `wall` and led-grid's `background` stay
+  full-canvas because a wall genuinely is one. Flip-dot's panel is part of its fit, so
+  a board in an exactly-fitting canvas draws its discs a little smaller than before.
 
 ## [1.10.0] — 2026-08-02
 

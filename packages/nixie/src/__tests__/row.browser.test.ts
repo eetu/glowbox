@@ -89,6 +89,29 @@ test('a row-level null colour patch resets every tube to the default', () => {
 	row.dispose();
 });
 
+test('the wire colour reaches every tube, at creation and on patch', () => {
+	// Both rows light the same numerals in the same glow, so the only difference
+	// between them is the colour of the unlit cathode stack behind it.
+	const blueness = (c: HTMLCanvasElement) => {
+		const px = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+		let d = 0;
+		for (let i = 0; i < px.length; i += 4) d += px[i + 2] - px[i];
+		return d;
+	};
+	const blue = makeContainer();
+	const plain = makeContainer();
+	const rowBlue = createNixieRow(blue, { value: '88', mesh: false, wire: '#3060ff' })!;
+	const rowPlain = createNixieRow(plain, { value: '88', mesh: false })!;
+	// A blue wire reads bluer than the default nickel...
+	expect(blueness(canvases(blue)[0])).toBeGreaterThan(blueness(canvases(plain)[0]));
+	// ...and a patch reaches the live tubes.
+	const before = blueness(canvases(blue)[0]);
+	rowBlue.setOptions({ wire: '#ff4020' });
+	expect(blueness(canvases(blue)[0])).toBeLessThan(before);
+	rowBlue.dispose();
+	rowPlain.dispose();
+});
+
 test('the decimal-point glyph exists and lights', () => {
 	expect(glyphPath('.')).toBeTruthy();
 	const el = makeContainer(80, 150);

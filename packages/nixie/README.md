@@ -60,6 +60,7 @@ tubes in place (a ticking clock never recreates canvases); `tubes` exposes the l
 | `background` | near-black  | tube glass colour behind the numerals                             |
 | `mesh`       | `true`      | draw the honeycomb anode mesh over the tube                       |
 | `ghost`      | `true`      | draw the other, unlit cathodes faintly behind — the stacked depth |
+| `wire`       | dull nickel | unlit cathode-wire colour (the filament stack behind the glass)   |
 | `pixelRatio` | `2`         | cap on devicePixelRatio                                           |
 | `bare`       | `false`     | contents only, transparent canvas (no glass) — for 3D/compositing |
 | `label`      | lit symbol  | accessible name (`aria-label`); a blank unlabelled tube is hidden |

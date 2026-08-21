@@ -340,7 +340,7 @@ test('elementRect reports where the anodes actually are, in CSS pixels', () => {
 	const box = panel.elementRect('main')!;
 	const cssW = parseFloat(canvas.style.width);
 	const cssH = parseFloat(canvas.style.height);
-	// The frame is letterboxed inside the bezel, so the rect is scaled and offset. It
+	// The frame is fitted inside the faceplate, so the rect is scaled and offset. It
 	// reports the INK, not the declared box, so it comes out a shade tighter than the
 	// 140×40 that was asked for — and it stays on the canvas.
 	expect(box.width / box.height).toBeGreaterThan(2.5);
@@ -350,6 +350,27 @@ test('elementRect reports where the anodes actually are, in CSS pixels', () => {
 	expect(box.left + box.width).toBeLessThanOrEqual(cssW);
 	expect(box.top + box.height).toBeLessThanOrEqual(cssH);
 	expect(panel.elementRect('nope')).toBe(null);
+});
+
+test('the faceplate hugs the glass instead of filling the canvas', () => {
+	// A box far taller than a 320×64 frame: faceplate around the glass, page past it.
+	const canvas = document.createElement('canvas');
+	canvas.style.width = '320px';
+	canvas.style.height = '320px';
+	document.body.appendChild(canvas);
+	const panel = createVfdPanel(canvas, { frame: FRAME, selfTest: false, layout: DIGITS })!;
+	cleanup.push(() => {
+		panel.dispose();
+		canvas.remove();
+	});
+	const alphaAt = (x: number, y: number) =>
+		canvas.getContext('2d')!.getImageData(x, y, 1, 1).data[3];
+	expect(alphaAt(2, 2)).toBe(0);
+	expect(alphaAt(canvas.width >> 1, 2)).toBe(0);
+	// The plate itself is opaque, just above the glass.
+	const box = panel.elementRect('main')!;
+	const dpr = canvas.width / 320;
+	expect(alphaAt(canvas.width >> 1, Math.round((box.top - 4) * dpr))).toBe(255);
 });
 
 test('an icon placed in a shared frame does not claim the whole panel', () => {

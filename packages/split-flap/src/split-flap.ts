@@ -74,8 +74,9 @@ export interface SplitFlapOptions {
 	card?: Color;
 	/** Printed character colour (default warm white). */
 	ink?: Color;
-	/** Frame behind/between the modules (default '#0c0c0f'). */
-	board?: Color;
+	/** Frame behind/between the modules (default '#0c0c0f'); `null` leaves the
+	 *  canvas transparent behind them, to compose the board over your own scene. */
+	board?: Color | null;
 	/** Gap around each module as a fraction of the cell, 0..0.4 (default 0.08). */
 	gap?: number;
 	/** Character font family (default a Helvetica stack — the Solari letterform). */
@@ -143,6 +144,51 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [
 const WHITE: RGB = [1, 1, 1];
 const BLACK: RGB = [0, 0, 0];
 
+/** Print registration against the seam: the y offset, in device px, that moves the
+ *  card's mid-height cut into a gap in the printed ink and as far from either edge
+ *  of that gap as it can get. A letter spans the seam and has no gap, so it gets 0
+ *  and is cut through the middle — that cut is the display's signature. A colon has
+ *  one between its dots. The offset is capped at 5% of the card, which keeps every
+ *  glyph on a shared baseline. */
+function seamNudge(layer: CanvasRenderingContext2D, W: number, H: number): number {
+	const d = layer.getImageData(0, 0, W, H).data;
+	const inked = new Uint8Array(H);
+	for (let y = 0; y < H; y++) {
+		for (let x = 0, i = y * W * 4 + 3; x < W; x++, i += 4) {
+			if (d[i] > 8) {
+				inked[y] = 1;
+				break;
+			}
+		}
+	}
+	const reach = Math.max(2, Math.round(H * 0.05));
+	const far = 3 * reach;
+	// Rows to the nearest ink, looking no further than a gap worth centring in.
+	const clearance = (r: number) => {
+		for (let k = 0; k <= far; k++) if (inked[r - k] || inked[r + k]) return k;
+		return far;
+	};
+	const seam = H / 2;
+	// A cut grazing an ink edge severs a sliver of it, so a nudge has to buy this
+	// much room to be worth taking at all.
+	const need = Math.max(1, Math.round(H * 0.02));
+	let best = 0;
+	let room = clearance(seam);
+	for (let i = 1; i <= reach; i++) {
+		const up = clearance(seam + i);
+		if (up > room) {
+			room = up;
+			best = -i;
+		}
+		const down = clearance(seam - i);
+		if (down > room) {
+			room = down;
+			best = i;
+		}
+	}
+	return room > need ? best : 0;
+}
+
 /** Create a split-flap board on a 2D canvas. Returns null if 2D is unavailable. */
 export function createSplitFlap(
 	canvas: HTMLCanvasElement,
@@ -158,7 +204,7 @@ export function createSplitFlap(
 	let palette = opts.palette;
 	let card = parseColor(opts.card ?? '#1b1c1f');
 	let ink = parseColor(opts.ink ?? '#f4f4ef');
-	let board = parseColor(opts.board ?? '#0c0c0f');
+	let board = opts.board === null ? null : parseColor(opts.board ?? '#0c0c0f');
 	let gap = Math.max(0, Math.min(0.4, opts.gap ?? 0.08));
 	let font = opts.font ?? "'Helvetica Neue', Helvetica, Arial, sans-serif";
 	let shaded = opts.shaded ?? false;
@@ -279,7 +325,7 @@ export function createSplitFlap(
 
 		// The module wells: only the shaded look needs a board layer; flat mode
 		// fills the background directly each frame.
-		if (shaded) {
+		if (shaded && board) {
 			const b = document.createElement('canvas');
 			b.width = Math.max(1, Math.round(w * dpr));
 			b.height = Math.max(1, Math.round(h * dpr));
@@ -382,7 +428,10 @@ export function createSplitFlap(
 		const hit = faces.get(ch);
 		if (hit) return hit;
 		const W = Math.max(2, Math.ceil(cardW * dpr));
-		const H = Math.max(2, Math.ceil(cardH * dpr));
+		// Even, so the cut is exactly half the card and the two flaps are the same
+		// pixel height — an odd sprite hands one row to the top half and reads as a
+		// print sitting slightly high.
+		const H = Math.max(2, 2 * Math.round((cardH * dpr) / 2));
 		const full = document.createElement('canvas');
 		full.width = W;
 		full.height = H;
@@ -410,25 +459,36 @@ export function createSplitFlap(
 		rr(g, 0, 0, W, H, Math.min(W, H) * 0.07, true);
 		if (glyph !== ' ') {
 			// The letterform: large, slightly condensed, centred on the FULL card so
-			// the two halves meet exactly at the split.
-			g.fillStyle = rgba(glyphInk, 1);
+			// the two halves meet exactly at the split. Its own layer, registered
+			// against the seam (seamNudge) as it goes down on the card.
+			const gl = document.createElement('canvas');
+			gl.width = W;
+			gl.height = H;
+			const lg = gl.getContext('2d')!;
+			lg.fillStyle = rgba(glyphInk, 1);
 			let fontPx = Math.round(H * 0.74);
-			g.font = `600 ${fontPx}px ${font}`;
-			g.textAlign = 'center';
-			g.textBaseline = 'middle';
-			let m = g.measureText(glyph).width;
+			lg.font = `600 ${fontPx}px ${font}`;
+			lg.textAlign = 'center';
+			lg.textBaseline = 'middle';
+			let m = lg.measureText(glyph).width;
 			if (m > W * 0.82 && [...glyph].length > 1) {
 				// A word flap ('DELAYED' printed across one card — the real boards'
 				// remark flaps): shrink the type to fit instead of condensing a
 				// letter-sized face into a smear.
 				fontPx = Math.max(4, Math.floor((fontPx * W * 0.82) / m));
-				g.font = `600 ${fontPx}px ${font}`;
-				m = g.measureText(glyph).width;
+				lg.font = `600 ${fontPx}px ${font}`;
+				m = lg.measureText(glyph).width;
 			}
 			const sx = Math.min(1, (W * 0.8) / Math.max(1, m)) * 0.94;
-			g.setTransform(sx, 0, 0, 1, W / 2, H * 0.54);
-			g.fillText(glyph, 0, 0);
-			g.setTransform(1, 0, 0, 1, 0, 0);
+			// Registration: the drum's cap band is centred on the cut, measured from
+			// the font in use, so a letter's two halves are the same height. The
+			// baseline is shared, so glyphs that ride lower (a period) stay lower.
+			const ref = lg.measureText('8');
+			const oy = H / 2 + (ref.actualBoundingBoxAscent - ref.actualBoundingBoxDescent) / 2;
+			lg.setTransform(sx, 0, 0, 1, W / 2, oy);
+			lg.fillText(glyph, 0, 0);
+			lg.setTransform(1, 0, 0, 1, 0, 0);
+			g.drawImage(gl, 0, seamNudge(lg, W, H));
 		}
 		// The pin cuts: a nick out of each side at the hinge line.
 		g.globalCompositeOperation = 'destination-out';
@@ -512,13 +572,16 @@ export function createSplitFlap(
 		if (!w || !h) return;
 		const g = ctx!;
 		g.setTransform(1, 0, 0, 1, 0, 0);
+		g.clearRect(0, 0, canvas.width, canvas.height);
 		if (boardLayer) {
 			g.drawImage(boardLayer, 0, 0);
 			g.scale(dpr, dpr);
 		} else {
 			g.scale(dpr, dpr);
-			g.fillStyle = rgba(board, 1);
-			g.fillRect(0, 0, w, h);
+			if (board) {
+				g.fillStyle = rgba(board, 1);
+				g.fillRect(0, 0, w, h);
+			}
 		}
 		if (micro) {
 			// Degenerate size: cards and glyphs, no mechanism — still a correct
@@ -879,8 +942,8 @@ export function createSplitFlap(
 				ink = parseColor(patch.ink);
 				rebake = true;
 			}
-			if (patch.board != null) {
-				board = parseColor(patch.board);
+			if (patch.board !== undefined) {
+				board = patch.board === null ? null : parseColor(patch.board);
 				rebake = true;
 			}
 			if (patch.gap != null) {

@@ -35,8 +35,9 @@ export interface FlipDotsOptions {
 	onColor?: Color;
 	/** Dark disc face (default near-black with a sheen). */
 	offColor?: Color;
-	/** Board plastic behind the discs (default '#101114'). */
-	board?: Color;
+	/** Board plastic behind the discs (default '#101114'): a panel hugging the dot
+	 *  field, so canvas past it stays transparent. `null` leaves the discs bare. */
+	board?: Color | null;
 	/** Gap around each disc as a fraction of the cell, 0..0.45 (default 0.14). */
 	gap?: number;
 	/** Dot geometry (default 'disc'). */
@@ -118,7 +119,7 @@ export function createFlipDots(
 	let rows = Math.max(1, Math.floor(opts.rows ?? 14));
 	let onColor = parseColor(opts.onColor ?? '#d5e138');
 	let offColor = parseColor(opts.offColor ?? '#17181a');
-	let board = parseColor(opts.board ?? '#101114');
+	let board = opts.board === null ? null : parseColor(opts.board ?? '#101114');
 	let gap = Math.max(0, Math.min(0.45, opts.gap ?? 0.14));
 	let shape: FlipDotShape = opts.shape ?? 'disc';
 	let shaded = opts.shaded ?? false;
@@ -170,6 +171,7 @@ export function createFlipDots(
 	let dot = 0; // disc diameter, CSS px
 	let ox = 0; // board origin (grid centred in the canvas)
 	let oy = 0;
+	let panel = { x: 0, y: 0, w: 0, h: 0 }; // the plastic, grid plus PANEL_PAD
 	let micro = false; // too small for physics — flat rects, no sprites
 	let boardLayer: HTMLCanvasElement | null = null;
 	let onSprite: HTMLCanvasElement | null = null;
@@ -183,16 +185,27 @@ export function createFlipDots(
 	// plain drawImage instead of setTransform+draw+setTransform (3× fewer canvas
 	// calls — the whole cost at 10k+ dots). Sparse boards keep the live transform:
 	// few dots, big discs, where analog squash looks better and costs nothing.
+	// The plastic margin around the dot field, in cells.
+	const PANEL_PAD = 0.35;
 	const ATLAS_STEPS = 32;
 	const ATLAS_MIN_DOTS = 512;
 	let atlasA: HTMLCanvasElement[] | null = null; // face shown while k > 0
 	let atlasB: HTMLCanvasElement[] | null = null; // face shown while k < 0
 
 	function bake() {
-		cell = Math.min(w / cols, h / rows);
+		// The panel is part of the module, so its margin is part of the fit.
+		const pad = board ? PANEL_PAD : 0;
+		cell = Math.min(w / (cols + 2 * pad), h / (rows + 2 * pad));
 		dot = cell * (1 - gap);
 		ox = (w - cell * cols) / 2;
 		oy = (h - cell * rows) / 2;
+		const bp = pad * cell;
+		panel = {
+			x: ox - bp,
+			y: oy - bp,
+			w: cell * cols + bp * 2,
+			h: cell * rows + bp * 2
+		};
 		micro = cell * dpr < 4;
 		if (micro) {
 			boardLayer = onSprite = offSprite = null;
@@ -394,16 +407,16 @@ export function createFlipDots(
 		}
 
 		// The board layer: only the shaded look needs one (recessed socket wells);
-		// flat mode fills the background directly each frame — no full-canvas
-		// texture to hold or blit.
-		if (shaded) {
+		// flat mode fills the panel directly each frame — no texture to hold or blit.
+		// Bare discs have no plastic to mould, so they have no layer either.
+		if (shaded && board) {
 			const b = document.createElement('canvas');
 			b.width = Math.max(1, Math.round(w * dpr));
 			b.height = Math.max(1, Math.round(h * dpr));
 			const g = b.getContext('2d')!;
 			g.scale(dpr, dpr);
 			g.fillStyle = rgba(board, 1);
-			g.fillRect(0, 0, w, h);
+			g.fillRect(panel.x, panel.y, panel.w, panel.h);
 			// The molded waffle: each socket is a square recess with pyramid facets —
 			// in the corners between discs the board shows its geometry, diagonal
 			// facets alternating light and shadow between cells.
@@ -472,11 +485,15 @@ export function createFlipDots(
 		if (!w || !h) return;
 		const g = ctx!;
 		g.setTransform(1, 0, 0, 1, 0, 0);
+		// The panel covers only its own rectangle, so the canvas needs clearing.
+		g.clearRect(0, 0, canvas.width, canvas.height);
 		if (micro) {
 			// Degenerate size: flat pixels, still a correct picture.
 			g.scale(dpr, dpr);
-			g.fillStyle = rgba(board, 1);
-			g.fillRect(0, 0, w, h);
+			if (board) {
+				g.fillStyle = rgba(board, 1);
+				g.fillRect(panel.x, panel.y, panel.w, panel.h);
+			}
 			g.fillStyle = rgba(onColor, 1);
 			for (let i = 0; i < n; i++) {
 				if (cur[i] < 0.5) continue;
@@ -490,10 +507,12 @@ export function createFlipDots(
 			g.drawImage(boardLayer, 0, 0);
 			g.scale(dpr, dpr);
 		} else {
-			// Flat board: a fill beats blitting a full-canvas texture.
+			// Flat board: a fill beats blitting a panel-sized texture.
 			g.scale(dpr, dpr);
-			g.fillStyle = rgba(board, 1);
-			g.fillRect(0, 0, w, h);
+			if (board) {
+				g.fillStyle = rgba(board, 1);
+				g.fillRect(panel.x, panel.y, panel.w, panel.h);
+			}
 		}
 		// The rotation axis: the real discs pivot on pins at diagonal corners, so the
 		// foreshortening runs along ~45°, not vertically — that's the twinkle. The
@@ -803,8 +822,8 @@ export function createFlipDots(
 				offColor = parseColor(patch.offColor);
 				rebake = true;
 			}
-			if (patch.board != null) {
-				board = parseColor(patch.board);
+			if (patch.board !== undefined) {
+				board = patch.board === null ? null : parseColor(patch.board);
 				rebake = true;
 			}
 			if (patch.gap != null) {

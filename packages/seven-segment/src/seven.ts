@@ -176,6 +176,10 @@ export interface SevenSegmentOptions {
 	pixelRatio?: number;
 	/** Accessible name (default: the shown symbol; a blank display is aria-hidden). */
 	label?: string;
+	/** Composite mode for a scene or housing of your own: render just the segments
+	 *  (ghosts per `ghost`) on a fully transparent canvas — no window module (tint,
+	 *  vignette, drop shadow, margin), the same contract as nixie's `bare`. */
+	bare?: boolean;
 }
 
 export interface SevenSegmentDisplay {
@@ -219,6 +223,7 @@ export function createSevenSegment(
 	let transition = opts.transition ?? 90;
 	let pixelRatio = opts.pixelRatio ?? 2;
 	let label = opts.label ?? '';
+	let bare = opts.bare ?? false;
 	let w = 0;
 	let h = 0;
 	let dpr = 1;
@@ -308,31 +313,36 @@ export function createSevenSegment(
 		g.scale(dpr, dpr);
 
 		// The window: a rounded module inset from the canvas edge (shadow into the
-		// margin, like the nixie glass), tinted per style.
+		// margin, like the nixie glass), tinted per style. `bare` drops the module —
+		// segments alone on a transparent canvas, using the whole box.
 		// Pads floor at 2px, so clamp the window box to ≥1px — a sub-5px canvas must
 		// degrade to a sliver, not feed roundRect a negative radius (IndexSizeError).
-		const padX = Math.max(2, w * 0.04);
-		const padY = Math.max(2, h * 0.04);
+		const padX = bare ? 0 : Math.max(2, w * 0.04);
+		const padY = bare ? 0 : Math.max(2, h * 0.04);
 		const bw = Math.max(1, w - padX * 2);
 		const bh = Math.max(1, h - padY * 2);
 		const rad = Math.min(bw, bh) * 0.08;
 		const micro = Math.min((bw * 0.7) / VB_W, (bh * 0.75) / VB_H) * VB_H < 34;
 		g.save();
-		if (!micro) {
-			g.shadowColor = 'rgba(0,0,0,0.5)';
-			g.shadowBlur = Math.min(padX, padY) * 1.6;
-			g.shadowOffsetY = Math.min(padY * 0.5, 3);
+		if (!bare) {
+			if (!micro) {
+				g.shadowColor = 'rgba(0,0,0,0.5)';
+				g.shadowBlur = Math.min(padX, padY) * 1.6;
+				g.shadowOffsetY = Math.min(padY * 0.5, 3);
+			}
+			roundRect(g, padX, padY, bw, bh, rad);
+			g.fillStyle = rgba(st.bg, 1);
+			g.fill();
 		}
-		roundRect(g, padX, padY, bw, bh, rad);
-		g.fillStyle = rgba(st.bg, 1);
-		g.fill();
 		g.restore();
 		g.save();
-		roundRect(g, padX, padY, bw, bh, rad);
-		g.clip();
+		if (!bare) {
+			roundRect(g, padX, padY, bw, bh, rad);
+			g.clip();
+		}
 
 		// Window vignette (subtle — smoked plastic, not nixie glass).
-		if (!micro) {
+		if (!micro && !bare) {
 			const grad = g.createRadialGradient(
 				padX + bw / 2,
 				padY + bh / 2,
@@ -440,8 +450,8 @@ export function createSevenSegment(
 		}
 		g.restore(); // window clip
 
-		// Window rim highlight.
-		if (!micro) {
+		// Window rim highlight (part of the module, so bare mode has none).
+		if (!micro && !bare) {
 			roundRect(g, padX, padY, bw, bh, rad);
 			g.lineWidth = 1;
 			g.strokeStyle = 'rgba(255,255,255,0.07)';
@@ -571,6 +581,7 @@ export function createSevenSegment(
 				bgOverride = patch.background != null ? parseColor(patch.background) : null;
 			if (patch.glow != null) glow = patch.glow;
 			if (patch.ghost != null) ghost = patch.ghost;
+			if (patch.bare != null) bare = patch.bare;
 			if (patch.age != null) age = Math.max(0, Math.min(1, patch.age));
 			if (patch.transition != null) transition = patch.transition;
 			if (patch.dp != null) dp = patch.dp;

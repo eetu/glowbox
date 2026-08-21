@@ -24,6 +24,8 @@
 	let glow = $state(0.7);
 	let age = $state(0);
 	let ghost = $state(true);
+	// The window module: off is `bare` — segments alone on a transparent canvas.
+	let windowOn = $state(true);
 	let digitW = $state(76);
 	let digitH = $state(130);
 	let backdrop = $state('#0a0a0e');
@@ -60,7 +62,8 @@
 					style,
 					glow,
 					age,
-					ghost
+					ghost,
+					bare: !windowOn
 				}))
 			)
 		);
@@ -70,7 +73,7 @@
 		};
 	});
 	$effect(() => {
-		const patch = { style, glow, age, ghost };
+		const patch = { style, glow, age, ghost, bare: !windowOn };
 		for (const d of displays) d?.setOptions(patch);
 	});
 
@@ -193,6 +196,9 @@
 
 		<section>
 			<h2>scene</h2>
+			<div class="row">
+				<ToggleChip bind:checked={windowOn} label="window module" />
+			</div>
 			<div class="row">
 				<span class="rlabel">backdrop</span>
 				<input type="color" bind:value={backdrop} aria-label="backdrop colour" />

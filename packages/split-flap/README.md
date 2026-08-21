@@ -112,7 +112,7 @@ flip on the board.
 | `palette`    | —                      | per-flap faces: paint (chroma) or `{ glyph, ink, paint }`   |
 | `card`       | near-black             | flap plastic (any CSS string or `[r,g,b]` 0..1)             |
 | `ink`        | warm white             | the printed characters                                      |
-| `board`      | `'#0c0c0f'`            | the frame behind/between modules                            |
+| `board`      | `'#0c0c0f'`            | the frame behind/between modules; `null` = transparent      |
 | `gap`        | `0.08`                 | cell fraction around each module                            |
 | `font`       | Helvetica stack        | the letterform                                              |
 | `shaded`     | `false`                | opt-in lighting: wells, hinge clips, the fallen pile, glint |

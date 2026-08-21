@@ -74,9 +74,14 @@ export interface LcdModuleOptions {
 	/** The uninitialised boot row: power-up shows the top row as solid blocks for a
 	 *  moment (default true; skipped under prefers-reduced-motion). */
 	boot?: boolean;
-	/** The plastic frame around the glass; null = transparent outside the glass
-	 *  (default near-black plastic). */
+	/** The plastic frame around the glass (default near-black plastic): a strip of
+	 *  `bezelWidth`, never a canvas fill — canvas past the frame is transparent.
+	 *  `null` draws no plastic and gives its room to the glass. */
 	bezel?: Color | null;
+	/** Frame thickness in dot pitches, so it holds its proportions at any canvas
+	 *  size (default 3, max 16). 0 matches `bezel: null` — no plastic, and the
+	 *  glass fills the canvas. */
+	bezelWidth?: number;
 	/** Cap on devicePixelRatio (default 2). */
 	pixelRatio?: number;
 	/** Accessible name (default 'lcd display'; '' hides from the a11y tree). The
@@ -136,6 +141,10 @@ const ADV_X = CELL_W + 1;
 const ADV_Y = CELL_H + 2;
 // Glass margin around the character field, in dot pitches.
 const GLASS_PAD = 2;
+// Default and maximum plastic-frame thickness, in dot pitches. The frame is a strip
+// hugging the glass and is fitted with it; canvas past the frame stays transparent.
+const BEZEL_PAD = 3;
+const BEZEL_MAX = 16;
 // The wear arc thresholds — the franchise's, at column-driver granularity.
 const FLICKER_AT = 0.7;
 const DIE_AT = 0.95;
@@ -187,6 +196,9 @@ export function createLcdModule(
 				? null
 				: parseColor(opts.bezel);
 	let bezelOn = opts.bezel !== null;
+	const clampBezel = (v: number | undefined) =>
+		v == null ? BEZEL_PAD : Math.max(0, Math.min(BEZEL_MAX, Number(v) || 0));
+	let bezelW = clampBezel(opts.bezelWidth);
 	let pixelRatio = opts.pixelRatio ?? 2;
 	let label = opts.label ?? 'lcd display';
 	// The extension face, compiled once per table — null means the plain face.
@@ -250,6 +262,7 @@ export function createLcdModule(
 	let ox = 0; // character-field origin
 	let oy = 0;
 	let glass = { x: 0, y: 0, w: 0, h: 0 };
+	let frame = { x: 0, y: 0, w: 0, h: 0 };
 
 	// --- targets ------------------------------------------------------------------
 	const glyphRow = (ch: string, r: number): number => {
@@ -428,7 +441,7 @@ export function createLcdModule(
 
 		if (bezelOn && bezel) {
 			g.fillStyle = rgba(bezel, 1);
-			g.fillRect(0, 0, w, h);
+			g.fillRect(frame.x, frame.y, frame.w, frame.h);
 		}
 		if (glass.w <= 4 || glass.h <= 4) return; // sub-legible: plastic only, never negative maths
 
@@ -495,12 +508,18 @@ export function createLcdModule(
 		canvas.width = Math.max(1, Math.round(w * dpr));
 		canvas.height = Math.max(1, Math.round(h * dpr));
 		// The character field in dot pitches (the last cell drops its trailing gap).
+		// Glass margin and frame are both part of the fit, so the module keeps its
+		// proportions in any canvas; a frameless module spends nothing on plastic.
 		const fieldW = cols * ADV_X - 1;
 		const fieldH = rows * ADV_Y - 2;
-		pitch = Math.min(w / (fieldW + GLASS_PAD * 2), h / (fieldH + GLASS_PAD * 2));
+		const bw = bezelOn && bezel ? bezelW : 0;
+		const pad = (GLASS_PAD + bw) * 2;
+		pitch = Math.min(w / (fieldW + pad), h / (fieldH + pad));
 		const gw = (fieldW + GLASS_PAD * 2) * pitch;
 		const gh = (fieldH + GLASS_PAD * 2) * pitch;
 		glass = { x: (w - gw) / 2, y: (h - gh) / 2, w: gw, h: gh };
+		const bp = bw * pitch;
+		frame = { x: glass.x - bp, y: glass.y - bp, w: gw + bp * 2, h: gh + bp * 2 };
 		ox = glass.x + GLASS_PAD * pitch;
 		oy = glass.y + GLASS_PAD * pitch;
 		draw();
@@ -626,9 +645,13 @@ export function createLcdModule(
 				syncFlicker();
 			}
 			if (patch.boot != null) boot = patch.boot;
-			if (patch.bezel !== undefined) {
-				bezelOn = patch.bezel !== null;
-				bezel = patch.bezel == null ? null : parseColor(patch.bezel);
+			if (patch.bezel !== undefined || patch.bezelWidth !== undefined) {
+				if (patch.bezel !== undefined) {
+					bezelOn = patch.bezel !== null;
+					bezel = patch.bezel == null ? null : parseColor(patch.bezel);
+				}
+				if (patch.bezelWidth !== undefined) bezelW = clampBezel(patch.bezelWidth);
+				resize(); // the frame is part of the fit, so both are layout
 			}
 			if (patch.label !== undefined) {
 				label = patch.label;

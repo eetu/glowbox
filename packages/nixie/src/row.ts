@@ -13,7 +13,7 @@ import { createNixieTube, type NixieOptions, type NixieTube } from './nixie';
 /** Characters that get a narrow slot (their ink is a dot column, not a digit). */
 const SEPARATORS = new Set([':', '.', '-']);
 
-export interface NixieRowOptions extends Omit<NixieOptions, 'value' | 'label' | 'bare'> {
+export interface NixieRowOptions extends Omit<NixieOptions, 'value' | 'label'> {
 	/** The string to light — one tube per character (e.g. `'12:34'`, `'3.14'`, `'-42'`).
 	 *  `null`/`''` = an empty row (no tubes). */
 	value?: string | number | null;
@@ -189,6 +189,8 @@ function pickTubeOptions(o: Partial<NixieRowOptions>): Partial<NixieOptions> {
 	if (o.background !== undefined) out.background = o.background;
 	if (o.mesh != null) out.mesh = o.mesh;
 	if (o.ghost != null) out.ghost = o.ghost;
+	if (o.wire !== undefined) out.wire = o.wire;
+	if (o.bare != null) out.bare = o.bare;
 	if (o.pixelRatio != null) out.pixelRatio = o.pixelRatio;
 	return out;
 }
