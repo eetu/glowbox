@@ -31,6 +31,10 @@ version and are released together.
   sizes (8×1 / 16×2 / 20×4) — the `cols`/`rows` regrid the gallery never exposed —
   and the page injects `LATIN_5X7` (an ÄÄKKÖSET preset types it) with a
   font-showcase attract scene that marches the whole repertoire page by page.
+- **svelte-gallery `/lcd`: a bezel control.** A chip plus a colour swatch under
+  _size_ — the plastic's colour, or off entirely (`bezel: null`), which leaves bare
+  glass on the page for composing the module into hardware of your own. The glass
+  keeps its size either way: plastic is paint, not geometry.
 
 ### Fixed
 

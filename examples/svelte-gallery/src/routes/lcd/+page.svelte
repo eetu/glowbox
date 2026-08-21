@@ -36,6 +36,10 @@
 	let cursorStyle = $state<LcdCursor>('block');
 	let moduleW = $state(480);
 	let moduleH = $state(150);
+	// The module's plastic frame. Off is `bezel: null` — bare glass, for dropping the
+	// module onto hardware of your own (or a page that already has a frame).
+	let bezelOn = $state(true);
+	let bezelColor = $state('#14161a');
 	// Reflective glass belongs on a light wall — the opposite default to every
 	// emissive sibling's near-black stage.
 	let backdrop = $state('#e9e7e1');
@@ -161,6 +165,7 @@
 				ghost,
 				age,
 				on,
+				bezel: bezelOn ? bezelColor : null,
 				cols: modCols,
 				rows: modRows,
 				// The Latin/Nordic extension face, injected the opt-in way (import + option).
@@ -185,6 +190,7 @@
 			response,
 			ghost,
 			age,
+			bezel: bezelOn ? bezelColor : null,
 			cols: modCols,
 			rows: modRows
 		});
@@ -460,6 +466,10 @@
 				step={5}
 				format={(v) => `${v}px`}
 			/>
+			<div class="row">
+				<ToggleChip bind:checked={bezelOn} label="bezel" />
+				<input type="color" bind:value={bezelColor} disabled={!bezelOn} aria-label="bezel colour" />
+			</div>
 		</section>
 
 		<section>
@@ -660,6 +670,10 @@
 		border-radius: var(--halo-radius);
 		background: none;
 		cursor: pointer;
+	}
+	.row input[type='color']:disabled {
+		opacity: 0.35;
+		cursor: default;
 	}
 	.panel :global(.slider) {
 		margin-bottom: 14px;
