@@ -8,9 +8,9 @@
 		type CameraOptions,
 		type ColorOptions,
 		createLedDisplay,
-		type LedDisplayOptions,
 		type InteractionOptions,
 		type LedDisplay,
+		type LedDisplayOptions,
 		type LedOptions,
 		type QualityOptions
 	} from '@glowbox/led-grid';
@@ -63,7 +63,7 @@
 		const el = canvas;
 		if (!el) return;
 		const d = untrack(() =>
-			createLedDisplay(el, { size, led, color, camera, interaction, quality, label })
+			createLedDisplay(el, { size, led, color, camera, interaction, quality, theme, label })
 		);
 		if (!d) {
 			console.warn('LedGrid: WebGL unavailable');
@@ -101,6 +101,9 @@
 	});
 	$effect(() => {
 		display?.setOptions({ quality });
+	});
+	$effect(() => {
+		display?.setOptions({ theme });
 	});
 	$effect(() => {
 		display?.setOptions({ label });
