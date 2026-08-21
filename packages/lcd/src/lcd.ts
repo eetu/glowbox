@@ -74,8 +74,10 @@ export interface LcdModuleOptions {
 	/** The uninitialised boot row: power-up shows the top row as solid blocks for a
 	 *  moment (default true; skipped under prefers-reduced-motion). */
 	boot?: boolean;
-	/** The plastic frame around the glass; null = transparent outside the glass
-	 *  (default near-black plastic). */
+	/** The plastic frame around the glass; null = no plastic at all (default
+	 *  near-black plastic). The frame is a fixed strip hugging the glass, not a
+	 *  fill — canvas left over past it stays transparent whatever this is set to,
+	 *  so a module in an over-tall box is a module, not a letterbox. */
 	bezel?: Color | null;
 	/** Cap on devicePixelRatio (default 2). */
 	pixelRatio?: number;
@@ -136,6 +138,12 @@ const ADV_X = CELL_W + 1;
 const ADV_Y = CELL_H + 2;
 // Glass margin around the character field, in dot pitches.
 const GLASS_PAD = 2;
+// The plastic frame around the glass, in dot pitches. A module's bezel is a FINITE
+// strip of plastic — it hugs the glass and stops. Anything the canvas has left over
+// past it is not hardware, so it stays transparent: a reflective module on a pale
+// page must not sit in a black letterbox (a VFD's faceplate genuinely is the whole
+// panel, which is why that core fills instead).
+const BEZEL_PAD = 3;
 // The wear arc thresholds — the franchise's, at column-driver granularity.
 const FLICKER_AT = 0.7;
 const DIE_AT = 0.95;
@@ -250,6 +258,7 @@ export function createLcdModule(
 	let ox = 0; // character-field origin
 	let oy = 0;
 	let glass = { x: 0, y: 0, w: 0, h: 0 };
+	let frame = { x: 0, y: 0, w: 0, h: 0 };
 
 	// --- targets ------------------------------------------------------------------
 	const glyphRow = (ch: string, r: number): number => {
@@ -428,7 +437,7 @@ export function createLcdModule(
 
 		if (bezelOn && bezel) {
 			g.fillStyle = rgba(bezel, 1);
-			g.fillRect(0, 0, w, h);
+			g.fillRect(frame.x, frame.y, frame.w, frame.h);
 		}
 		if (glass.w <= 4 || glass.h <= 4) return; // sub-legible: plastic only, never negative maths
 
@@ -495,12 +504,17 @@ export function createLcdModule(
 		canvas.width = Math.max(1, Math.round(w * dpr));
 		canvas.height = Math.max(1, Math.round(h * dpr));
 		// The character field in dot pitches (the last cell drops its trailing gap).
+		// The bezel is part of the module, so it is fitted with the glass — the
+		// plastic never depends on how much canvas happens to be left over.
 		const fieldW = cols * ADV_X - 1;
 		const fieldH = rows * ADV_Y - 2;
-		pitch = Math.min(w / (fieldW + GLASS_PAD * 2), h / (fieldH + GLASS_PAD * 2));
+		const pad = (GLASS_PAD + BEZEL_PAD) * 2;
+		pitch = Math.min(w / (fieldW + pad), h / (fieldH + pad));
 		const gw = (fieldW + GLASS_PAD * 2) * pitch;
 		const gh = (fieldH + GLASS_PAD * 2) * pitch;
 		glass = { x: (w - gw) / 2, y: (h - gh) / 2, w: gw, h: gh };
+		const bp = BEZEL_PAD * pitch;
+		frame = { x: glass.x - bp, y: glass.y - bp, w: gw + bp * 2, h: gh + bp * 2 };
 		ox = glass.x + GLASS_PAD * pitch;
 		oy = glass.y + GLASS_PAD * pitch;
 		draw();

@@ -216,6 +216,23 @@ test('age dims toward a dead column; the text stays the text', () => {
 	canvas.remove();
 });
 
+test('the bezel is a frame, not a letterbox: spare canvas stays transparent', () => {
+	// A box far taller than a 16×2 module: the plastic hugs the glass and stops.
+	const canvas = makeCanvas(320, 400);
+	const lcd = createLcdModule(canvas, { boot: false, response: 0, text: 'HI' })!;
+	const px = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+	const alphaAt = (x: number, y: number) => px[(y * canvas.width + x) * 4 + 3];
+	expect(alphaAt(2, 2)).toBe(0); // corner: page, not hardware
+	expect(alphaAt(canvas.width >> 1, 2)).toBe(0); // above the module too
+	// The frame itself is opaque, just above the glass.
+	const r = lcd.cellRect(0, 0)!;
+	const box = canvas.getBoundingClientRect();
+	const dpr = canvas.width / box.width;
+	expect(alphaAt(canvas.width >> 1, Math.round((r.top - box.top - 6) * dpr))).toBe(255);
+	lcd.dispose();
+	canvas.remove();
+});
+
 test('snapshot returns a PNG and survives absurdly small canvases', () => {
 	const canvas = makeCanvas(8, 4);
 	const lcd = createLcdModule(canvas, { ...quiet, text: 'HI' })!;

@@ -32,6 +32,21 @@ version and are released together.
   and the page injects `LATIN_5X7` (an ÄÄKKÖSET preset types it) with a
   font-showcase attract scene that marches the whole repertoire page by page.
 
+### Fixed
+
+- **`@glowbox/split-flap`: the seam no longer severs a printed feature.** A colon
+  sat with its upper dot straddling the cut, so it showed as two half-dots that came
+  apart as the card fell — a printing error no real strip would carry. The artwork is
+  now registered against the seam: if a small nudge (≤5% of the card) puts the cut in
+  a gap in the ink, it takes it. Letterforms the seam is _meant_ to cut — every letter
+  and digit — have no gap to find and do not move.
+- **`@glowbox/lcd`: the bezel is a frame, not a letterbox.** The plastic filled the
+  whole canvas, so a module in a box wider or taller than its glass sat in black bars
+  — badly wrong for the family's one reflective, light-theme-native core. It is now a
+  fixed strip hugging the glass, fitted with it; canvas left over past the frame stays
+  transparent. (A VFD's faceplate genuinely is the whole panel, so that core still
+  fills.) `bezel: null` is unchanged: no plastic at all.
+
 ## [1.10.0] — 2026-08-02
 
 The eighth display core — a **character LCD module**, the family's first reflective

@@ -143,6 +143,35 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [
 const WHITE: RGB = [1, 1, 1];
 const BLACK: RGB = [0, 0, 0];
 
+/** Print registration against the seam. A card is cut at its mid-height, and a
+ *  letterform is *meant* to be cut there — the seam through an A or a 5 is the
+ *  display's signature. A DETACHED feature is not: a colon whose upper dot
+ *  straddles the cut shows as two half-dots that come apart as the card falls,
+ *  which reads as a printing error, because on real flaps it would be one. The
+ *  strip's artwork is nudged so the seam lands in a gap instead, so long as a
+ *  small nudge (≤5% of the card) can find one — a letter that spans the seam
+ *  end to end has no gap and stays exactly where the baseline puts it, which is
+ *  most of the drum. Returns the y offset for the glyph layer, in device px. */
+function seamNudge(layer: CanvasRenderingContext2D, W: number, H: number): number {
+	const d = layer.getImageData(0, 0, W, H).data;
+	// Clearance, not just absence: a seam grazing the edge of a dot severs a
+	// sliver of it, which looks worse than cutting the dot in half.
+	const m = Math.max(1, Math.round(H * 0.02));
+	const clear = (r: number) => {
+		const end = Math.min(H, r + m + 1) * W * 4;
+		for (let i = Math.max(0, r - m) * W * 4 + 3; i < end; i += 4) if (d[i] > 8) return false;
+		return true;
+	};
+	const seam = Math.round(H / 2);
+	if (clear(seam)) return 0;
+	const max = Math.round(H * 0.05);
+	for (let i = 1; i <= max; i++) {
+		if (clear(seam + i)) return -i;
+		if (clear(seam - i)) return i;
+	}
+	return 0;
+}
+
 /** Create a split-flap board on a 2D canvas. Returns null if 2D is unavailable. */
 export function createSplitFlap(
 	canvas: HTMLCanvasElement,
@@ -410,25 +439,32 @@ export function createSplitFlap(
 		rr(g, 0, 0, W, H, Math.min(W, H) * 0.07, true);
 		if (glyph !== ' ') {
 			// The letterform: large, slightly condensed, centred on the FULL card so
-			// the two halves meet exactly at the split.
-			g.fillStyle = rgba(glyphInk, 1);
+			// the two halves meet exactly at the split. It is printed on its own
+			// layer first so the artwork can be registered against the seam
+			// (seamNudge) before it goes down on the card.
+			const gl = document.createElement('canvas');
+			gl.width = W;
+			gl.height = H;
+			const lg = gl.getContext('2d')!;
+			lg.fillStyle = rgba(glyphInk, 1);
 			let fontPx = Math.round(H * 0.74);
-			g.font = `600 ${fontPx}px ${font}`;
-			g.textAlign = 'center';
-			g.textBaseline = 'middle';
-			let m = g.measureText(glyph).width;
+			lg.font = `600 ${fontPx}px ${font}`;
+			lg.textAlign = 'center';
+			lg.textBaseline = 'middle';
+			let m = lg.measureText(glyph).width;
 			if (m > W * 0.82 && [...glyph].length > 1) {
 				// A word flap ('DELAYED' printed across one card — the real boards'
 				// remark flaps): shrink the type to fit instead of condensing a
 				// letter-sized face into a smear.
 				fontPx = Math.max(4, Math.floor((fontPx * W * 0.82) / m));
-				g.font = `600 ${fontPx}px ${font}`;
-				m = g.measureText(glyph).width;
+				lg.font = `600 ${fontPx}px ${font}`;
+				m = lg.measureText(glyph).width;
 			}
 			const sx = Math.min(1, (W * 0.8) / Math.max(1, m)) * 0.94;
-			g.setTransform(sx, 0, 0, 1, W / 2, H * 0.54);
-			g.fillText(glyph, 0, 0);
-			g.setTransform(1, 0, 0, 1, 0, 0);
+			lg.setTransform(sx, 0, 0, 1, W / 2, H * 0.54);
+			lg.fillText(glyph, 0, 0);
+			lg.setTransform(1, 0, 0, 1, 0, 0);
+			g.drawImage(gl, 0, seamNudge(lg, W, H));
 		}
 		// The pin cuts: a nick out of each side at the hinge line.
 		g.globalCompositeOperation = 'destination-out';

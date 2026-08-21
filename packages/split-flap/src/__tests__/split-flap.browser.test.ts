@@ -199,6 +199,44 @@ test('cellAt and cellRect expose the layout maths', () => {
 	canvas.remove();
 });
 
+/** The ink-free run of rows through the seam, in device px: the mechanical split
+ *  alone for a letterform the seam cuts, wider when the artwork left it a gap. */
+const seamGap = (canvas: HTMLCanvasElement): number => {
+	const d = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+	const inked = (y: number) => {
+		for (let x = 0; x < canvas.width; x++) {
+			const i = (y * canvas.width + x) * 4;
+			if (Math.abs(d[i] - 0xf4) < 40 && Math.abs(d[i + 1] - 0xf4) < 40) return true;
+		}
+		return false;
+	};
+	const seam = canvas.height >> 1; // one flat cell: the hinge is dead-centre
+	let n = 1;
+	for (let y = seam - 1; y >= 0 && !inked(y); y--) n++;
+	for (let y = seam + 1; y < canvas.height && !inked(y); y++) n++;
+	return n;
+};
+
+test('the seam is kept out of a feature it would sever', () => {
+	// A colon's upper dot lands on the cut at a shared baseline; a real flap
+	// would print it clear of the seam rather than in two detachable halves.
+	const letter = mount(120, 160);
+	const colon = mount(120, 160);
+	const a = createSplitFlap(letter, { cols: 1, rows: 1, flipMs: 0, charset: DRUM_DIGITS })!;
+	const b = createSplitFlap(colon, { cols: 1, rows: 1, flipMs: 0, charset: DRUM_DIGITS })!;
+	a.setText('8');
+	b.setText(':');
+	// The 8 is still cut — its ink runs right up to both sides of the split.
+	const cut = seamGap(letter);
+	expect(cut).toBeLessThan(letter.height * 0.06);
+	// The colon's dots sit either side of it, with real clearance.
+	expect(seamGap(colon)).toBeGreaterThan(3 * cut);
+	a.dispose();
+	b.dispose();
+	letter.remove();
+	colon.remove();
+});
+
 test('sound: true is safe before any user gesture', () => {
 	const canvas = mount();
 	const board = createSplitFlap(canvas, { cols: 4, rows: 1, flipMs: 0, sound: true })!;
