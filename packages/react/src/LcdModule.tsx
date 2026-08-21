@@ -45,8 +45,10 @@ export interface LcdModuleProps {
 	on?: boolean;
 	/** The uninitialised boot row of solid blocks on power-up. */
 	boot?: boolean;
-	/** The plastic frame; null = transparent outside the glass. */
+	/** The plastic frame; null = no plastic, and the glass takes the room. */
 	bezel?: LcdModuleOptions['bezel'];
+	/** Frame thickness in dot pitches (default 3); 0 is the same as null. */
+	bezelWidth?: number;
 	pixelRatio?: number;
 	label?: string;
 	/** Called with the module after creation, and with null on teardown — the
@@ -83,6 +85,7 @@ export const LcdModule = forwardRef<LcdModuleHandle | null, LcdModuleProps>(
 			on,
 			boot,
 			bezel,
+			bezelWidth,
 			pixelRatio,
 			label,
 			className,
@@ -115,6 +118,7 @@ export const LcdModule = forwardRef<LcdModuleHandle | null, LcdModuleProps>(
 				on: p.on,
 				boot: p.boot,
 				bezel: p.bezel,
+				bezelWidth: p.bezelWidth,
 				pixelRatio: p.pixelRatio,
 				label: p.label
 			});
@@ -154,6 +158,7 @@ export const LcdModule = forwardRef<LcdModuleHandle | null, LcdModuleProps>(
 				on,
 				boot,
 				bezel,
+				bezelWidth,
 				pixelRatio,
 				label
 			});
@@ -172,6 +177,7 @@ export const LcdModule = forwardRef<LcdModuleHandle | null, LcdModuleProps>(
 			on,
 			boot,
 			bezel,
+			bezelWidth,
 			pixelRatio,
 			label
 		]);

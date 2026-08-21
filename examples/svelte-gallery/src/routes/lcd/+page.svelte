@@ -36,10 +36,11 @@
 	let cursorStyle = $state<LcdCursor>('block');
 	let moduleW = $state(480);
 	let moduleH = $state(150);
-	// The module's plastic frame. Off is `bezel: null` — bare glass, for dropping the
-	// module onto hardware of your own (or a page that already has a frame).
+	// The module's plastic frame: colour, thickness in dot pitches, or none at all
+	// (`bezel: null` — bare glass, to compose the module into hardware of your own).
 	let bezelOn = $state(true);
 	let bezelColor = $state('#14161a');
+	let bezelWidth = $state(3);
 	// Reflective glass belongs on a light wall — the opposite default to every
 	// emissive sibling's near-black stage.
 	let backdrop = $state('#e9e7e1');
@@ -166,6 +167,7 @@
 				age,
 				on,
 				bezel: bezelOn ? bezelColor : null,
+				bezelWidth,
 				cols: modCols,
 				rows: modRows,
 				// The Latin/Nordic extension face, injected the opt-in way (import + option).
@@ -191,6 +193,7 @@
 			ghost,
 			age,
 			bezel: bezelOn ? bezelColor : null,
+			bezelWidth,
 			cols: modCols,
 			rows: modRows
 		});
@@ -466,8 +469,18 @@
 				step={5}
 				format={(v) => `${v}px`}
 			/>
+			<Slider
+				bind:value={bezelWidth}
+				label="bezel"
+				min={0}
+				max={10}
+				step={1}
+				disabled={!bezelOn}
+				hint={bezelOn ? undefined : 'no plastic — the glass has the canvas'}
+				format={(v) => `${v} dots`}
+			/>
 			<div class="row">
-				<ToggleChip bind:checked={bezelOn} label="bezel" />
+				<ToggleChip bind:checked={bezelOn} label="plastic" />
 				<input type="color" bind:value={bezelColor} disabled={!bezelOn} aria-label="bezel colour" />
 			</div>
 		</section>

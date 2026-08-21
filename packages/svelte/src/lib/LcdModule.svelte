@@ -23,6 +23,7 @@
 		on,
 		boot,
 		bezel,
+		bezelWidth,
 		pixelRatio,
 		label,
 		class: className,
@@ -55,8 +56,10 @@
 		on?: boolean;
 		/** The uninitialised boot row of solid blocks on power-up. */
 		boot?: boolean;
-		/** The plastic frame; null = transparent outside the glass. */
+		/** The plastic frame; null = no plastic, and the glass takes the room. */
 		bezel?: LcdModuleOptions['bezel'];
+		/** Frame thickness in dot pitches (default 3); 0 is the same as null. */
+		bezelWidth?: number;
 		pixelRatio?: number;
 		label?: string;
 		/** Called with the module when created, and null on teardown — imperative escape
@@ -93,6 +96,7 @@
 				on,
 				boot,
 				bezel,
+				bezelWidth,
 				pixelRatio,
 				label
 			})
@@ -131,6 +135,7 @@
 			on,
 			boot,
 			bezel,
+			bezelWidth,
 			pixelRatio,
 			label
 		});

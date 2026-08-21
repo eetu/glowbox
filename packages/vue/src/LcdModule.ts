@@ -64,11 +64,13 @@ export const LcdModule = defineComponent({
 		on: { type: Boolean, default: undefined },
 		/** The uninitialised boot row of solid blocks on power-up. */
 		boot: { type: Boolean, default: undefined },
-		/** The plastic frame; null = transparent outside the glass. */
+		/** The plastic frame; null = no plastic, and the glass takes the room. */
 		bezel: {
 			type: [String, Array, null] as PropType<LcdModuleOptions['bezel']>,
 			default: undefined
 		},
+		/** Frame thickness in dot pitches (default 3); 0 is the same as null. */
+		bezelWidth: { type: Number, default: undefined },
 		pixelRatio: { type: Number, default: undefined },
 		label: { type: String, default: undefined },
 		/** Called with the module after creation, and with null on teardown — the same
@@ -97,6 +99,7 @@ export const LcdModule = defineComponent({
 			on: props.on,
 			boot: props.boot,
 			bezel: props.bezel,
+			bezelWidth: props.bezelWidth,
 			pixelRatio: props.pixelRatio,
 			label: props.label
 		});

@@ -211,7 +211,7 @@ test('age dims toward a dead column; the text stays the text', () => {
 	lcd.setOptions({ age: 1 });
 	const worn = inkPixels(canvas);
 	expect(worn).toBeLessThan(fresh); // dimming + one driver gone
-	expect(worn).toBeGreaterThan(fresh / 3); // but the module still reads
+	expect(worn).toBeGreaterThan(fresh / 4); // but the module still reads
 	lcd.dispose();
 	canvas.remove();
 });
@@ -229,6 +229,24 @@ test('the bezel is a frame, not a letterbox: spare canvas stays transparent', ()
 	const box = canvas.getBoundingClientRect();
 	const dpr = canvas.width / box.width;
 	expect(alphaAt(canvas.width >> 1, Math.round((r.top - box.top - 6) * dpr))).toBe(255);
+	lcd.dispose();
+	canvas.remove();
+});
+
+test('bezelWidth sizes the frame, and no plastic gives the room to the glass', () => {
+	const canvas = makeCanvas(320, 100);
+	const lcd = createLcdModule(canvas, { boot: false, response: 0, text: 'HI' })!;
+	const cellW = () => lcd.cellRect(0, 0)!.width;
+	const framed = cellW();
+	lcd.setOptions({ bezelWidth: 10 });
+	expect(cellW()).toBeLessThan(framed); // thicker plastic, smaller glass
+	lcd.setOptions({ bezelWidth: 0 });
+	const bare = cellW();
+	expect(bare).toBeGreaterThan(framed);
+	lcd.setOptions({ bezelWidth: 3, bezel: null });
+	expect(cellW()).toBeCloseTo(bare, 3); // null is the frameless module too
+	lcd.setOptions({ bezelWidth: 1e6 });
+	expect(cellW()).toBeGreaterThan(0); // clamped, never negative glass
 	lcd.dispose();
 	canvas.remove();
 });

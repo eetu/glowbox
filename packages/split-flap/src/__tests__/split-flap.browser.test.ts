@@ -217,9 +217,26 @@ const seamGap = (canvas: HTMLCanvasElement): number => {
 	return n;
 };
 
+/** The glyph's first and last inked row, in device px. */
+const inkSpan = (canvas: HTMLCanvasElement): [number, number] => {
+	const d = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+	let top = -1;
+	let bottom = -1;
+	for (let y = 0; y < canvas.height; y++) {
+		for (let x = 0; x < canvas.width; x++) {
+			const i = (y * canvas.width + x) * 4;
+			if (Math.abs(d[i] - 0xf4) < 40 && Math.abs(d[i + 1] - 0xf4) < 40) {
+				if (top < 0) top = y;
+				bottom = y;
+				break;
+			}
+		}
+	}
+	return [top, bottom];
+};
+
 test('the seam is kept out of a feature it would sever', () => {
-	// A colon's upper dot lands on the cut at a shared baseline; a real flap
-	// would print it clear of the seam rather than in two detachable halves.
+	// A digit is cut by the seam; a colon's dots sit either side of it.
 	const letter = mount(120, 160);
 	const colon = mount(120, 160);
 	const a = createSplitFlap(letter, { cols: 1, rows: 1, flipMs: 0, charset: DRUM_DIGITS })!;
@@ -235,6 +252,18 @@ test('the seam is kept out of a feature it would sever', () => {
 	b.dispose();
 	letter.remove();
 	colon.remove();
+});
+
+test('a cut letterform is cut through its middle', () => {
+	const canvas = mount(120, 160);
+	const board = createSplitFlap(canvas, { cols: 1, rows: 1, flipMs: 0, charset: DRUM_DIGITS })!;
+	board.setText('8');
+	const [top, bottom] = inkSpan(canvas);
+	const seam = canvas.height / 2; // one flat cell: the hinge is dead-centre
+	// Equal halves: the ink reaches as far above the cut as below it.
+	expect(Math.abs(seam - top - (bottom - seam))).toBeLessThan(canvas.height * 0.02);
+	board.dispose();
+	canvas.remove();
 });
 
 test('sound: true is safe before any user gesture', () => {

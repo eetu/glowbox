@@ -31,19 +31,26 @@ version and are released together.
   sizes (8×1 / 16×2 / 20×4) — the `cols`/`rows` regrid the gallery never exposed —
   and the page injects `LATIN_5X7` (an ÄÄKKÖSET preset types it) with a
   font-showcase attract scene that marches the whole repertoire page by page.
-- **svelte-gallery `/lcd`: a bezel control.** A chip plus a colour swatch under
-  _size_ — the plastic's colour, or off entirely (`bezel: null`), which leaves bare
-  glass on the page for composing the module into hardware of your own. The glass
-  keeps its size either way: plastic is paint, not geometry.
+- **`@glowbox/lcd`: a `bezelWidth` option.** Frame thickness in dot pitches
+  (default 3, max 16), so the plastic holds its proportions at any canvas size; 0 is
+  the frameless module, same as `bezel: null`. Mirrored into `<LcdModule>` in all
+  three wrappers.
+- **svelte-gallery `/lcd`: bezel controls.** A width slider plus a plastic chip and
+  colour swatch under _size_ — thickness, colour, or no frame at all, where the glass
+  takes the whole canvas.
 
 ### Fixed
 
-- **`@glowbox/split-flap`: the seam no longer severs a printed feature.** A colon
-  sat with its upper dot straddling the cut, so it showed as two half-dots that came
-  apart as the card fell — a printing error no real strip would carry. The artwork is
-  now registered against the seam: if a small nudge (≤5% of the card) puts the cut in
-  a gap in the ink, it takes it. Letterforms the seam is _meant_ to cut — every letter
-  and digit — have no gap to find and do not move.
+- **`@glowbox/split-flap`: the print is registered against the card's seam.** Two
+  faults, one cause — the artwork sat where a shared baseline happened to put it. A
+  colon's upper dot straddled the cut and came apart as the card fell, and every
+  letter was cut a little above its middle, so the two halves never matched. The card
+  is now registered on the cut: the drum's cap band is centred on it, measured from
+  the font in use (so a `font` of your own registers too), and the sprite is an even
+  number of device pixels so the two flaps are the same height. Glyphs whose ink
+  leaves a gap at the cut — a colon, a hyphen — shift up to 5% of the card to put the
+  cut in the middle of that gap; letterforms have no gap and are cut through the
+  middle, which is the display's signature.
 - **`@glowbox/lcd`: the bezel is a frame, not a letterbox.** The plastic filled the
   whole canvas, so a module in a box wider or taller than its glass sat in black bars
   — badly wrong for the family's one reflective, light-theme-native core. It is now a

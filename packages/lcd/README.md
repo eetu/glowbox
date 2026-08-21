@@ -51,7 +51,8 @@ lcd?.setOptions({ cursor: 'block' });
 | `glyphs`     | —               | extension face over the vendored ASCII font (see below); `null` resets                         |
 | `on`         | `true`          | power; off drains the ink, then the pane sits unlit                                            |
 | `boot`       | `true`          | the uninitialised boot row (skipped under reduced motion)                                      |
-| `bezel`      | dark plastic    | `Color`; a frame hugging the glass (spare canvas stays transparent); `null` = no plastic       |
+| `bezel`      | dark plastic    | `Color`; a frame hugging the glass (canvas past it is transparent); `null` = none, glass fills |
+| `bezelWidth` | `3`             | frame thickness in dot pitches (max 16); `0` matches `bezel: null`                             |
 | `pixelRatio` | `2`             | cap on `devicePixelRatio`                                                                      |
 | `label`      | `'lcd display'` | accessible name (`aria-label`); the shown text is appended; `''` hides                         |
 
