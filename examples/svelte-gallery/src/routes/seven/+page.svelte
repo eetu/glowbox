@@ -170,7 +170,6 @@
 			/>
 			<div class="row">
 				<ToggleChip bind:checked={ghost} label="segment ghosts" />
-				<ToggleChip bind:checked={windowOn} label="window" />
 				<ToggleChip bind:checked={crtOn} label="CRT" />
 			</div>
 		</section>
@@ -197,6 +196,9 @@
 
 		<section>
 			<h2>scene</h2>
+			<div class="row">
+				<ToggleChip bind:checked={windowOn} label="window module" />
+			</div>
 			<div class="row">
 				<span class="rlabel">backdrop</span>
 				<input type="color" bind:value={backdrop} aria-label="backdrop colour" />

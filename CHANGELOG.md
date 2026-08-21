@@ -40,9 +40,11 @@ version and are released together.
   takes the whole canvas.
 - **svelte-gallery: every housing is switchable, on every route.** A chip beside the
   colour swatch drops the housing and shows the page through it — _glass module_
-  (nixie), _window_ (7-seg), _panel_ (flip-dot), _frame_ (split-flap), _wall_ (neon,
-  emit only: an absorbing sign needs a wall to ink), _faceplate_ (vfd, which had no
-  bezel control at all). Turn the backdrop pale and a display composites onto it.
+  (nixie), _window module_ (7-seg), _panel_ (flip-dot), _frame_ (split-flap), _wall_
+  (neon, emit only: an absorbing sign needs a wall to ink), _faceplate_ (vfd, which had
+  no bezel control at all), _plastic_ (lcd). Turn the backdrop pale and a display
+  composites onto it. All of them sit in the same place — the _scene_ group, next to
+  the backdrop swatch — so the switch is where the last page left it.
 - **svelte-gallery `/nixie`: a filament swatch.** The unlit cathode wires, driving the
   core's new `wire` in 2D and the three.js wire material in 3D.
 - **`board: null` on `@glowbox/flip-dot` and `@glowbox/split-flap`.** No plastic at

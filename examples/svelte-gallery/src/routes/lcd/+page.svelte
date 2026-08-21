@@ -469,6 +469,10 @@
 				step={5}
 				format={(v) => `${v}px`}
 			/>
+		</section>
+
+		<section>
+			<h2>scene</h2>
 			<Slider
 				bind:value={bezelWidth}
 				label="bezel"
@@ -483,10 +487,6 @@
 				<ToggleChip bind:checked={bezelOn} label="plastic" />
 				<input type="color" bind:value={bezelColor} disabled={!bezelOn} aria-label="bezel colour" />
 			</div>
-		</section>
-
-		<section>
-			<h2>scene</h2>
 			<div class="row">
 				<span class="rlabel">backdrop</span>
 				<input type="color" bind:value={backdrop} aria-label="backdrop colour" />
