@@ -57,6 +57,7 @@ fits by height, so a slim slot keeps full-size dots), or `null` / `''` for all d
 | `background` | per style  | window tint                                                |
 | `glow`       | `0.7`      | 0..1 halo strength                                         |
 | `ghost`      | `true`     | show unlit segments as dark bodies                         |
+| `bare`       | `false`    | segments only, transparent canvas (no window module)       |
 | `age`        | `0`        | wear 0..1 (dimming → flicker → dead segment)               |
 | `transition` | `90`       | per-segment cross-fade ms (0 = instant)                    |
 | `pixelRatio` | `2`        | cap on devicePixelRatio                                    |

@@ -97,6 +97,26 @@ test('the colon separator lights two dots and fits by height in a slim slot', ()
 	d.dispose();
 });
 
+test('bare drops the window module: segments on a transparent canvas', () => {
+	const framed = makeCanvas();
+	const bare = makeCanvas();
+	const a = createSevenSegment(framed, { value: 8, transition: 0 })!;
+	const b = createSevenSegment(bare, { value: 8, transition: 0, bare: true })!;
+	const alphaAt = (canvas: HTMLCanvasElement, x: number, y: number) =>
+		canvas.getContext('2d')!.getImageData(x, y, 1, 1).data[3];
+	// The framed module paints its window; bare paints nothing but the segments.
+	expect(alphaAt(framed, framed.width >> 1, framed.height >> 1)).toBe(255);
+	expect(alphaAt(bare, 1, 1)).toBe(0);
+	// Same digit, and bare uses the whole box, so it is not the smaller of the two.
+	expect(litPixels(bare)).toBeGreaterThanOrEqual(litPixels(framed));
+	a.setOptions({ bare: true });
+	expect(alphaAt(framed, 1, 1)).toBe(0); // live-updatable, like every option
+	a.dispose();
+	b.dispose();
+	framed.remove();
+	bare.remove();
+});
+
 test('survives absurdly small canvases (regression: negative window inset threw)', () => {
 	// A sub-5px box used to feed roundRect a negative radius (IndexSizeError).
 	for (const [cw, cy] of [

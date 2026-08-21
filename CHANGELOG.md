@@ -39,8 +39,12 @@ version and are released together.
   colour swatch under _size_ — thickness, colour, or no frame at all, where the glass
   takes the whole canvas.
 - **`board: null` on `@glowbox/flip-dot` and `@glowbox/split-flap`.** No plastic at
-  all: bare discs, or cards over your own scene. Every core with a housing now takes
-  the same escape hatch (`bezel`/`wall`/`board` = `null`).
+  all: bare discs, or cards over your own scene.
+- **`bare` on `@glowbox/seven-segment`.** Segments alone on a transparent canvas — no
+  window tint, vignette, rim or shadow — the same contract and name as nixie's `bare`,
+  for a housing of your own. Mirrored into `<SevenSegment>` in all three wrappers.
+  With it, every core's housing can be dropped: `bezel`/`wall`/`board` take `null`,
+  nixie and seven-segment take `bare`, led-grid takes a transparent context.
 
 ### Fixed
 
