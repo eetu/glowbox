@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/vfd",
-	"version": "1.10.0",
+	"version": "1.11.0",
 	"description": "Vacuum-fluorescent display panel component — the stereo faceplate: a zoo of unlike anodes in one envelope (segment fields, lit word legends, spectrum bars, icons, tuning scale), sharing phosphor persistence, a dimmer, filament haze and filter glass, in the glowbox family.",
 	"keywords": [
 		"glowbox",
