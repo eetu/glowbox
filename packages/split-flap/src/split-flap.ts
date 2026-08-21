@@ -74,8 +74,9 @@ export interface SplitFlapOptions {
 	card?: Color;
 	/** Printed character colour (default warm white). */
 	ink?: Color;
-	/** Frame behind/between the modules (default '#0c0c0f'). */
-	board?: Color;
+	/** Frame behind/between the modules (default '#0c0c0f'); `null` leaves the
+	 *  canvas transparent behind them, to compose the board over your own scene. */
+	board?: Color | null;
 	/** Gap around each module as a fraction of the cell, 0..0.4 (default 0.08). */
 	gap?: number;
 	/** Character font family (default a Helvetica stack — the Solari letterform). */
@@ -203,7 +204,7 @@ export function createSplitFlap(
 	let palette = opts.palette;
 	let card = parseColor(opts.card ?? '#1b1c1f');
 	let ink = parseColor(opts.ink ?? '#f4f4ef');
-	let board = parseColor(opts.board ?? '#0c0c0f');
+	let board = opts.board === null ? null : parseColor(opts.board ?? '#0c0c0f');
 	let gap = Math.max(0, Math.min(0.4, opts.gap ?? 0.08));
 	let font = opts.font ?? "'Helvetica Neue', Helvetica, Arial, sans-serif";
 	let shaded = opts.shaded ?? false;
@@ -324,7 +325,7 @@ export function createSplitFlap(
 
 		// The module wells: only the shaded look needs a board layer; flat mode
 		// fills the background directly each frame.
-		if (shaded) {
+		if (shaded && board) {
 			const b = document.createElement('canvas');
 			b.width = Math.max(1, Math.round(w * dpr));
 			b.height = Math.max(1, Math.round(h * dpr));
@@ -571,13 +572,16 @@ export function createSplitFlap(
 		if (!w || !h) return;
 		const g = ctx!;
 		g.setTransform(1, 0, 0, 1, 0, 0);
+		g.clearRect(0, 0, canvas.width, canvas.height);
 		if (boardLayer) {
 			g.drawImage(boardLayer, 0, 0);
 			g.scale(dpr, dpr);
 		} else {
 			g.scale(dpr, dpr);
-			g.fillStyle = rgba(board, 1);
-			g.fillRect(0, 0, w, h);
+			if (board) {
+				g.fillStyle = rgba(board, 1);
+				g.fillRect(0, 0, w, h);
+			}
 		}
 		if (micro) {
 			// Degenerate size: cards and glyphs, no mechanism — still a correct
@@ -938,8 +942,8 @@ export function createSplitFlap(
 				ink = parseColor(patch.ink);
 				rebake = true;
 			}
-			if (patch.board != null) {
-				board = parseColor(patch.board);
+			if (patch.board !== undefined) {
+				board = patch.board === null ? null : parseColor(patch.board);
 				rebake = true;
 			}
 			if (patch.gap != null) {

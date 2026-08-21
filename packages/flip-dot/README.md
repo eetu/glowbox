@@ -67,7 +67,7 @@ for stills). Pure logic, runs under plain node.
 | `shape`      | `'disc'`             | `'disc'` \| `'square'` (octagonal vane, folding flap)         |
 | `onColor`    | fluorescent yellow   | lit face (any CSS string or `[r,g,b]` 0..1)                   |
 | `offColor`   | near-black           | dark face — kept distinct from the board on purpose           |
-| `board`      | `'#101114'`          | the plastic behind the dots                                   |
+| `board`      | `'#101114'`          | the panel behind the dots; `null` = bare discs                |
 | `gap`        | `0.14`               | cell fraction around each dot                                 |
 | `shaded`     | `false`              | opt-in lighting: gradients, waffle sockets, pole studs, glint |
 | `flipMs`     | `70`                 | one disc's flip (0 = instant; forced by reduced motion)       |

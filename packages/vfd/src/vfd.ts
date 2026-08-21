@@ -91,10 +91,12 @@ export interface VfdPanelOptions {
 	age?: number;
 	/** Glow strength 0..1 (default 0.7). */
 	glow?: number;
-	/** The faceplate around the glass (default a dark grey). `null` leaves the canvas
-	 *  transparent outside the glass, to compose the panel over your own hardware. A
-	 *  VFD is a physical object with a bezel, which is why this core needs no invented
-	 *  light-theme element: a dark panel on a pale page is a dark panel, correctly. */
+	/** The faceplate around the glass (default a dark grey): a strip hugging the
+	 *  fitted glass, so canvas past it stays transparent whatever the canvas aspect
+	 *  is. `null` drops the plate entirely, to compose the panel over your own
+	 *  hardware. A VFD is a physical object with a bezel, which is why this core
+	 *  needs no invented light-theme element: a dark panel on a pale page is a dark
+	 *  panel, correctly. */
 	bezel?: Color | null;
 	/** The unlit glass itself (default from the filter — near-black under a tint). */
 	glass?: Color;
@@ -462,7 +464,8 @@ export function createVfdPanel(
 		g.clearRect(0, 0, canvas.width, canvas.height);
 		g.scale(dpr, dpr);
 
-		// Fit the frame into the canvas, preserving aspect. The bezel is whatever's left.
+		// Fit the frame into the canvas, preserving aspect; the faceplate is a strip
+		// of `pad` around it, and canvas past the faceplate stays transparent.
 		const pad = Math.max(2, Math.min(w, h) * 0.03);
 		const availW = Math.max(1, w - pad * 2);
 		const availH = Math.max(1, h - pad * 2);
@@ -476,7 +479,7 @@ export function createVfdPanel(
 
 		if (bezel) {
 			g.fillStyle = rgba(bezel, 1);
-			g.fillRect(0, 0, w, h);
+			g.fillRect(offX - pad, offY - pad, gw + pad * 2, gh + pad * 2);
 		}
 
 		g.save();

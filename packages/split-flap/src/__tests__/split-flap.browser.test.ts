@@ -266,6 +266,18 @@ test('a cut letterform is cut through its middle', () => {
 	canvas.remove();
 });
 
+test('board: null leaves the canvas behind the modules transparent', () => {
+	const canvas = mount(240, 80);
+	const board = createSplitFlap(canvas, { cols: 4, rows: 1, flipMs: 0, board: null })!;
+	board.setText('AB');
+	const alphaAt = (x: number, y: number) =>
+		canvas.getContext('2d')!.getImageData(x, y, 1, 1).data[3];
+	expect(alphaAt(1, 1)).toBe(0); // the module gap, top-left corner of the cell
+	expect(board.snapshot().startsWith('data:image/png')).toBe(true);
+	board.dispose();
+	canvas.remove();
+});
+
 test('sound: true is safe before any user gesture', () => {
 	const canvas = mount();
 	const board = createSplitFlap(canvas, { cols: 4, rows: 1, flipMs: 0, sound: true })!;

@@ -161,20 +161,32 @@ test('sound: no AudioContext before a user gesture, then exactly one, shared', a
 	}
 });
 
+/** A rect's centre, as dotAt's two arguments. */
+const mid = (b: { left: number; top: number; width: number; height: number }): [number, number] => [
+	b.left + b.width / 2,
+	b.top + b.height / 2
+];
+
+const alphaAt = (canvas: HTMLCanvasElement, x: number, y: number) =>
+	canvas.getContext('2d')!.getImageData(x, y, 1, 1).data[3];
+
 test('dotAt and dotRect expose the layout maths', () => {
-	const canvas = makeCanvas(280, 140); // 14 × 7 grid of 20px cells, exact fit
+	const canvas = makeCanvas(280, 140); // a 14 × 7 field and its plastic margin
 	const board = createFlipDots(canvas, { cols: 14, rows: 7, flipMs: 0 })!;
 	const r = canvas.getBoundingClientRect();
-	expect(board.dotAt(r.left + 5, r.top + 5)).toEqual({ x: 0, y: 0 });
-	expect(board.dotAt(r.right - 5, r.bottom - 5)).toEqual({ x: 13, y: 6 });
-	expect(board.dotAt(r.left - 5, r.top + 5)).toBeNull(); // off the board
+	const first = board.dotRect(0, 0)!;
+	const cell = board.dotRect(1, 0)!.left - first.left;
+	// A disc centre round-trips to its own dot, at both ends of the field...
+	expect(board.dotAt(...mid(first))).toEqual({ x: 0, y: 0 });
+	expect(board.dotAt(...mid(board.dotRect(13, 6)!))).toEqual({ x: 13, y: 6 });
+	// ...and the margin around the field is plastic, not a dot.
+	expect(board.dotAt(r.left + 1, r.top + 1)).toBeNull();
+	expect(board.dotAt(r.left - 5, r.top + 5)).toBeNull(); // off the canvas
 	const c = board.dotRect(3, 2)!;
-	// The disc sits inside its own cell (the gap is excluded)...
-	expect(c.left).toBeGreaterThan(r.left + 3 * 20);
-	expect(c.left + c.width).toBeLessThan(r.left + 4 * 20);
-	expect(c.top).toBeGreaterThan(r.top + 2 * 20);
-	// ...and round-trips: a disc centre is always inside its own cell.
-	expect(board.dotAt(c.left + c.width / 2, c.top + c.height / 2)).toEqual({ x: 3, y: 2 });
+	// The disc sits inside its own cell (the gap is excluded).
+	expect(c.left).toBeCloseTo(first.left + 3 * cell, 3);
+	expect(c.width).toBeLessThan(cell);
+	expect(board.dotAt(...mid(c))).toEqual({ x: 3, y: 2 });
 	expect(board.dotRect(14, 0)).toBeNull();
 	expect(board.dotRect(NaN, 0)).toBeNull();
 	board.dispose();
@@ -182,13 +194,35 @@ test('dotAt and dotRect expose the layout maths', () => {
 
 	// A canvas wider than its grid centres the board — the plastic margin
 	// beside the discs is not a dot.
-	const wide = makeCanvas(320, 140); // same 20px cells, 20px margin each side
+	const wide = makeCanvas(320, 140);
 	const b2 = createFlipDots(wide, { cols: 14, rows: 7, flipMs: 0 })!;
 	const r2 = wide.getBoundingClientRect();
 	expect(b2.dotAt(r2.left + 5, r2.top + 70)).toBeNull(); // in the margin
-	expect(b2.dotAt(r2.left + 25, r2.top + 70)).toEqual({ x: 0, y: 3 });
+	expect(b2.dotAt(...mid(b2.dotRect(0, 3)!))).toEqual({ x: 0, y: 3 });
 	b2.dispose();
 	wide.remove();
+});
+
+test('the panel hugs the dot field, and board: null paints no plastic', () => {
+	// A canvas far taller than a 14 × 7 board: page above and below, no letterbox.
+	const tall = makeCanvas(280, 400);
+	const board = createFlipDots(tall, { cols: 14, rows: 7, flipMs: 0 })!;
+	expect(alphaAt(tall, 2, 2)).toBe(0);
+	expect(alphaAt(tall, tall.width >> 1, 2)).toBe(0);
+	// The plastic is there, just above the top row of discs.
+	const r = tall.getBoundingClientRect();
+	const dpr = tall.width / r.width;
+	const top = board.dotRect(0, 0)!.top - r.top;
+	expect(alphaAt(tall, tall.width >> 1, Math.round((top - 2) * dpr))).toBe(255);
+	board.dispose();
+	tall.remove();
+
+	// No plastic at all: the discs sit straight on the page.
+	const bare = makeCanvas(280, 140);
+	const b2 = createFlipDots(bare, { cols: 14, rows: 7, flipMs: 0, board: null })!;
+	expect(alphaAt(bare, 1, 1)).toBe(0);
+	b2.dispose();
+	bare.remove();
 });
 
 test('dispose hands the canvas back without ARIA and stops the loop', () => {

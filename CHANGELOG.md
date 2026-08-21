@@ -38,6 +38,9 @@ version and are released together.
 - **svelte-gallery `/lcd`: bezel controls.** A width slider plus a plastic chip and
   colour swatch under _size_ — thickness, colour, or no frame at all, where the glass
   takes the whole canvas.
+- **`board: null` on `@glowbox/flip-dot` and `@glowbox/split-flap`.** No plastic at
+  all: bare discs, or cards over your own scene. Every core with a housing now takes
+  the same escape hatch (`bezel`/`wall`/`board` = `null`).
 
 ### Fixed
 
@@ -51,12 +54,16 @@ version and are released together.
   leaves a gap at the cut — a colon, a hyphen — shift up to 5% of the card to put the
   cut in the middle of that gap; letterforms have no gap and are cut through the
   middle, which is the display's signature.
-- **`@glowbox/lcd`: the bezel is a frame, not a letterbox.** The plastic filled the
-  whole canvas, so a module in a box wider or taller than its glass sat in black bars
-  — badly wrong for the family's one reflective, light-theme-native core. It is now a
-  fixed strip hugging the glass, fitted with it; canvas left over past the frame stays
-  transparent. (A VFD's faceplate genuinely is the whole panel, so that core still
-  fills.) `bezel: null` is unchanged: no plastic at all.
+- **Every housing is a frame, not a letterbox — `@glowbox/lcd`, `@glowbox/vfd`,
+  `@glowbox/flip-dot`.** A core whose content keeps its aspect used to fill the whole
+  canvas with its plastic, so a module in a box of a different shape sat in bars of
+  bezel — badly wrong for the family's one reflective, light-theme-native core, and
+  not much better on the others. Each housing is now a strip hugging its content
+  (lcd's `bezelWidth` of glass margins, vfd's fitted faceplate, flip-dot's panel
+  margin of 0.35 cells), and canvas past it stays transparent — the model nixie and
+  seven-segment already had, and where neon's `wall` and led-grid's `background` stay
+  full-canvas because a wall genuinely is one. Flip-dot's panel is part of its fit, so
+  a board in an exactly-fitting canvas draws its discs a little smaller than before.
 
 ## [1.10.0] — 2026-08-02
 

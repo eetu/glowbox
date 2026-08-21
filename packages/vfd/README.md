@@ -170,8 +170,9 @@ the muting relay's clunk belongs to the receiver, not to the display.
 ## Light theme
 
 A VFD is a physical object with a bezel, so a dark panel on a pale page is a dark panel,
-correctly — `bezel` sets the faceplate around the glass (or `null` for a transparent
-canvas to compose over your own hardware). Unlike neon, this core needs no invented
+correctly — `bezel` sets the faceplate around the glass, a strip hugging it so canvas
+past the plate stays transparent (or `null` for no plate at all, to compose over your
+own hardware). Unlike neon, this core needs no invented
 element to live in the light: it was always a dark rectangle screwed into a chassis.
 
 ## Cost
