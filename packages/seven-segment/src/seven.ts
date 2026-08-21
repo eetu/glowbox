@@ -13,6 +13,7 @@
 // Give it a canvas + a value; drive it with setValue/setOptions. Import-safe under
 // node/SSR (no browser globals at module scope; Path2D built lazily on first draw).
 import { type Color, parseColor } from './color';
+import { resolveTheme, type Theme, watchTheme } from './theme';
 
 const VB_W = 60;
 const VB_H = 100;
@@ -176,6 +177,11 @@ export interface SevenSegmentOptions {
 	pixelRatio?: number;
 	/** Accessible name (default: the shown symbol; a blank display is aria-hidden). */
 	label?: string;
+	/** Colour bundle: `'dark'` (default) or `'light'`, or `'auto'` to follow the page's
+	 *  `prefers-color-scheme`. Lit segments need a dark window to read against, so the
+	 *  module is a DARK OBJECT either way — the light theme deepens its drop shadow and
+	 *  lifts its rim so it sits on a pale page. `background` is still yours to set. */
+	theme?: Theme;
 	/** Composite mode for a scene or housing of your own: render just the segments
 	 *  (ghosts per `ghost`) on a fully transparent canvas — no window module (tint,
 	 *  vignette, drop shadow, margin), the same contract as nixie's `bare`. */
@@ -224,6 +230,14 @@ export function createSevenSegment(
 	let pixelRatio = opts.pixelRatio ?? 2;
 	let label = opts.label ?? '';
 	let bare = opts.bare ?? false;
+	// Emissive, so the window stays dark in both themes; the theme is the housing.
+	const HOUSING = {
+		dark: { shadow: 0.5, rim: 0.07 },
+		light: { shadow: 0.66, rim: 0.14 }
+	} as const;
+	let theme = opts.theme ?? 'dark';
+	let scheme = resolveTheme(theme);
+	let housing = HOUSING[scheme];
 	let w = 0;
 	let h = 0;
 	let dpr = 1;
@@ -326,7 +340,7 @@ export function createSevenSegment(
 		g.save();
 		if (!bare) {
 			if (!micro) {
-				g.shadowColor = 'rgba(0,0,0,0.5)';
+				g.shadowColor = `rgba(0,0,0,${housing.shadow})`;
 				g.shadowBlur = Math.min(padX, padY) * 1.6;
 				g.shadowOffsetY = Math.min(padY * 0.5, 3);
 			}
@@ -454,7 +468,7 @@ export function createSevenSegment(
 		if (!micro && !bare) {
 			roundRect(g, padX, padY, bw, bh, rad);
 			g.lineWidth = 1;
-			g.strokeStyle = 'rgba(255,255,255,0.07)';
+			g.strokeStyle = `rgba(255,255,255,${housing.rim})`;
 			g.stroke();
 		}
 	}
@@ -557,6 +571,13 @@ export function createSevenSegment(
 	applyAria();
 
 	const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => resize()) : null;
+	// `theme: 'auto'` follows the page: the housing re-tunes when the scheme flips.
+	const repaintTheme = (next: 'dark' | 'light') => {
+		scheme = next;
+		housing = HOUSING[scheme];
+		draw();
+	};
+	let stopTheme = watchTheme(theme, repaintTheme);
 	ro?.observe(canvas);
 	// First paint: segments land at their targets instantly (no boot animation), then
 	// changes animate.
@@ -574,6 +595,14 @@ export function createSevenSegment(
 			animate();
 		},
 		setOptions(patch) {
+			// The theme only tunes the housing, so nothing here needs a re-layout.
+			if (patch.theme !== undefined && patch.theme !== theme) {
+				theme = patch.theme;
+				scheme = resolveTheme(theme);
+				housing = HOUSING[scheme];
+				stopTheme();
+				stopTheme = watchTheme(theme, repaintTheme);
+			}
 			if (patch.style != null) style = patch.style;
 			if (patch.color !== undefined)
 				colorOverride = patch.color != null ? parseColor(patch.color) : null;
@@ -601,6 +630,7 @@ export function createSevenSegment(
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			stopTheme();
 			ro?.disconnect();
 			if (raf) cancelAnimationFrame(raf);
 			if (flickerTimer) clearTimeout(flickerTimer);

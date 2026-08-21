@@ -48,20 +48,21 @@ fits by height, so a slim slot keeps full-size dots), or `null` / `''` for all d
 
 ## Options
 
-| option       | default    | notes                                                      |
-| ------------ | ---------- | ---------------------------------------------------------- |
-| `value`      | `null`     | the shown symbol (see above)                               |
-| `dp`         | `false`    | light the decimal point                                    |
-| `style`      | `'led'`    | `'led'` \| `'vfd'`                                         |
-| `color`      | per style  | segment colour (any CSS string or `[r,g,b]` 0..1)          |
-| `background` | per style  | window tint                                                |
-| `glow`       | `0.7`      | 0..1 halo strength                                         |
-| `ghost`      | `true`     | show unlit segments as dark bodies                         |
-| `bare`       | `false`    | segments only, transparent canvas (no window module)       |
-| `age`        | `0`        | wear 0..1 (dimming → flicker → dead segment)               |
-| `transition` | `90`       | per-segment cross-fade ms (0 = instant)                    |
-| `pixelRatio` | `2`        | cap on devicePixelRatio                                    |
-| `label`      | the symbol | `aria-label`; a blank, unlabelled display is `aria-hidden` |
+| option       | default    | notes                                                              |
+| ------------ | ---------- | ------------------------------------------------------------------ |
+| `value`      | `null`     | the shown symbol (see above)                                       |
+| `dp`         | `false`    | light the decimal point                                            |
+| `style`      | `'led'`    | `'led'` \| `'vfd'`                                                 |
+| `color`      | per style  | segment colour (any CSS string or `[r,g,b]` 0..1)                  |
+| `background` | per style  | window tint                                                        |
+| `glow`       | `0.7`      | 0..1 halo strength                                                 |
+| `ghost`      | `true`     | show unlit segments as dark bodies                                 |
+| `bare`       | `false`    | segments only, transparent canvas (no window module)               |
+| `age`        | `0`        | wear 0..1 (dimming → flicker → dead segment)                       |
+| `transition` | `90`       | per-segment cross-fade ms (0 = instant)                            |
+| `theme`      | `'dark'`   | `'light'` / `'auto'` bundle the colour defaults (see Themes below) |
+| `pixelRatio` | `2`        | cap on devicePixelRatio                                            |
+| `label`      | the symbol | `aria-label`; a blank, unlabelled display is `aria-hidden`         |
 
 All options update live via `setOptions(patch)`; `setValue(v)` re-lights. Methods:
 `resize()`, `snapshot()` (PNG data URL), `dispose()`.
@@ -74,6 +75,14 @@ plus the decimal-point circle in the **`SEGMENT_VIEWBOX`** (60×100, y-down, un-
 — apply **`SEGMENT_SLANT`** as an x-shear for the italic); **`litSegments(symbol)`**
 tells you which named segments to light. Extrude the polygons into prisms and you have
 a real 3D module.
+
+## Themes
+
+`theme` bundles the housing: `'dark'` (the default), `'light'`, or `'auto'` to follow the
+page's `prefers-color-scheme`. Lit segments need a dark window to read against, so the
+module is a **dark object either way** — the light theme deepens its drop shadow and
+lifts its rim so it sits on a pale page. `background` is still yours to set, and `bare`
+drops the window entirely.
 
 ---
 

@@ -51,6 +51,8 @@ export interface LcdModuleProps {
 	bezelWidth?: number;
 	pixelRatio?: number;
 	label?: string;
+	/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+	theme?: LcdModuleOptions['theme'];
 	/** Called with the module after creation, and with null on teardown — the
 	 *  Svelte wrapper's `oncreate` contract, for consumers who want a signal
 	 *  rather than watching the forwarded ref flip silently. */
@@ -87,6 +89,7 @@ export const LcdModule = forwardRef<LcdModuleHandle | null, LcdModuleProps>(
 			bezel,
 			bezelWidth,
 			pixelRatio,
+			theme,
 			label,
 			className,
 			style
@@ -120,6 +123,7 @@ export const LcdModule = forwardRef<LcdModuleHandle | null, LcdModuleProps>(
 				bezel: p.bezel,
 				bezelWidth: p.bezelWidth,
 				pixelRatio: p.pixelRatio,
+				theme: p.theme,
 				label: p.label
 			});
 			if (!m) {
@@ -160,6 +164,7 @@ export const LcdModule = forwardRef<LcdModuleHandle | null, LcdModuleProps>(
 				bezel,
 				bezelWidth,
 				pixelRatio,
+				theme,
 				label
 			});
 		}, [
@@ -179,6 +184,7 @@ export const LcdModule = forwardRef<LcdModuleHandle | null, LcdModuleProps>(
 			bezel,
 			bezelWidth,
 			pixelRatio,
+			theme,
 			label
 		]);
 

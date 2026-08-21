@@ -28,3 +28,4 @@ export {
 	type SplitFlapBoard,
 	type SplitFlapOptions
 } from './split-flap';
+export { type Theme } from './theme';

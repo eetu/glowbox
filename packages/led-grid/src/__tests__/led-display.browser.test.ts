@@ -370,3 +370,36 @@ test('comic style on a transparent canvas: opaque discs, clear gaps', () => {
 	expect(px[3]).toBeLessThan(10); // corner clear
 	d.dispose();
 });
+
+test('theme light swaps the additive glow for the comic look on a pale ground', () => {
+	const canvas = makeCanvas();
+	// No `color.background` here: the theme owns the ground until someone names it.
+	const d = createLedDisplay(canvas, {
+		size: [5, 5, 5],
+		quality: { paused: true },
+		theme: 'light'
+	})!;
+	d.fill([1, 0.2, 0]);
+	d.render();
+	const gl = canvas.getContext('webgl')!;
+	const corner = () => {
+		const px = new Uint8Array(4);
+		gl.readPixels(1, 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+		return px[0] + px[1] + px[2];
+	};
+	const pale = corner();
+	expect(pale).toBeGreaterThan(400); // a bone ground, not a dark room
+	// The LEDs are still visible against it — that is what 'comic' is for.
+	expect(nonWhitePixels(canvas)).toBeGreaterThan(0);
+	d.setOptions({ theme: 'dark' });
+	d.render();
+	expect(corner()).toBeLessThan(pale);
+	// A ground the consumer names is theirs through every later theme move.
+	d.setOptions({ color: { background: '#3c3c3c' }, theme: 'light' });
+	d.render();
+	const named = corner();
+	d.setOptions({ theme: 'dark' });
+	d.render();
+	expect(corner()).toBe(named);
+	d.dispose();
+});

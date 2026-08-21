@@ -60,4 +60,5 @@ export {
 	PHOSPHORS,
 	type PhosphorSpec
 } from './phosphor';
+export { type Theme } from './theme';
 export { createVfdPanel, type VfdPanel, type VfdPanelOptions } from './vfd';

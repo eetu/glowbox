@@ -75,6 +75,8 @@ export const VfdPanel = defineComponent({
 		selfTest: { type: Boolean, default: undefined },
 		pixelRatio: { type: Number, default: undefined },
 		label: { type: String, default: undefined },
+		/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+		theme: { type: String as PropType<VfdPanelOptions['theme']>, default: undefined },
 		/** Called with the panel after creation, and with null on teardown — the same
 		 *  contract as the Svelte wrapper. Bind as `:oncreate="fn"` (an `@create`
 		 *  listener would camelize to `onCreate` and miss it). */
@@ -106,6 +108,7 @@ export const VfdPanel = defineComponent({
 			on: props.on,
 			selfTest: props.selfTest,
 			pixelRatio: props.pixelRatio,
+			theme: props.theme,
 			label: props.label
 		});
 

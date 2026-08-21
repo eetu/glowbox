@@ -48,6 +48,8 @@ export const NixieTube = defineComponent({
 		pixelRatio: { type: Number, default: undefined },
 		/** Accessible name (`aria-label`); defaults to the lit symbol itself. */
 		label: { type: String, default: undefined },
+		/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+		theme: { type: String as PropType<NixieOptions['theme']>, default: undefined },
 		/** Called with the tube after creation, and with null on teardown — the same
 		 *  contract as the Svelte wrapper. Bind as `:oncreate="fn"` (an `@create`
 		 *  listener would camelize to `onCreate` and miss it). */
@@ -69,6 +71,7 @@ export const NixieTube = defineComponent({
 			ghost: props.ghost,
 			wire: props.wire,
 			pixelRatio: props.pixelRatio,
+			theme: props.theme,
 			label: props.label
 		});
 

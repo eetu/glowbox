@@ -36,6 +36,7 @@
 		on,
 		selfTest,
 		pixelRatio,
+		theme,
 		label,
 		class: className,
 		style,
@@ -78,6 +79,8 @@
 		selfTest?: boolean;
 		pixelRatio?: number;
 		label?: string;
+		/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+		theme?: VfdPanelOptions['theme'];
 		/** Called with the panel when created, and null on teardown — the imperative
 		 *  escape hatch, and the right way to drive a spectrum at frame rate. */
 		oncreate?: (panel: VfdPanelHandle | null) => void;
@@ -117,6 +120,7 @@
 				on,
 				selfTest,
 				pixelRatio,
+				theme,
 				label
 			})
 		);
@@ -173,6 +177,7 @@
 			on,
 			selfTest,
 			pixelRatio,
+			theme,
 			label
 		});
 	});

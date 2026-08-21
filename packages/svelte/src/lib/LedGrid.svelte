@@ -8,6 +8,7 @@
 		type CameraOptions,
 		type ColorOptions,
 		createLedDisplay,
+		type LedDisplayOptions,
 		type InteractionOptions,
 		type LedDisplay,
 		type LedOptions,
@@ -23,6 +24,7 @@
 		camera,
 		interaction,
 		quality,
+		theme,
 		label,
 		class: className,
 		style,
@@ -37,6 +39,8 @@
 		quality?: QualityOptions;
 		/** Accessible name for the canvas (`aria-label`; default 'LED grid'). */
 		label?: string;
+		/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+		theme?: LedDisplayOptions['theme'];
 		/** Called with the display when (re)created, and with null on teardown —
 		 *  an escape hatch for imperative access (snapshot(), stats, setCamera…). */
 		oncreate?: (display: LedDisplay | null) => void;

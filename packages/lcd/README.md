@@ -53,6 +53,7 @@ lcd?.setOptions({ cursor: 'block' });
 | `boot`       | `true`          | the uninitialised boot row (skipped under reduced motion)                                      |
 | `bezel`      | dark plastic    | `Color`; a frame hugging the glass (canvas past it is transparent); `null` = none, glass fills |
 | `bezelWidth` | `3`             | frame thickness in dot pitches (max 16); `0` matches `bezel: null`                             |
+| `theme`      | `'dark'`        | `'light'` / `'auto'` bundle the colour defaults (see Themes)                                   |
 | `pixelRatio` | `2`             | cap on `devicePixelRatio`                                                                      |
 | `label`      | `'lcd display'` | accessible name (`aria-label`); the shown text is appended; `''` hides                         |
 
@@ -97,6 +98,15 @@ raw masks if you need them).
 
 An LED-backlit module is silent — like the vfd, this core ships no sound module. (The
 EL-inverter whine of older glass is a niche for the day someone misses it.)
+
+## Themes
+
+`theme` bundles the colour **defaults**: `'dark'` (the default — near-black plastic),
+`'light'` (pale grey plastic), or `'auto'` to follow the page's `prefers-color-scheme`.
+
+The glass is **hardware, not a mood**: a reflective pane already belongs on a light page,
+so `panel` stays your choice and the theme only moves the plastic around it. A `bezel`
+you set yourself is yours for good.
 
 Wrappers: **[@glowbox/svelte](https://www.npmjs.com/package/@glowbox/svelte)** ·
 **[@glowbox/react](https://www.npmjs.com/package/@glowbox/react)** ·

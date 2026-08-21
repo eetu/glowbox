@@ -37,6 +37,8 @@ export interface SevenSegmentProps {
 	pixelRatio?: number;
 	/** Accessible name (`aria-label`); defaults to the shown symbol itself. */
 	label?: string;
+	/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+	theme?: SevenSegmentOptions['theme'];
 	/** Called with the display after creation, and with null on teardown — the
 	 *  Svelte wrapper's `oncreate` contract, for consumers who want a signal
 	 *  rather than watching the forwarded ref flip silently. */
@@ -68,6 +70,7 @@ export const SevenSegment = forwardRef<SevenSegmentDisplay | null, SevenSegmentP
 			age,
 			transition,
 			pixelRatio,
+			theme,
 			label,
 			className,
 			style
@@ -96,6 +99,7 @@ export const SevenSegment = forwardRef<SevenSegmentDisplay | null, SevenSegmentP
 				age: p.age,
 				transition: p.transition,
 				pixelRatio: p.pixelRatio,
+				theme: p.theme,
 				label: p.label
 			});
 			if (!d) {
@@ -135,6 +139,7 @@ export const SevenSegment = forwardRef<SevenSegmentDisplay | null, SevenSegmentP
 				age,
 				transition,
 				pixelRatio,
+				theme,
 				label
 			});
 		}, [
@@ -149,6 +154,7 @@ export const SevenSegment = forwardRef<SevenSegmentDisplay | null, SevenSegmentP
 			age,
 			transition,
 			pixelRatio,
+			theme,
 			label
 		]);
 

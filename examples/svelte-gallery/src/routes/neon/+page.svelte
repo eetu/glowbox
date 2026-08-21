@@ -14,6 +14,11 @@
 	import Slider from '$lib/components/Slider.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import ToggleChip from '$lib/components/ToggleChip.svelte';
+	import {
+		DISPLAY_THEME_OPTIONS,
+		displayScheme,
+		type DisplayThemeChoice
+	} from '$lib/displayTheme.svelte';
 	import { NEON_SHOWS, type NeonShow } from '$lib/examples/neon';
 
 	let show = $state<NeonShow>('cocktails');
@@ -28,10 +33,17 @@
 	// absorbing sign inks a wall, so it has to have one; the switch is emit-only.
 	let wallOn = $state(true);
 	let backdrop = $state('#0a0a0e');
+	// Does the hardware follow the page's theme toggle, or is it pinned? This page owns
+	// controls for BOTH knobs the core's `theme` owns — the polarity and the wall — and
+	// a colour the consumer names stops being the theme's, so the switch moves these
+	// controls instead of the option: the same result, visible in the panel.
+	let displayTheme = $state<DisplayThemeChoice>('page');
+	const scheme = $derived(displayScheme(displayTheme));
 	// The invented element: tubes that ink a pale wall instead of lighting a dark
 	// one. Flipping it drags the scene colours along — dark ink on a dark wall is
-	// invisible, and that trap isn't worth making the visitor discover.
-	let polarity = $state<'emit' | 'absorb'>('emit');
+	// invisible, and that trap isn't worth making the visitor discover. It starts from
+	// the display switch and stays wherever the visitor puts it.
+	let polarity = $derived<'emit' | 'absorb'>(scheme === 'light' ? 'absorb' : 'emit');
 	// On a phone the sign is bound by canvas width, so the 8% margin is the
 	// difference between a small sign and a legible one.
 	// (The gallery is ssr: false, so matchMedia is safe here.)
@@ -321,6 +333,14 @@
 					<ToggleChip bind:checked={wallOn} label="wall" />
 				</div>
 			{/if}
+			<label class="field"
+				>theme
+				<Segmented
+					bind:value={displayTheme}
+					ariaLabel="colour theme"
+					options={DISPLAY_THEME_OPTIONS}
+				/>
+			</label>
 			<div class="row">
 				<span class="rlabel">backdrop</span>
 				<input type="color" bind:value={backdrop} aria-label="backdrop colour" />
@@ -434,6 +454,15 @@
 		font-size: 11px;
 		letter-spacing: 0.04em;
 		color: var(--halo-text-muted);
+	}
+	.field {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		margin-bottom: 12px;
+		font-size: 13px;
+		color: var(--halo-text-main);
 	}
 	.row {
 		display: flex;

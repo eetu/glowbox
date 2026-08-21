@@ -38,6 +38,8 @@ export interface SplitFlapProps {
 	sound?: boolean | number;
 	pixelRatio?: number;
 	label?: string;
+	/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+	theme?: SplitFlapOptions['theme'];
 	/** Called with the board after creation, and with null on teardown — the
 	 *  Svelte wrapper's `oncreate` contract, for consumers who want a signal
 	 *  rather than watching the forwarded ref flip silently. */
@@ -73,6 +75,7 @@ export const SplitFlap = forwardRef<SplitFlapBoard | null, SplitFlapProps>(
 			flipMs,
 			sound,
 			pixelRatio,
+			theme,
 			label,
 			className,
 			style
@@ -104,6 +107,7 @@ export const SplitFlap = forwardRef<SplitFlapBoard | null, SplitFlapProps>(
 				flipMs: p.flipMs,
 				sound: p.sound,
 				pixelRatio: p.pixelRatio,
+				theme: p.theme,
 				label: p.label
 			});
 			if (!b) {
@@ -144,6 +148,7 @@ export const SplitFlap = forwardRef<SplitFlapBoard | null, SplitFlapProps>(
 				flipMs,
 				sound,
 				pixelRatio,
+				theme,
 				label
 			});
 		}, [
@@ -162,6 +167,7 @@ export const SplitFlap = forwardRef<SplitFlapBoard | null, SplitFlapProps>(
 			flipMs,
 			sound,
 			pixelRatio,
+			theme,
 			label
 		]);
 

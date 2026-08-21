@@ -9,6 +9,7 @@ import {
 	createLedDisplay,
 	type InteractionOptions,
 	type LedDisplay,
+	type LedDisplayOptions,
 	type LedOptions,
 	type QualityOptions
 } from '@glowbox/led-grid';
@@ -50,6 +51,8 @@ export const LedGrid = defineComponent({
 		quality: { type: Object as PropType<QualityOptions>, default: undefined },
 		/** Accessible name for the canvas (`aria-label`; default 'LED grid'). */
 		label: { type: String, default: undefined },
+		/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+		theme: { type: String as PropType<LedDisplayOptions['theme']>, default: undefined },
 		/** Called with the display after creation, and with null on teardown — the same
 		 *  contract as the Svelte wrapper. Bind as `:oncreate="fn"` (an `@create`
 		 *  listener would camelize to `onCreate` and miss it). */
@@ -78,6 +81,7 @@ export const LedGrid = defineComponent({
 				camera: props.camera,
 				interaction: props.interaction,
 				quality: props.quality,
+				theme: props.theme,
 				label: props.label
 			});
 			if (!display) {

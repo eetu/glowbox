@@ -8,6 +8,7 @@ import {
 	createLedDisplay,
 	type InteractionOptions,
 	type LedDisplay,
+	type LedDisplayOptions,
 	type LedOptions,
 	type QualityOptions
 } from '@glowbox/led-grid';
@@ -32,6 +33,8 @@ export interface LedGridProps {
 	quality?: QualityOptions;
 	/** Accessible name for the canvas (`aria-label`; default 'LED grid'). */
 	label?: string;
+	/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+	theme?: LedDisplayOptions['theme'];
 	/** Called with the display after creation, and with null on teardown — the
 	 *  Svelte wrapper's `oncreate` contract, for consumers who want a signal
 	 *  rather than watching the forwarded ref flip silently. */
@@ -78,6 +81,7 @@ export const LedGrid = forwardRef<LedDisplay | null, LedGridProps>(function LedG
 			camera: p.camera,
 			interaction: p.interaction,
 			quality: p.quality,
+			theme: p.theme,
 			label: p.label
 		});
 		if (!d) {

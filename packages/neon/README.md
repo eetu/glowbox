@@ -184,6 +184,7 @@ to steady, snaps strikes, and disables flicker/tired.
 | `strikeMs`      | `900`         | one tube's strike (0 = instant; forced by reduced motion)             |
 | `sound`         | off           | `true` (= 0.5) or `0..1` — the hum that follows the glass             |
 | `mains`         | `50`          | 50/60 Hz — the hum's fundamental is twice this                        |
+| `theme`         | `'dark'`      | `'light'` / `'auto'` bundle the colour defaults (see Themes)          |
 | `pixelRatio`    | `2`           | cap on devicePixelRatio                                               |
 | `label`         | `'neon sign'` | `aria-label`; the shown text is appended; `''` hides                  |
 
@@ -256,6 +257,14 @@ Path2D per section, built lazily and cached until the text/font changes;
 passes are stroked with `shadowBlur` capped and an LOD that drops halation and
 electrodes below ~28 px cap height. A sign is typically 5–30 sections — the
 render loop stops the moment the last transient settles.
+
+## Themes
+
+`theme` bundles the two options that decide how a sign lives on a page: `'dark'` (the
+default — lit tubes on a near-black wall), `'light'` (`polarity: 'absorb'` on a
+near-white wall, because a bloom cannot read against white), or `'auto'` to follow the
+page's `prefers-color-scheme`. Set `polarity` or `wall` yourself and that half is yours
+from then on.
 
 ---
 

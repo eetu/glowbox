@@ -51,19 +51,20 @@ tubes in place (a ticking clock never recreates canvases); `tubes` exposes the l
 
 ## Options
 
-| option       | default     | notes                                                             |
-| ------------ | ----------- | ----------------------------------------------------------------- |
-| `value`      | —           | the lit symbol (see above)                                        |
-| `style`      | `'classic'` | physical tube numeral shape: `'classic'` · `'slim'` · `'tall'`    |
-| `color`      | warm orange | glow colour — a `Color` (`[r,g,b]` 0..1 or any CSS string)        |
-| `glow`       | `0.7`       | glow strength 0..1                                                |
-| `background` | near-black  | tube glass colour behind the numerals                             |
-| `mesh`       | `true`      | draw the honeycomb anode mesh over the tube                       |
-| `ghost`      | `true`      | draw the other, unlit cathodes faintly behind — the stacked depth |
-| `wire`       | dull nickel | unlit cathode-wire colour (the filament stack behind the glass)   |
-| `pixelRatio` | `2`         | cap on devicePixelRatio                                           |
-| `bare`       | `false`     | contents only, transparent canvas (no glass) — for 3D/compositing |
-| `label`      | lit symbol  | accessible name (`aria-label`); a blank unlabelled tube is hidden |
+| option       | default     | notes                                                              |
+| ------------ | ----------- | ------------------------------------------------------------------ |
+| `value`      | —           | the lit symbol (see above)                                         |
+| `style`      | `'classic'` | physical tube numeral shape: `'classic'` · `'slim'` · `'tall'`     |
+| `color`      | warm orange | glow colour — a `Color` (`[r,g,b]` 0..1 or any CSS string)         |
+| `glow`       | `0.7`       | glow strength 0..1                                                 |
+| `background` | near-black  | tube glass colour behind the numerals                              |
+| `mesh`       | `true`      | draw the honeycomb anode mesh over the tube                        |
+| `ghost`      | `true`      | draw the other, unlit cathodes faintly behind — the stacked depth  |
+| `wire`       | dull nickel | unlit cathode-wire colour (the filament stack behind the glass)    |
+| `theme`      | `'dark'`    | `'light'` / `'auto'` bundle the colour defaults (see Themes below) |
+| `pixelRatio` | `2`         | cap on devicePixelRatio                                            |
+| `bare`       | `false`     | contents only, transparent canvas (no glass) — for 3D/compositing  |
+| `label`      | lit symbol  | accessible name (`aria-label`); a blank unlabelled tube is hidden  |
 
 All update live via `setOptions(patch)`.
 
@@ -117,6 +118,16 @@ from these (three.js owns only the glass cylinder + bloom).
 
 `setValue(v)`, `setOptions(patch)`, `resize()` (after the canvas box changes),
 `snapshot(): string` (PNG data URL), `dispose()`.
+
+## Themes
+
+`theme` bundles the housing: `'dark'` (the default), `'light'`, or `'auto'` to follow the
+page's `prefers-color-scheme`.
+
+A lit numeral needs dark glass to bloom against, so a nixie tube is a **dark object in
+both themes** — what the light theme changes is the hardware around the glass: a heavier
+drop shadow and a brighter rim, so the tube sits on a pale page instead of floating on
+it. `background` and `wire` stay yours to set.
 
 Part of the **glowbox** family of glowing retro displays — see
 **[@glowbox/led-grid](https://www.npmjs.com/package/@glowbox/led-grid)** (3D LED grid). Live demos:

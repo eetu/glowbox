@@ -24,6 +24,7 @@
 		flipMs,
 		sound,
 		pixelRatio,
+		theme,
 		label,
 		class: className,
 		style,
@@ -53,6 +54,8 @@
 		sound?: boolean | number;
 		pixelRatio?: number;
 		label?: string;
+		/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+		theme?: SplitFlapOptions['theme'];
 		/** Called with the board when created, and null on teardown — imperative escape hatch. */
 		oncreate?: (board: SplitFlapBoard | null) => void;
 		/** Forwarded to the <canvas>. */
@@ -86,6 +89,7 @@
 				flipMs,
 				sound,
 				pixelRatio,
+				theme,
 				label
 			})
 		);
@@ -127,6 +131,7 @@
 			flipMs,
 			sound,
 			pixelRatio,
+			theme,
 			label
 		});
 	});

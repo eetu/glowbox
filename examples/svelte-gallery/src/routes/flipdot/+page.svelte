@@ -21,6 +21,12 @@
 	import Slider from '$lib/components/Slider.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import ToggleChip from '$lib/components/ToggleChip.svelte';
+	import {
+		coreTheme,
+		DISPLAY_THEME_OPTIONS,
+		displayScheme,
+		type DisplayThemeChoice
+	} from '$lib/displayTheme.svelte';
 	import { FLIP_SHOWS, type FlipShow } from '$lib/examples/flipdot';
 
 	let show = $state<FlipShow>('clock');
@@ -68,6 +74,23 @@
 	// The panel behind the discs: off is `board: null` — bare discs on the page.
 	let panelOn = $state(true);
 	let backdrop = $state('#0a0a0e');
+	// Does the hardware follow the page's theme toggle, or is it pinned? The
+	// stage follows the display, because dark ink on a dark stage is invisible.
+	let displayTheme = $state<DisplayThemeChoice>('page');
+	let backdropNamed = false;
+	const scheme = $derived(displayScheme(displayTheme));
+	// This page has a swatch for every colour the core's `theme` owns, and a named
+	// colour stops being the theme's — so the switch moves the swatches, using the
+	// core's own palette. Pick a colour afterwards and it stays until you flip again.
+	$effect(() => {
+		const light = scheme === 'light';
+		onColor = light ? '#1b1c20' : '#d5e138';
+		offColor = light ? '#ded9cd' : '#17181a';
+		boardColor = light ? '#eeebe3' : '#101114';
+	});
+	$effect(() => {
+		if (!backdropNamed) backdrop = scheme === 'light' ? '#e9e7e1' : '#0a0a0e';
+	});
 	let crtOn = $state(false);
 	let panelOpen = $state(false);
 	const onKeydown = (e: KeyboardEvent) => {
@@ -95,7 +118,8 @@
 				sound: soundOn ? volume : 0,
 				onColor,
 				offColor,
-				board: panelOn ? boardColor : null
+				board: panelOn ? boardColor : null,
+				theme: coreTheme(displayTheme)
 			}))
 		);
 		board = b;
@@ -117,7 +141,8 @@
 			sound: soundOn && show !== 'gif' ? volume : 0,
 			onColor,
 			offColor,
-			board: panelOn ? boardColor : null
+			board: panelOn ? boardColor : null,
+			theme: coreTheme(displayTheme)
 		});
 	});
 
@@ -340,9 +365,22 @@
 			<div class="row">
 				<ToggleChip bind:checked={panelOn} label="panel" />
 			</div>
+			<label class="field"
+				>theme
+				<Segmented
+					bind:value={displayTheme}
+					ariaLabel="colour theme"
+					options={DISPLAY_THEME_OPTIONS}
+				/>
+			</label>
 			<div class="row">
 				<span class="rlabel">backdrop</span>
-				<input type="color" bind:value={backdrop} aria-label="backdrop colour" />
+				<input
+					type="color"
+					bind:value={backdrop}
+					aria-label="backdrop colour"
+					oninput={() => (backdropNamed = true)}
+				/>
 			</div>
 		</section>
 	</aside>
@@ -455,6 +493,15 @@
 		font-size: 11px;
 		letter-spacing: 0.04em;
 		color: var(--halo-text-muted);
+	}
+	.field {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		margin-bottom: 12px;
+		font-size: 13px;
+		color: var(--halo-text-main);
 	}
 	.row {
 		display: flex;
