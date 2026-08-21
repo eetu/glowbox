@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/lcd",
-	"version": "1.10.0",
+	"version": "1.11.0",
 	"description": "Character LCD module component — the HD44780-class 16×2: a reflective display whose ink takes real time to move (LC response smear), with the contrast pot, passive-matrix crosstalk streaks, the uninitialised row of boot boxes, CGRAM custom glyphs and a blinking block cursor, in the glowbox family.",
 	"keywords": [
 		"glowbox",

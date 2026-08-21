@@ -4,12 +4,19 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
-## [Unreleased]
+## [1.11.0] — 2026-08-21
+
+**Light mode, per core** — a `theme` option on all eight displays, where "light" is each
+one's own honest answer rather than a filter: paint inverted on the flap and dot boards,
+`polarity: 'absorb'` on neon, plastic and faceplates on the emissive panels, the comic
+look on the LED grid. Plus the housing pass that made it possible — every bezel is a
+strip hugging its hardware instead of a fill of the canvas — and the split-flap card
+finally printed in register with its own seam.
 
 ### Added
 
-- **A `theme` option on all eight display cores.** `'dark'` (the default — today's
-  look), `'light'`, or `'auto'` to follow the page's `prefers-color-scheme` and repaint
+- **A `theme` option on all eight display cores.** `'dark'` (the default — the look
+  every core has always had), `'light'`, or `'auto'` to follow the page's `prefers-color-scheme` and repaint
   when it flips. It is a bundle of colour **defaults**, never a render path, and a colour
   you set yourself stops being the theme's for good: `{ theme: 'light', onColor: '#c00' }`
   is a light board with a red dot and stays one when the page goes dark. What "light"
