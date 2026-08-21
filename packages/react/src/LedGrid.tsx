@@ -60,7 +60,8 @@ const baseStyle: CSSProperties = {
 // React 18 peer too.
 // eslint-disable-next-line @eslint-react/no-forward-ref
 export const LedGrid = forwardRef<LedDisplay | null, LedGridProps>(function LedGrid(props, ref) {
-	const { size, draw, led, color, camera, interaction, quality, label, className, style } = props;
+	const { size, draw, led, color, camera, interaction, quality, theme, label, className, style } =
+		props;
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const [display, setDisplay] = useState<LedDisplay | null>(null);
 
@@ -124,6 +125,9 @@ export const LedGrid = forwardRef<LedDisplay | null, LedGridProps>(function LedG
 	useEffect(() => {
 		display?.setOptions({ quality });
 	}, [display, quality]);
+	useEffect(() => {
+		display?.setOptions({ theme });
+	}, [display, theme]);
 	useEffect(() => {
 		display?.setOptions({ label });
 	}, [display, label]);

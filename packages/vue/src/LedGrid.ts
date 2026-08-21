@@ -131,6 +131,14 @@ export const LedGrid = defineComponent({
 			}
 		);
 		watch(
+			() => props.theme,
+			() => display?.setOptions({ theme: props.theme })
+		);
+		watch(
+			() => props.theme,
+			() => display?.setOptions({ theme: props.theme })
+		);
+		watch(
 			() => props.label,
 			() => display?.setOptions({ label: props.label })
 		);

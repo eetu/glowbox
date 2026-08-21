@@ -71,3 +71,24 @@ test('StrictMode double-mount recreates on the same canvas and still paints', as
 	const canvas = container.querySelector('canvas')!;
 	expect(litPixels(canvas)).toBeGreaterThan(0);
 });
+
+test('the theme prop updates the live display, not just the created one', async () => {
+	// <LedGrid> passes grouped option bags with one update effect per group, so `theme`
+	// needs its own — a prop flip after mount has to reach the live display.
+	const corner = (canvas: HTMLCanvasElement) => {
+		const gl = canvas.getContext('webgl')!;
+		const px = new Uint8Array(4);
+		gl.readPixels(1, 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+		return px[0] + px[1] + px[2];
+	};
+	const { container, rerender } = await render(
+		<LedGrid size={[4, 4, 4]} camera={{ autoOrbit: false }} theme="light" />
+	);
+	const canvas = container.querySelector('canvas')!;
+	await nextFrame();
+	const pale = corner(canvas);
+	expect(pale).toBeGreaterThan(400); // the light theme's bone ground
+	await rerender(<LedGrid size={[4, 4, 4]} camera={{ autoOrbit: false }} theme="dark" />);
+	await nextFrame();
+	expect(corner(canvas)).toBeLessThan(pale);
+});
