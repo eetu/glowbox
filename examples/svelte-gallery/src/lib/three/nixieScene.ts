@@ -5,13 +5,7 @@
 // (`glyphPath`). The unlit wire colour comes in as an option, so the page can drive it.
 // This file only owns the 3D part
 // the component can't: extruding those paths into geometry, the glass, and the bloom.
-import {
-	GLYPH_VIEWBOX,
-	glyphPath,
-	nixieCathodes,
-	nixieMesh,
-	nixieStyle
-} from '@glowbox/nixie';
+import { GLYPH_VIEWBOX, glyphPath, nixieCathodes, nixieMesh, nixieStyle } from '@glowbox/nixie';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
