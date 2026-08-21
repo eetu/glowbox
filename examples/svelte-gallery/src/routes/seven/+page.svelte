@@ -19,6 +19,12 @@
 	import Slider from '$lib/components/Slider.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import ToggleChip from '$lib/components/ToggleChip.svelte';
+	import {
+		coreTheme,
+		DISPLAY_THEME_OPTIONS,
+		displayScheme,
+		type DisplayThemeChoice
+	} from '$lib/displayTheme.svelte';
 
 	let style = $state<SevenSegmentStyle>('led');
 	let glow = $state(0.7);
@@ -29,6 +35,14 @@
 	let digitW = $state(76);
 	let digitH = $state(130);
 	let backdrop = $state('#0a0a0e');
+	// Does the hardware follow the page's theme toggle, or is it pinned? The
+	// stage follows the display, because dark ink on a dark stage is invisible.
+	let displayTheme = $state<DisplayThemeChoice>('page');
+	let backdropNamed = false;
+	const scheme = $derived(displayScheme(displayTheme));
+	$effect(() => {
+		if (!backdropNamed) backdrop = scheme === 'light' ? '#e9e7e1' : '#0a0a0e';
+	});
 	let panelOpen = $state(false);
 	const onKeydown = (e: KeyboardEvent) => {
 		if (e.key === 'Escape' && panelOpen) panelOpen = false;
@@ -63,7 +77,8 @@
 					glow,
 					age,
 					ghost,
-					bare: !windowOn
+					bare: !windowOn,
+					theme: coreTheme(displayTheme)
 				}))
 			)
 		);
@@ -73,7 +88,7 @@
 		};
 	});
 	$effect(() => {
-		const patch = { style, glow, age, ghost, bare: !windowOn };
+		const patch = { style, glow, age, ghost, bare: !windowOn, theme: coreTheme(displayTheme) };
 		for (const d of displays) d?.setOptions(patch);
 	});
 
@@ -199,9 +214,22 @@
 			<div class="row">
 				<ToggleChip bind:checked={windowOn} label="window module" />
 			</div>
+			<label class="field"
+				>theme
+				<Segmented
+					bind:value={displayTheme}
+					ariaLabel="colour theme"
+					options={DISPLAY_THEME_OPTIONS}
+				/>
+			</label>
 			<div class="row">
 				<span class="rlabel">backdrop</span>
-				<input type="color" bind:value={backdrop} aria-label="backdrop colour" />
+				<input
+					type="color"
+					bind:value={backdrop}
+					aria-label="backdrop colour"
+					oninput={() => (backdropNamed = true)}
+				/>
 			</div>
 		</section>
 	</aside>
@@ -309,6 +337,15 @@
 		font-size: 11px;
 		letter-spacing: 0.04em;
 		color: var(--halo-text-muted);
+	}
+	.field {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		margin-bottom: 12px;
+		font-size: 13px;
+		color: var(--halo-text-main);
 	}
 	.row {
 		display: flex;

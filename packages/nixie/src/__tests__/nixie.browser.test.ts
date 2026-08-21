@@ -107,3 +107,24 @@ test('survives absurdly small canvases (regression: negative glass inset threw)'
 		tube?.dispose();
 	}
 });
+
+test('theme light sits the dark tube on a pale page: heavier shadow, brighter rim', () => {
+	// The glass stays dark in both themes — what moves is the housing, and the
+	// shadow lands in the transparent margin around the glass.
+	const canvas = document.createElement('canvas');
+	canvas.style.width = '120px';
+	canvas.style.height = '200px';
+	document.body.appendChild(canvas);
+	const tube = createNixieTube(canvas, { value: 8, theme: 'light' })!;
+	const marginAlpha = () => {
+		const d = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, 6).data;
+		let n = 0;
+		for (let i = 3; i < d.length; i += 4) n += d[i];
+		return n;
+	};
+	const light = marginAlpha();
+	tube.setOptions({ theme: 'dark' });
+	expect(marginAlpha()).toBeLessThan(light);
+	tube.dispose();
+	canvas.remove();
+});

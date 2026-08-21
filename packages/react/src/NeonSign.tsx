@@ -66,6 +66,8 @@ export interface NeonSignProps {
 	mains?: NeonSignOptions['mains'];
 	pixelRatio?: number;
 	label?: string;
+	/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+	theme?: NeonSignOptions['theme'];
 	/** Called with the sign after creation, and with null on teardown — the
 	 *  Svelte wrapper's `oncreate` contract, for consumers who want a signal
 	 *  rather than watching the forwarded ref flip silently. */
@@ -113,6 +115,7 @@ export const NeonSign = forwardRef<NeonSignHandle | null, NeonSignProps>(
 			sound,
 			mains,
 			pixelRatio,
+			theme,
 			label,
 			className,
 			style
@@ -157,6 +160,7 @@ export const NeonSign = forwardRef<NeonSignHandle | null, NeonSignProps>(
 				sound: p.sound,
 				mains: p.mains,
 				pixelRatio: p.pixelRatio,
+				theme: p.theme,
 				label: p.label
 			});
 			if (!s) {
@@ -208,6 +212,7 @@ export const NeonSign = forwardRef<NeonSignHandle | null, NeonSignProps>(
 				sound,
 				mains,
 				pixelRatio,
+				theme,
 				label
 			});
 		}, [
@@ -238,6 +243,7 @@ export const NeonSign = forwardRef<NeonSignHandle | null, NeonSignProps>(
 			sound,
 			mains,
 			pixelRatio,
+			theme,
 			label
 		]);
 

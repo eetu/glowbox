@@ -21,6 +21,7 @@
 		ghost,
 		wire,
 		pixelRatio,
+		theme,
 		label,
 		class: className,
 		style,
@@ -40,6 +41,8 @@
 		pixelRatio?: number;
 		/** Accessible name (`aria-label`); defaults to the lit symbol itself. */
 		label?: string;
+		/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+		theme?: NixieOptions['theme'];
 		/** Called with the tube when created, and null on teardown — imperative escape hatch. */
 		oncreate?: (tube: NixieTube | null) => void;
 		/** Forwarded to the <canvas>. */
@@ -68,6 +71,7 @@
 				ghost,
 				wire,
 				pixelRatio,
+				theme,
 				label
 			})
 		);
@@ -100,6 +104,7 @@
 			ghost,
 			wire,
 			pixelRatio,
+			theme,
 			label
 		});
 	});

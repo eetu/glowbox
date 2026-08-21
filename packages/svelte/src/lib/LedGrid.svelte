@@ -10,6 +10,7 @@
 		createLedDisplay,
 		type InteractionOptions,
 		type LedDisplay,
+		type LedDisplayOptions,
 		type LedOptions,
 		type QualityOptions
 	} from '@glowbox/led-grid';
@@ -23,6 +24,7 @@
 		camera,
 		interaction,
 		quality,
+		theme,
 		label,
 		class: className,
 		style,
@@ -37,6 +39,8 @@
 		quality?: QualityOptions;
 		/** Accessible name for the canvas (`aria-label`; default 'LED grid'). */
 		label?: string;
+		/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+		theme?: LedDisplayOptions['theme'];
 		/** Called with the display when (re)created, and with null on teardown —
 		 *  an escape hatch for imperative access (snapshot(), stats, setCamera…). */
 		oncreate?: (display: LedDisplay | null) => void;
@@ -59,7 +63,7 @@
 		const el = canvas;
 		if (!el) return;
 		const d = untrack(() =>
-			createLedDisplay(el, { size, led, color, camera, interaction, quality, label })
+			createLedDisplay(el, { size, led, color, camera, interaction, quality, theme, label })
 		);
 		if (!d) {
 			console.warn('LedGrid: WebGL unavailable');
@@ -97,6 +101,9 @@
 	});
 	$effect(() => {
 		display?.setOptions({ quality });
+	});
+	$effect(() => {
+		display?.setOptions({ theme });
 	});
 	$effect(() => {
 		display?.setOptions({ label });

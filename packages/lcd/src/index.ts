@@ -11,3 +11,4 @@ export {
 	type LcdModuleOptions
 } from './lcd';
 export { type PanelName, PANELS, type PanelSpec } from './panels';
+export { type Theme } from './theme';

@@ -83,6 +83,8 @@ export const NeonSign = defineComponent({
 		mains: { type: Number as PropType<NeonSignOptions['mains']>, default: undefined },
 		pixelRatio: { type: Number, default: undefined },
 		label: { type: String, default: undefined },
+		/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+		theme: { type: String as PropType<NeonSignOptions['theme']>, default: undefined },
 		/** Called with the sign after creation, and with null on teardown — the same
 		 *  contract as the Svelte wrapper. Bind as `:oncreate="fn"` (an `@create`
 		 *  listener would camelize to `onCreate` and miss it). */
@@ -122,6 +124,7 @@ export const NeonSign = defineComponent({
 			sound: props.sound,
 			mains: props.mains,
 			pixelRatio: props.pixelRatio,
+			theme: props.theme,
 			label: props.label
 		});
 

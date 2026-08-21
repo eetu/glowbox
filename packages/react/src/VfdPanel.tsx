@@ -59,6 +59,8 @@ export interface VfdPanelProps {
 	selfTest?: boolean;
 	pixelRatio?: number;
 	label?: string;
+	/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+	theme?: VfdPanelOptions['theme'];
 	/** Called with the panel after creation, and with null on teardown — the
 	 *  Svelte wrapper's `oncreate` contract, for consumers who want a signal
 	 *  rather than watching the forwarded ref flip silently. */
@@ -96,6 +98,7 @@ export const VfdPanel = forwardRef<VfdPanelHandle | null, VfdPanelProps>(
 			on,
 			selfTest,
 			pixelRatio,
+			theme,
 			label,
 			className,
 			style
@@ -131,6 +134,7 @@ export const VfdPanel = forwardRef<VfdPanelHandle | null, VfdPanelProps>(
 				on: p.on,
 				selfTest: p.selfTest,
 				pixelRatio: p.pixelRatio,
+				theme: p.theme,
 				label: p.label
 			});
 			if (!created) {
@@ -187,6 +191,7 @@ export const VfdPanel = forwardRef<VfdPanelHandle | null, VfdPanelProps>(
 				on,
 				selfTest,
 				pixelRatio,
+				theme,
 				label
 			});
 		}, [
@@ -205,6 +210,7 @@ export const VfdPanel = forwardRef<VfdPanelHandle | null, VfdPanelProps>(
 			on,
 			selfTest,
 			pixelRatio,
+			theme,
 			label
 		]);
 

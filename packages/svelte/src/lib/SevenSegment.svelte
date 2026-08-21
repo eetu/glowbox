@@ -24,6 +24,7 @@
 		age,
 		transition,
 		pixelRatio,
+		theme,
 		label,
 		class: className,
 		style,
@@ -48,6 +49,8 @@
 		pixelRatio?: number;
 		/** Accessible name (`aria-label`); defaults to the shown symbol itself. */
 		label?: string;
+		/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+		theme?: SevenSegmentOptions['theme'];
 		/** Called with the display when created, and null on teardown — imperative escape hatch. */
 		oncreate?: (display: SevenSegmentDisplay | null) => void;
 		/** Forwarded to the <canvas>. */
@@ -78,6 +81,7 @@
 				age,
 				transition,
 				pixelRatio,
+				theme,
 				label
 			})
 		);
@@ -112,6 +116,7 @@
 			age,
 			transition,
 			pixelRatio,
+			theme,
 			label
 		});
 	});

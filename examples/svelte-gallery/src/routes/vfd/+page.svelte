@@ -24,6 +24,12 @@
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import ToggleChip from '$lib/components/ToggleChip.svelte';
 	import {
+		coreTheme,
+		DISPLAY_THEME_OPTIONS,
+		displayScheme,
+		type DisplayThemeChoice
+	} from '$lib/displayTheme.svelte';
+	import {
 		ANALYSER_FRAME,
 		analyserLayout,
 		createAnalyserShow,
@@ -59,6 +65,23 @@
 	let panelWidth = $state(680);
 	let panelOpen = $state(false);
 	// The faceplate: off is `bezel: null` — glass and anodes on a transparent canvas.
+	// Does the chassis follow the page's theme toggle, or is it pinned?
+	let displayTheme = $state<DisplayThemeChoice>('page');
+	const scheme = $derived(displayScheme(displayTheme));
+	// The room and the case the panel is screwed into, per scheme: a brushed-silver
+	// faceplate against a black chassis reads as a mistake rather than a receiver.
+	const roomStyle = $derived(
+		scheme === 'light'
+			? '--room: #dedbd4; --case-top: #cfccc4; --case-bottom: #bebbb3; --case-edge: #a9a6a0'
+			: '--room: #17181b; --case-top: #2a2c31; --case-bottom: #202226; --case-edge: #2c2e33'
+	);
+	// This page has a swatch for every colour the core's `theme` owns, and a named
+	// colour stops being the theme's — so the switch moves the swatches, using the
+	// core's own palette. Pick a colour afterwards and it stays until you flip again.
+	$effect(() => {
+		const light = scheme === 'light';
+		plateColor = light ? '#b9bcc2' : '#15171a';
+	});
 	let plateOn = $state(true);
 	let plateColor = $state('#15171a');
 	// Which element the last tap landed on — the geometry contract, with the page (not
@@ -101,6 +124,7 @@
 				grid,
 				on,
 				bezel: plateOn ? plateColor : null,
+				theme: coreTheme(displayTheme),
 				label: 'mini-system display panel'
 			})
 		);
@@ -126,7 +150,8 @@
 			filament,
 			grid,
 			on,
-			bezel: plateOn ? plateColor : null
+			bezel: plateOn ? plateColor : null,
+			theme: coreTheme(displayTheme)
 		});
 	});
 
@@ -151,7 +176,8 @@
 		filament,
 		grid,
 		on,
-		bezel: plateOn ? plateColor : null
+		bezel: plateOn ? plateColor : null,
+		theme: coreTheme(displayTheme)
 	});
 
 	let analyserCanvas = $state<HTMLCanvasElement>();
@@ -228,7 +254,9 @@
 		</button>
 	</header>
 
-	<div class="stage">
+	<!-- The chassis is the PAGE's hardware, so a silver faceplate needs a lighter case
+	     and a lighter room to sit in — the core only owns what is on the plate. -->
+	<div class="stage" style={roomStyle}>
 		<!-- The core attaches no listeners; the page owns the click and asks the panel
 		     for geometry. Same contract as split-flap's cellAt and neon's sectionAt. -->
 		<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
@@ -432,6 +460,14 @@
 			<div class="row">
 				<ToggleChip bind:checked={plateOn} label="faceplate" />
 			</div>
+			<label class="field"
+				>theme
+				<Segmented
+					bind:value={displayTheme}
+					ariaLabel="colour theme"
+					options={DISPLAY_THEME_OPTIONS}
+				/>
+			</label>
 		</section>
 
 		<section>
@@ -506,7 +542,7 @@
 		justify-content: center;
 		overflow: auto;
 		padding: 24px;
-		background: #17181b;
+		background: var(--room);
 	}
 
 	/* The panel is a piece of hardware, so it gets a front panel to sit in — brushed
@@ -514,9 +550,9 @@
 	.unit {
 		max-width: 100%;
 		padding: 14px;
-		border: 1px solid #2c2e33;
+		border: 1px solid var(--case-edge);
 		border-radius: 6px;
-		background: linear-gradient(#2a2c31, #202226);
+		background: linear-gradient(var(--case-top), var(--case-bottom));
 		box-shadow:
 			0 1px 0 rgb(255 255 255 / 6%) inset,
 			0 12px 30px rgb(0 0 0 / 45%);

@@ -655,3 +655,43 @@ test('clear() with no name stops the whole panel but leaves the silkscreen', asy
 	panel.set('main', '888');
 	expect(energy(canvas)).toBeGreaterThan(dark);
 });
+
+test('theme light puts a brushed-silver plate round the same dark glass', () => {
+	const canvas = document.createElement('canvas');
+	canvas.style.width = '320px';
+	canvas.style.height = '200px'; // taller than the frame: the plate shows
+	document.body.appendChild(canvas);
+	// persistence 0 so every setOptions settles synchronously, like the other tests.
+	const panel = createVfdPanel(canvas, {
+		frame: FRAME,
+		selfTest: false,
+		layout: DIGITS,
+		persistence: 0,
+		theme: 'light'
+	})!;
+	cleanup.push(() => {
+		panel.dispose();
+		canvas.remove();
+	});
+	// The plate is the module's own top edge: walk the centre column to the first
+	// opaque pixel and read two rows in.
+	const plate = () => {
+		const x = canvas.width >> 1;
+		const col = canvas.getContext('2d')!.getImageData(x, 0, 1, canvas.height).data;
+		for (let y = 0; y < canvas.height; y++)
+			if (col[y * 4 + 3] > 250) {
+				const i = (y + 2) * 4;
+				return col[i] + col[i + 1] + col[i + 2];
+			}
+		return -1;
+	};
+	const silver = plate();
+	expect(silver).toBeGreaterThan(400);
+	panel.setOptions({ theme: 'dark' });
+	expect(plate()).toBeLessThan(silver);
+	// A plate the consumer named never moves again.
+	panel.setOptions({ bezel: '#ff0000', theme: 'light' });
+	const named = plate();
+	panel.setOptions({ theme: 'dark' });
+	expect(plate()).toBe(named);
+});

@@ -36,3 +36,4 @@ export const createVoxelGrid: (
 	nz: number,
 	leds?: Float32Array
 ) => PublicVoxelGrid = createVoxelGridImpl;
+export { type Theme } from './theme';

@@ -134,3 +134,19 @@ test('survives absurdly small canvases (regression: negative window inset threw)
 		d?.dispose();
 	}
 });
+
+test('theme light deepens the module shadow so it sits on a pale page', () => {
+	const canvas = makeCanvas();
+	const d = createSevenSegment(canvas, { value: 8, transition: 0, theme: 'light' })!;
+	const marginAlpha = () => {
+		const px = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, 4).data;
+		let n = 0;
+		for (let i = 3; i < px.length; i += 4) n += px[i];
+		return n;
+	};
+	const light = marginAlpha();
+	d.setOptions({ theme: 'dark' });
+	expect(marginAlpha()).toBeLessThan(light);
+	d.dispose();
+	canvas.remove();
+});

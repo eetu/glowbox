@@ -29,6 +29,7 @@
 		scanMs,
 		sound,
 		pixelRatio,
+		theme,
 		label,
 		class: className,
 		style,
@@ -56,6 +57,8 @@
 		sound?: boolean | number;
 		pixelRatio?: number;
 		label?: string;
+		/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+		theme?: FlipDotsOptions['theme'];
 		/** Called with the board when created, and null on teardown — imperative escape hatch. */
 		oncreate?: (board: FlipDotBoard | null) => void;
 		/** Forwarded to the <canvas>. */
@@ -89,6 +92,7 @@
 				scanMs,
 				sound,
 				pixelRatio,
+				theme,
 				label
 			})
 		);
@@ -130,6 +134,7 @@
 			scanMs,
 			sound,
 			pixelRatio,
+			theme,
 			label
 		});
 	});

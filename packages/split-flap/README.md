@@ -104,22 +104,23 @@ flip on the board.
 
 ## Options
 
-| option       | default                | notes                                                       |
-| ------------ | ---------------------- | ----------------------------------------------------------- |
-| `cols, rows` | `12×1`                 | one destination line; tile bigger boards freely             |
-| `charset`    | `DRUM_NORDIC`          | the drum — flap sequence in rotation order                  |
-| `drums`      | —                      | drum zones: rectangles of modules with their own drum       |
-| `palette`    | —                      | per-flap faces: paint (chroma) or `{ glyph, ink, paint }`   |
-| `card`       | near-black             | flap plastic (any CSS string or `[r,g,b]` 0..1)             |
-| `ink`        | warm white             | the printed characters                                      |
-| `board`      | `'#0c0c0f'`            | the frame behind/between modules; `null` = transparent      |
-| `gap`        | `0.08`                 | cell fraction around each module                            |
-| `font`       | Helvetica stack        | the letterform                                              |
-| `shaded`     | `false`                | opt-in lighting: wells, hinge clips, the fallen pile, glint |
-| `flipMs`     | `90`                   | one flap's fall (0 = instant; forced by reduced motion)     |
-| `sound`      | off                    | `true` (= 0.5) or `0..1` volume                             |
-| `pixelRatio` | `2`                    | cap on devicePixelRatio                                     |
-| `label`      | `'split-flap display'` | `aria-label`; the shown text is appended; `''` hides        |
+| option       | default                | notes                                                        |
+| ------------ | ---------------------- | ------------------------------------------------------------ |
+| `cols, rows` | `12×1`                 | one destination line; tile bigger boards freely              |
+| `charset`    | `DRUM_NORDIC`          | the drum — flap sequence in rotation order                   |
+| `drums`      | —                      | drum zones: rectangles of modules with their own drum        |
+| `palette`    | —                      | per-flap faces: paint (chroma) or `{ glyph, ink, paint }`    |
+| `card`       | near-black             | flap plastic (any CSS string or `[r,g,b]` 0..1)              |
+| `ink`        | warm white             | the printed characters                                       |
+| `board`      | `'#0c0c0f'`            | the frame behind/between modules; `null` = transparent       |
+| `gap`        | `0.08`                 | cell fraction around each module                             |
+| `font`       | Helvetica stack        | the letterform                                               |
+| `shaded`     | `false`                | opt-in lighting: wells, hinge clips, the fallen pile, glint  |
+| `flipMs`     | `90`                   | one flap's fall (0 = instant; forced by reduced motion)      |
+| `sound`      | off                    | `true` (= 0.5) or `0..1` volume                              |
+| `theme`      | `'dark'`               | `'light'` / `'auto'` bundle the colour defaults (see Themes) |
+| `pixelRatio` | `2`                    | cap on devicePixelRatio                                      |
+| `label`      | `'split-flap display'` | `aria-label`; the shown text is appended; `''` hides         |
 
 All options update live via `setOptions(patch)` — swapping
 `charset`/`drums`/`palette` re-cards the modules in place. API: `setText(string | string[])`,
@@ -173,6 +174,16 @@ for the drum's unused letters); resting modules are two `drawImage` calls, and
 the render loop stops when the last card lands. A 40×20 chroma wall (800
 modules) cascades smoothly at dpr 2; the practical ceiling is a couple of
 thousand modules.
+
+## Themes
+
+`theme` is a bundle of colour **defaults**, not a render path: `'dark'` (the default —
+near-black cards printed warm white, in a near-black frame), `'light'` (a bone-white
+strip printed near-black, in a pale frame — the paint job the pale Solari boards wore),
+or `'auto'` to follow the page's `prefers-color-scheme` and repaint when it flips.
+
+A colour you set is yours for good — `{ theme: 'light', ink: '#c0392b' }` is a pale board
+with red print, and stays one when the page flips to dark.
 
 ---
 

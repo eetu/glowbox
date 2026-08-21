@@ -8,6 +8,34 @@ version and are released together.
 
 ### Added
 
+- **A `theme` option on all eight display cores.** `'dark'` (the default — today's
+  look), `'light'`, or `'auto'` to follow the page's `prefers-color-scheme` and repaint
+  when it flips. It is a bundle of colour **defaults**, never a render path, and a colour
+  you set yourself stops being the theme's for good: `{ theme: 'light', onColor: '#c00' }`
+  is a light board with a red dot and stays one when the page goes dark. What "light"
+  means is each core's own answer, and for half of them it is not an inversion:
+  - **split-flap** prints a bone strip in near-black, in a pale frame; **flip-dot** runs
+    the same board with the paint the other way round; **neon** switches to
+    `polarity: 'absorb'` on a near-white wall (a bloom cannot read against white);
+    **lcd** was light-native all along, so the theme moves the plastic and leaves `panel`
+    alone — the glass is hardware, not a mood.
+  - **nixie**, **seven-segment** and **vfd** are emissive: the glass stays dark in both
+    themes, and the theme is the housing — a heavier drop shadow and a brighter rim on
+    the first two, the brushed silver of a 70s receiver on the vfd's faceplate.
+    **led-grid** switches the LOOK, since an additive glow has nothing to add to on a
+    pale ground: `comic`'s opaque ink-outlined LEDs on a bone room.
+
+  Mirrored into every component in all three wrappers, and each core now exports the
+  `Theme` type. The resolution, the listener and the who-owns-this-colour bookkeeping
+  live in `shared/theme.ts`, symlinked into all eight (guarded by `check-shared`).
+
+- **svelte-gallery: a display-theme switch on every route** — _Page_ (follow the header
+  toggle, handing the core `'auto'` when the page is on auto), _Dark_, _Light_. The stage
+  follows the display, because dark ink on a dark stage is invisible. Where a page has
+  its own swatch for a colour the theme owns (split-flap's card/ink/board, flip-dot's
+  discs, neon's polarity + wall, the lcd plastic, the vfd plate, led-grid's look), the
+  switch moves those controls instead, using the core's own palette — a named colour is
+  not the theme's to move, and the demo shows that rather than hiding it.
 - **`@glowbox/lcd`: extension faces — a `glyphs` option and the `LATIN_5X7` table.**
   Inject glyphs over the vendored ASCII font as character → 5×7 ASCII art (the
   face's own authoring format); CGRAM code points 0–7 still win, and patching

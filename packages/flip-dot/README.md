@@ -75,6 +75,7 @@ for stills). Pure logic, runs under plain node.
 | `stagger`    | `'scan'`             | `'scan'` \| `'random'` \| `'none'`                            |
 | `scanMs`     | `150`                | total sweep spread                                            |
 | `sound`      | off                  | `true` (= 0.5) or `0..1` volume                               |
+| `theme`      | `'dark'`             | `'light'` / `'auto'` bundle the colour defaults (see Themes)  |
 | `pixelRatio` | `2`                  | cap on devicePixelRatio                                       |
 | `label`      | `'flip-dot display'` | `aria-label`; `''` hides from the a11y tree                   |
 
@@ -100,6 +101,15 @@ Faces are baked sprites; dense boards (>512 dots) additionally use a
 pre-squashed atlas so a mid-flip dot is a single `drawImage`. The demo board
 (56×28) animates its worst case at **~134 fps at dpr 2 on an Apple M1**
 (`scripts/bench-flip-dot.mjs` in the repo); idle is zero by construction.
+
+## Themes
+
+`theme` bundles the colour **defaults**: `'dark'` (the default — fluorescent discs on a
+near-black panel), `'light'` (near-black discs on a bone panel), or `'auto'` to follow
+the page's `prefers-color-scheme`. A disc is painted on both faces, so either way round
+is real hardware — this is an inversion, not a filter.
+
+Any colour you set yourself stays yours through every later theme change.
 
 ---
 

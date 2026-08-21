@@ -19,6 +19,7 @@ import {
 	type RendererParams,
 	type RgbLayout
 } from './renderer';
+import { resolveTheme, type Theme, themeOwner, watchTheme } from './theme';
 import { type Color, createVoxelGrid, type VoxelGrid } from './voxel-grid';
 
 export type { LedShape, LedStyle, Projection, RgbLayout } from './renderer';
@@ -122,6 +123,12 @@ export interface QualityOptions {
 export interface LedDisplayOptions {
 	/** Grid size [nx, ny, nz]. */
 	size: [number, number, number];
+	/** Colour bundle: `'dark'` (default) or `'light'`, or `'auto'` to follow the page's
+	 *  `prefers-color-scheme`. An additive glow cannot read against white, so the light
+	 *  theme does not tint the dark room — it switches the LOOK to `'comic'`, whose
+	 *  cel-shaded, ink-outlined LEDs are opaque, and puts them on a pale ground. Any
+	 *  colour or style you set yourself stays yours. */
+	theme?: Theme;
 	led?: LedOptions;
 	color?: ColorOptions;
 	camera?: CameraOptions;
@@ -194,14 +201,27 @@ export function createLedDisplay(
 	const it = opts.interaction ?? {};
 	const q = opts.quality ?? {};
 
+	// A glow is ADDITIVE: on a pale ground there is nothing for it to add to, so the
+	// light theme is the comic look — opaque cel-shaded LEDs with an ink outline, the
+	// one style that survives a bright page — on a bone ground.
+	const THEMES = {
+		dark: { background: [0.01, 0.01, 0.02] as Color, style: 'hologram' as LedStyle },
+		light: { background: [0.92, 0.91, 0.88] as Color, style: 'comic' as LedStyle }
+	};
+	const themed = themeOwner(['background', 'style'] as const);
+	if (col.background !== undefined) themed.mark({ background: col.background });
+	if (led.style !== undefined) themed.mark({ style: led.style });
+	let theme = opts.theme ?? 'dark';
+	let scheme = resolveTheme(theme);
+
 	const rendererParams: RendererParams = {
-		background: parseColor01(col.background ?? [0.01, 0.01, 0.02]),
+		background: parseColor01(col.background ?? THEMES[scheme].background),
 		offColor: parseColor01(led.offColor ?? [0, 0, 0]),
 		tint: parseColor(col.tint ?? [1, 1, 1]),
 		glow: led.glow ?? 2.2,
 		ledSize: led.size ?? 0.6,
 		offSize: led.offSize ?? 0.35,
-		style: led.style ?? 'hologram',
+		style: led.style ?? THEMES[scheme].style,
 		shape: led.shape ?? 'round',
 		outline: led.outline ?? 0.25,
 		outlineColor: parseColor01(led.outlineColor ?? [0.02, 0.02, 0.02]),
@@ -444,7 +464,37 @@ export function createLedDisplay(
 		}
 	}
 
+	// `theme: 'auto'` follows the page: the ground and the look track the scheme.
+	let stopTheme = watchTheme(theme, (next) => {
+		scheme = next;
+		applyTheme();
+	});
+	/** Move the ground and the look to the resolved scheme, minus what is named. */
+	function applyTheme() {
+		const t = THEMES[scheme];
+		const cfg: Partial<RendererParams> = {};
+		if (themed.owns('background')) cfg.background = parseColor01(t.background);
+		if (themed.owns('style')) cfg.style = t.style;
+		renderer.configure(cfg);
+		Object.assign(rendererParams, cfg);
+		render();
+	}
+
 	function setOptions(patch: LedDisplayPatch) {
+		// A colour or style named in this patch is the consumer's for good, so mark it
+		// before the theme gets a chance to move it.
+		if (patch.color?.background !== undefined) themed.mark({ background: patch.color.background });
+		if (patch.led?.style !== undefined) themed.mark({ style: patch.led.style });
+		if (patch.theme !== undefined && patch.theme !== theme) {
+			theme = patch.theme;
+			scheme = resolveTheme(theme);
+			stopTheme();
+			stopTheme = watchTheme(theme, (next) => {
+				scheme = next;
+				applyTheme();
+			});
+			applyTheme();
+		}
 		if (patch.led || patch.color) {
 			const cfg: Partial<RendererParams> = {
 				background:
@@ -565,6 +615,7 @@ export function createLedDisplay(
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			stopTheme();
 			stop();
 			ro?.disconnect();
 			canvas.style.touchAction = prevTouchAction;

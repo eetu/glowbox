@@ -53,6 +53,8 @@ export const SevenSegment = defineComponent({
 		pixelRatio: { type: Number, default: undefined },
 		/** Accessible name (`aria-label`); defaults to the shown symbol itself. */
 		label: { type: String, default: undefined },
+		/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+		theme: { type: String as PropType<SevenSegmentOptions['theme']>, default: undefined },
 		/** Called with the display after creation, and with null on teardown — the same
 		 *  contract as the Svelte wrapper. Bind as `:oncreate="fn"` (an `@create`
 		 *  listener would camelize to `onCreate` and miss it). */
@@ -76,6 +78,7 @@ export const SevenSegment = defineComponent({
 			age: props.age,
 			transition: props.transition,
 			pixelRatio: props.pixelRatio,
+			theme: props.theme,
 			label: props.label
 		});
 

@@ -25,6 +25,7 @@
 		bezel,
 		bezelWidth,
 		pixelRatio,
+		theme,
 		label,
 		class: className,
 		style,
@@ -62,6 +63,8 @@
 		bezelWidth?: number;
 		pixelRatio?: number;
 		label?: string;
+		/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+		theme?: LcdModuleOptions['theme'];
 		/** Called with the module when created, and null on teardown — imperative escape
 		 *  hatch (setGlyph, setCursor, power). */
 		oncreate?: (lcd: LcdModule | null) => void;
@@ -98,6 +101,7 @@
 				bezel,
 				bezelWidth,
 				pixelRatio,
+				theme,
 				label
 			})
 		);
@@ -137,6 +141,7 @@
 			bezel,
 			bezelWidth,
 			pixelRatio,
+			theme,
 			label
 		});
 	});

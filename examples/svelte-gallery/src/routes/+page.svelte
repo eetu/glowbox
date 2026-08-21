@@ -29,6 +29,12 @@
 	import Slider from '$lib/components/Slider.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import ToggleChip from '$lib/components/ToggleChip.svelte';
+	import {
+		coreTheme,
+		DISPLAY_THEME_OPTIONS,
+		displayScheme,
+		type DisplayThemeChoice
+	} from '$lib/displayTheme.svelte';
 	import { makeAttractor } from '$lib/examples/attractor';
 	import { makeGifDraw } from '$lib/examples/gif';
 	import { makeXwing } from '$lib/examples/model';
@@ -182,6 +188,15 @@
 	let projection = $state<Projection>('perspective');
 	let zoom = $state(true);
 	let background = $state('#05050c'); // CSS string → Color, straight from <input type=color>
+	// This page names both knobs the core's theme owns (the look and the ground),
+	// because it has a control for each — so the switch moves the page's OWN knobs,
+	// which is what the option bundles in one word. Pick either afterwards to keep it.
+	let displayTheme = $state<DisplayThemeChoice>('page');
+	$effect(() => {
+		const light = displayScheme(displayTheme) === 'light';
+		style = light ? 'comic' : 'hologram';
+		background = light ? '#ecebe4' : '#05050c';
+	});
 	// quality.alpha is fixed at context creation, so this toggle remounts the display
 	// (the {#key} below). The stage shows a gradient behind it to make it visible.
 	let transparent = $state(false);
@@ -378,6 +393,7 @@
 						}}
 						interaction={{ zoom, zoomLimits: [0.35, 12] }}
 						color={{ background }}
+						theme={coreTheme(displayTheme)}
 						quality={{ fps: fpsCapNum, alpha: transparent }}
 						oncreate={(d) => (display = d)}
 					/>
@@ -565,6 +581,14 @@
 
 		<section>
 			<h2>scene</h2>
+			<label class="field"
+				>theme
+				<Segmented
+					bind:value={displayTheme}
+					ariaLabel="colour theme"
+					options={DISPLAY_THEME_OPTIONS}
+				/>
+			</label>
 			<div class="row">
 				<span class="rlabel">background</span>
 				<span class="swatch">

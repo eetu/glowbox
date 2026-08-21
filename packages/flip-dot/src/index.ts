@@ -13,3 +13,4 @@ export {
 	type FlipDotStagger
 } from './flip-dot';
 export { createMechSound, type MechSound, type MechTick } from './sound';
+export { type Theme } from './theme';

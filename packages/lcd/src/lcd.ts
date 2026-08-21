@@ -30,6 +30,7 @@
 import { type Color, parseColor, type RGB } from './color';
 import { compile5x7, FONT_5X7, glyph5x7 } from './font5x7';
 import { type PanelName, PANELS, type PanelSpec } from './panels';
+import { resolveTheme, type Theme, themeOwner, watchTheme } from './theme';
 
 /** The cursor the controller draws over a cell: none, the steady underline, or the
  *  blinking solid block (blink is steady under prefers-reduced-motion). */
@@ -74,7 +75,12 @@ export interface LcdModuleOptions {
 	/** The uninitialised boot row: power-up shows the top row as solid blocks for a
 	 *  moment (default true; skipped under prefers-reduced-motion). */
 	boot?: boolean;
-	/** The plastic frame around the glass (default near-black plastic): a strip of
+	/** Colour bundle: `'dark'` (default — near-black plastic), `'light'` (pale grey
+	 *  plastic) or `'auto'` to follow the page's `prefers-color-scheme`. The GLASS is
+	 *  hardware, not a theme: a reflective module already belongs on a light page, so
+	 *  `panel` stays your choice and the theme moves the plastic around it. */
+	theme?: Theme;
+	/** The plastic frame around the glass (default per `theme`): a strip of
 	 *  `bezelWidth`, never a canvas fill — canvas past the frame is transparent.
 	 *  `null` draws no plastic and gives its room to the glass. */
 	bezel?: Color | null;
@@ -189,13 +195,24 @@ export function createLcdModule(
 	let age = clamp01(opts.age ?? 0);
 	let on = opts.on ?? true;
 	let boot = opts.boot ?? true;
+	// The pane is reflective — light-native already — so the theme owns the plastic
+	// and nothing else. A pale module on a pale page still reads: the ink is the ink.
+	const PLASTIC = { dark: '#14161a', light: '#c6c2b7' } as const;
+	const themed = themeOwner(['bezel'] as const);
+	themed.mark(opts);
+	let theme = opts.theme ?? 'dark';
+	let scheme = resolveTheme(theme);
 	let bezel =
 		opts.bezel === undefined
-			? parseColor('#14161a')
+			? parseColor(PLASTIC[scheme])
 			: opts.bezel == null
 				? null
 				: parseColor(opts.bezel);
 	let bezelOn = opts.bezel !== null;
+	/** Move the plastic to the resolved scheme, unless the consumer named it. */
+	function applyTheme() {
+		if (themed.owns('bezel') && bezel) bezel = parseColor(PLASTIC[scheme]);
+	}
 	const clampBezel = (v: number | undefined) =>
 		v == null ? BEZEL_PAD : Math.max(0, Math.min(BEZEL_MAX, Number(v) || 0));
 	let bezelW = clampBezel(opts.bezelWidth);
@@ -544,6 +561,13 @@ export function createLcdModule(
 	let warnedGlyph = false;
 
 	const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => resize()) : null;
+	// `theme: 'auto'` follows the page, so the plastic tracks the scheme.
+	const repaintTheme = (next: 'dark' | 'light') => {
+		scheme = next;
+		applyTheme();
+		draw();
+	};
+	let stopTheme = watchTheme(theme, repaintTheme);
 	ro?.observe(canvas);
 	applyAria();
 	resize();
@@ -627,6 +651,16 @@ export function createLcdModule(
 		},
 		setOptions(patch) {
 			let doRegrid = false;
+			// A colour named in this patch is the consumer's for good, so mark it before
+			// the theme gets a chance to move it.
+			themed.mark(patch);
+			if (patch.theme !== undefined && patch.theme !== theme) {
+				theme = patch.theme;
+				scheme = resolveTheme(theme);
+				stopTheme();
+				stopTheme = watchTheme(theme, repaintTheme);
+				applyTheme();
+			}
 			if (patch.cols != null && Math.max(1, Math.floor(patch.cols)) !== cols) {
 				cols = Math.max(1, Math.floor(patch.cols));
 				doRegrid = true;
@@ -681,6 +715,7 @@ export function createLcdModule(
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			stopTheme();
 			ro?.disconnect();
 			if (raf) cancelAnimationFrame(raf);
 			clearTimeout(blinkTimer);

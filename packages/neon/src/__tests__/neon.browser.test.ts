@@ -280,6 +280,21 @@ test('the glass and the hardware are customizable, and sane per polarity', () =>
 	expect(energy(canvas)).not.toBeCloseTo(before, -3);
 });
 
+test('theme light is the absorbing sign on a pale wall', () => {
+	const { canvas, sign } = mount({ text: 'OPEN', strikeMs: 0, theme: 'light' });
+	// A pale wall carries far more energy than a near-black one, whatever the tubes do.
+	const pale = energy(canvas);
+	sign.setOptions({ theme: 'dark' });
+	expect(energy(canvas)).toBeLessThan(pale);
+	// A wall the consumer named is theirs from then on: the theme still flips the
+	// polarity (that is the trick), but the surface behind the tubes does not move.
+	sign.setOptions({ wall: '#808080', theme: 'light' });
+	const corner = () => [...canvas.getContext('2d')!.getImageData(2, 2, 1, 1).data].slice(0, 3);
+	expect(corner()).toEqual([128, 128, 128]);
+	sign.setOptions({ theme: 'dark' });
+	expect(corner()).toEqual([128, 128, 128]);
+});
+
 test('art pieces flank the text and carry their own colours', () => {
 	const box = 'M0 0L40 0 40 40 0 40Z';
 	const { canvas } = mount({

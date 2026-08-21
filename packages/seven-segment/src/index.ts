@@ -15,3 +15,4 @@ export {
 	type SevenSegmentOptions,
 	type SevenSegmentStyle
 } from './seven';
+export { type Theme } from './theme';

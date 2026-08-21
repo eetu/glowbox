@@ -156,3 +156,12 @@ Framework wrappers build on this core — see **[@glowbox/svelte](https://www.np
 **[@glowbox/react](https://www.npmjs.com/package/@glowbox/react)** and **[@glowbox/vue](https://www.npmjs.com/package/@glowbox/vue)**; content helpers (GIF /
 image / text) live in **[@glowbox/extras](https://www.npmjs.com/package/@glowbox/extras)**. Live demos:
 <https://eetu.github.io/glowbox/>.
+
+## Themes
+
+`theme` bundles the look and the ground: `'dark'` (the default — the additive
+`hologram` glow in a near-black room), `'light'` (the `comic` cel-shaded look, whose
+opaque ink-outlined LEDs survive a bright page, on a bone ground), or `'auto'` to follow
+the page's `prefers-color-scheme`. A glow is additive, so on a pale ground there is
+nothing for it to add to — the light theme switches the look rather than tinting the
+room. Set `led.style` or `color.background` yourself and that knob is yours for good.

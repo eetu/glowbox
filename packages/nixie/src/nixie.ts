@@ -10,6 +10,7 @@
 // NUDGE: in a real tube the cathodes sit at slightly different positions/depths, so the
 // glowing number shifts a hair off dead-centre and jitters as the value changes.
 import { type Color, parseColor, type RGB } from './color';
+import { resolveTheme, type Theme, watchTheme } from './theme';
 
 const TAU = Math.PI * 2;
 const VB_W = 60;
@@ -114,6 +115,13 @@ export interface NixieOptions {
 	/** Accessible name for the canvas (`aria-label`). Defaults to the lit symbol itself;
 	 *  a blank, unlabelled tube is hidden from assistive tech (`aria-hidden`). */
 	label?: string;
+	/** Colour bundle: `'dark'` (default) or `'light'`, or `'auto'` to follow the page's
+	 *  `prefers-color-scheme`. A lit numeral needs dark glass to bloom against, so a
+	 *  nixie tube is a DARK OBJECT in both themes — what the light theme changes is the
+	 *  hardware around the glass: a heavier drop shadow and a brighter rim, so the tube
+	 *  sits on a pale page instead of floating on it. Every colour stays yours.
+	 *  \@see the `background` / `wire` options for the glass itself. */
+	theme?: Theme;
 	/** Composite mode for a 3D scene or your own glass container: render just the glowing
 	 *  numeral (plus the cathode stack / anode mesh, per `ghost` / `mesh`) on a fully
 	 *  transparent canvas — no 2D glass module (drop shadow, glass vignette, rim, margin).
@@ -232,6 +240,16 @@ export function createNixieTube(
 	let wire = parseColor(opts.wire ?? WIRE);
 	let pixelRatio = opts.pixelRatio ?? 2;
 	let bare = opts.bare ?? false;
+	// An emissive tube cannot invert: the glass stays dark so the glow has something to
+	// bloom against. The theme tunes the module's own hardware instead — on a pale page
+	// a heavier shadow and a brighter rim are what make it sit rather than float.
+	const HOUSING = {
+		dark: { shadow: 0.42, rim: 0.08 },
+		light: { shadow: 0.6, rim: 0.16 }
+	} as const;
+	let theme = opts.theme ?? 'dark';
+	let scheme = resolveTheme(theme);
+	let housing = HOUSING[scheme];
 	let label = opts.label ?? '';
 	let w = 0;
 	let h = 0;
@@ -302,7 +320,7 @@ export function createNixieTube(
 		if (!bare) {
 			// Drop shadow (invisible on a dark page, a soft lift on a light one).
 			g.save();
-			g.shadowColor = 'rgba(0,0,0,0.42)';
+			g.shadowColor = `rgba(0,0,0,${housing.shadow})`;
 			g.shadowBlur = sPad * 1.6;
 			g.shadowOffsetY = padY * 0.3;
 			roundRect(padX, padY, bw, bh, rad);
@@ -451,7 +469,7 @@ export function createNixieTube(
 		if (!bare) {
 			roundRect(padX, padY, bw, bh, rad);
 			g.lineWidth = 1;
-			g.strokeStyle = 'rgba(255,255,255,0.08)';
+			g.strokeStyle = `rgba(255,255,255,${housing.rim})`;
 			g.stroke();
 		}
 	}
@@ -500,6 +518,13 @@ export function createNixieTube(
 	applyAria();
 
 	const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => resize()) : null;
+	// `theme: 'auto'` follows the page: the housing re-tunes when the scheme flips.
+	const repaintTheme = (next: 'dark' | 'light') => {
+		scheme = next;
+		housing = HOUSING[scheme];
+		draw();
+	};
+	let stopTheme = watchTheme(theme, repaintTheme);
 	ro?.observe(canvas);
 	resize();
 
@@ -510,6 +535,14 @@ export function createNixieTube(
 			draw();
 		},
 		setOptions(patch) {
+			// The theme only tunes the housing, so nothing here needs a re-layout.
+			if (patch.theme !== undefined && patch.theme !== theme) {
+				theme = patch.theme;
+				scheme = resolveTheme(theme);
+				housing = HOUSING[scheme];
+				stopTheme();
+				stopTheme = watchTheme(theme, repaintTheme);
+			}
 			if (patch.style != null) style = patch.style;
 			// `undefined` skips, null resets — seven-segment's contract, so a themed
 			// tube can hand the colour back without knowing the default.
@@ -536,6 +569,7 @@ export function createNixieTube(
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			stopTheme();
 			ro?.disconnect();
 			// Hand the consumer's canvas back without our ARIA (it may be reused).
 			canvas.removeAttribute('role');

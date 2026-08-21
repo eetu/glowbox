@@ -40,6 +40,7 @@ import {
 	type VfdPanelLayout
 } from './panel';
 import { type FilterName, FILTERS, type PhosphorName, PHOSPHORS } from './phosphor';
+import { resolveTheme, type Theme, themeOwner, watchTheme } from './theme';
 
 export interface VfdPanelOptions {
 	/** The panel design frame, `[width, height]` — the units every element's box is in
@@ -91,12 +92,18 @@ export interface VfdPanelOptions {
 	age?: number;
 	/** Glow strength 0..1 (default 0.7). */
 	glow?: number;
-	/** The faceplate around the glass (default a dark grey): a strip hugging the
+	/** Colour bundle: `'dark'` (default — a dark grey plate) or `'light'` (the brushed
+	 *  silver of a 70s receiver, which is what a VFD panel on a pale page actually
+	 *  looked like), or `'auto'` to follow the page's `prefers-color-scheme`. The GLASS
+	 *  stays dark either way: a phosphor anode needs a dark window to read against, so
+	 *  the theme is the chassis around it. */
+	theme?: Theme;
+	/** The faceplate around the glass (default per `theme`): a strip hugging the
 	 *  fitted glass, so canvas past it stays transparent whatever the canvas aspect
 	 *  is. `null` drops the plate entirely, to compose the panel over your own
 	 *  hardware. A VFD is a physical object with a bezel, which is why this core
-	 *  needs no invented light-theme element: a dark panel on a pale page is a dark
-	 *  panel, correctly. */
+	 *  needs no invented light-theme element the way neon does: a dark panel on a
+	 *  pale page is a dark panel, correctly — the plate is what changes. */
 	bezel?: Color | null;
 	/** The unlit glass itself (default from the filter — near-black under a tint). */
 	glass?: Color;
@@ -216,7 +223,18 @@ export function createVfdPanel(
 	let gridMesh = opts.grid ?? true;
 	let age = clamp01(opts.age ?? 0);
 	let glow = clamp01(opts.glow ?? 0.7);
-	let bezel = opts.bezel === null ? null : parseColor(opts.bezel ?? '#15171a');
+	// A VFD is emissive, so the glass never inverts; the faceplate is the theme. Real
+	// panels came in both, and the light one is brushed aluminium.
+	const PLATE = { dark: '#15171a', light: '#b9bcc2' } as const;
+	const themed = themeOwner(['bezel'] as const);
+	themed.mark(opts);
+	let theme = opts.theme ?? 'dark';
+	let scheme = resolveTheme(theme);
+	let bezel = opts.bezel === null ? null : parseColor(opts.bezel ?? PLATE[scheme]);
+	/** Move the faceplate to the resolved scheme, unless the consumer named it. */
+	function applyTheme() {
+		if (themed.owns('bezel') && bezel) bezel = parseColor(PLATE[scheme]);
+	}
 	let glassOverride = opts.glass != null ? parseColor(opts.glass) : null;
 	let on = opts.on ?? true;
 	let selfTestOnPower = opts.selfTest ?? true;
@@ -885,6 +903,13 @@ export function createVfdPanel(
 
 	applyAria();
 	const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => resize()) : null;
+	// `theme: 'auto'` follows the page, so the chassis tracks the scheme.
+	const repaintTheme = (next: 'dark' | 'light') => {
+		scheme = next;
+		applyTheme();
+		draw();
+	};
+	let stopTheme = watchTheme(theme, repaintTheme);
 	ro?.observe(canvas);
 	resize();
 	syncFlicker();
@@ -1016,6 +1041,16 @@ export function createVfdPanel(
 			};
 		},
 		setOptions(patch) {
+			// A colour named in this patch is the consumer's for good, so mark it before
+			// the theme gets a chance to move it.
+			themed.mark(patch);
+			if (patch.theme !== undefined && patch.theme !== theme) {
+				theme = patch.theme;
+				scheme = resolveTheme(theme);
+				stopTheme();
+				stopTheme = watchTheme(theme, repaintTheme);
+				applyTheme();
+			}
 			// Nothing here re-compiles — the hardware is `setLayout`'s job — so a wrapper can
 			// re-send this whole bag on every slider tick (all three of ours do) for free.
 			if (patch.zones != null) {
@@ -1057,6 +1092,7 @@ export function createVfdPanel(
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			stopTheme();
 			ro?.disconnect();
 			if (raf) cancelAnimationFrame(raf);
 			if (flickerTimer) clearTimeout(flickerTimer);

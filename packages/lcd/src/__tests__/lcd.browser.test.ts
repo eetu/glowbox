@@ -251,6 +251,33 @@ test('bezelWidth sizes the frame, and no plastic gives the room to the glass', (
 	canvas.remove();
 });
 
+test('theme light puts pale plastic round the glass, and a named bezel stays', () => {
+	const canvas = makeCanvas(320, 200); // taller than the module: the plastic shows
+	const lcd = createLcdModule(canvas, { boot: false, response: 0, text: 'HI', theme: 'light' })!;
+	// The plastic is the module's own top edge: walk the centre column down to the
+	// first opaque pixel (page above it, frame at it) and read two rows in.
+	const plastic = () => {
+		const x = canvas.width >> 1;
+		const col = canvas.getContext('2d')!.getImageData(x, 0, 1, canvas.height).data;
+		for (let y = 0; y < canvas.height; y++) {
+			if (col[y * 4 + 3] > 250) {
+				const i = (y + 2) * 4;
+				return col[i] + col[i + 1] + col[i + 2];
+			}
+		}
+		return -1;
+	};
+	const pale = plastic();
+	lcd.setOptions({ theme: 'dark' });
+	expect(plastic()).toBeLessThan(pale);
+	lcd.setOptions({ bezel: '#ff0000', theme: 'light' });
+	const named = plastic();
+	lcd.setOptions({ theme: 'dark' });
+	expect(plastic()).toBe(named); // the consumer's plastic never moves again
+	lcd.dispose();
+	canvas.remove();
+});
+
 test('snapshot returns a PNG and survives absurdly small canvases', () => {
 	const canvas = makeCanvas(8, 4);
 	const lcd = createLcdModule(canvas, { ...quiet, text: 'HI' })!;

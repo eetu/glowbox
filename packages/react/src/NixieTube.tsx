@@ -32,6 +32,8 @@ export interface NixieTubeProps {
 	pixelRatio?: number;
 	/** Accessible name (`aria-label`); defaults to the lit symbol itself. */
 	label?: string;
+	/** Colour bundle: 'dark' (default), 'light', or 'auto' to follow the page. */
+	theme?: NixieOptions['theme'];
 	/** Called with the tube after creation, and with null on teardown — the
 	 *  Svelte wrapper's `oncreate` contract, for consumers who want a signal
 	 *  rather than watching the forwarded ref flip silently. */
@@ -61,6 +63,7 @@ export const NixieTube = forwardRef<NixieTubeHandle | null, NixieTubeProps>(
 			ghost,
 			wire,
 			pixelRatio,
+			theme,
 			label,
 			className,
 			style
@@ -87,6 +90,7 @@ export const NixieTube = forwardRef<NixieTubeHandle | null, NixieTubeProps>(
 				ghost: p.ghost,
 				wire: p.wire,
 				pixelRatio: p.pixelRatio,
+				theme: p.theme,
 				label: p.label
 			});
 			if (!t) {
@@ -120,9 +124,10 @@ export const NixieTube = forwardRef<NixieTubeHandle | null, NixieTubeProps>(
 				ghost,
 				wire,
 				pixelRatio,
+				theme,
 				label
 			});
-		}, [tube, tubeStyle, color, glow, background, mesh, ghost, wire, pixelRatio, label]);
+		}, [tube, tubeStyle, color, glow, background, mesh, ghost, wire, pixelRatio, theme, label]);
 
 		return <canvas ref={canvasRef} className={className} style={{ ...baseStyle, ...style }} />;
 	}

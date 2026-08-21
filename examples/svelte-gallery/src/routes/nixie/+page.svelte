@@ -15,12 +15,26 @@
 	import Slider from '$lib/components/Slider.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import ToggleChip from '$lib/components/ToggleChip.svelte';
+	import {
+		coreTheme,
+		DISPLAY_THEME_OPTIONS,
+		displayScheme,
+		type DisplayThemeChoice
+	} from '$lib/displayTheme.svelte';
 
 	let style = $state<NixieStyle>('classic');
 	let color = $state('#ff6a12'); // glow / lit-numeral colour
 	let glass = $state('#08080c'); // the tube's own glass — the glow needs it dark to bloom
 	let filament = $state('#85858f'); // the unlit cathode wires behind the glass
 	let backdrop = $state('#0a0806'); // the stage behind the tubes (they sit on any bg)
+	// Does the hardware follow the page's theme toggle, or is it pinned? The
+	// stage follows the display, because dark ink on a dark stage is invisible.
+	let displayTheme = $state<DisplayThemeChoice>('page');
+	let backdropNamed = false;
+	const scheme = $derived(displayScheme(displayTheme));
+	$effect(() => {
+		if (!backdropNamed) backdrop = scheme === 'light' ? '#e9e7e1' : '#0a0806';
+	});
 	// The glass module: off is `bare` — numerals alone on a transparent canvas.
 	let glassOn = $state(true);
 	// 2D = flat <NixieTube> canvases; 3D = real bent-wire cathodes in refractive glass
@@ -66,6 +80,7 @@
 				background: glass,
 				wire: filament,
 				bare: !glassOn,
+				theme: coreTheme(displayTheme),
 				digitAspect: tubeW / tubeH
 			}))
 		);
@@ -207,13 +222,26 @@
 			<div class="row">
 				<ToggleChip bind:checked={glassOn} label="glass module" disabled={mode === '3d'} />
 			</div>
+			<label class="field"
+				>theme
+				<Segmented
+					bind:value={displayTheme}
+					ariaLabel="colour theme"
+					options={DISPLAY_THEME_OPTIONS}
+				/>
+			</label>
 			<div class="row">
 				<span class="rlabel">filament</span>
 				<input type="color" bind:value={filament} aria-label="filament colour" />
 			</div>
 			<div class="row">
 				<span class="rlabel">backdrop</span>
-				<input type="color" bind:value={backdrop} aria-label="backdrop colour" />
+				<input
+					type="color"
+					bind:value={backdrop}
+					aria-label="backdrop colour"
+					oninput={() => (backdropNamed = true)}
+				/>
 			</div>
 		</section>
 
@@ -337,6 +365,15 @@
 		font-size: 11px;
 		letter-spacing: 0.04em;
 		color: var(--halo-text-muted);
+	}
+	.field {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		margin-bottom: 12px;
+		font-size: 13px;
+		color: var(--halo-text-main);
 	}
 	.row {
 		display: flex;

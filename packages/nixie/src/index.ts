@@ -25,3 +25,4 @@ export {
 	type NixieTube
 } from './nixie';
 export { createNixieRow, type NixieRow, type NixieRowOptions } from './row';
+export { type Theme } from './theme';

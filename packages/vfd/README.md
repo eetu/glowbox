@@ -175,6 +175,14 @@ past the plate stays transparent (or `null` for no plate at all, to compose over
 own hardware). Unlike neon, this core needs no invented
 element to live in the light: it was always a dark rectangle screwed into a chassis.
 
+## Themes
+
+`theme` bundles the chassis: `'dark'` (the default — a dark grey plate), `'light'` (the
+brushed silver of a 70s receiver, which is what a VFD panel on a pale page actually
+looked like), or `'auto'` to follow the page's `prefers-color-scheme`. The glass stays
+dark either way — a phosphor anode needs a dark window — so the theme is the plate. A
+`bezel` you set yourself never moves again.
+
 ## Cost
 
 Dot areas are where the anode budget goes: a `dots` grid or a `matrix` field is one anode

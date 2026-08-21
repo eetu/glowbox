@@ -38,6 +38,7 @@ import {
 	type TubeSection
 } from './layout';
 import { createHum, createMechSound, type HumVoice, type MechSound } from './sound';
+import { resolveTheme, type Theme, themeOwner, watchTheme } from './theme';
 
 /** The flasher cam: 'steady' holds, 'flash' toggles the whole sign, 'chase' runs a
  *  dark slot around the sections, 'reveal' strikes them one after another on each
@@ -66,6 +67,11 @@ export interface NeonSignOptions {
 	/** What's in the glass (default 'neon' — the red-orange): picks the lit
 	 *  colour, the hot-core whiteness and the unlit tint. */
 	gas?: GasName;
+	/** Colour bundle: `'dark'` (default — lit tubes on a near-black wall),
+	 *  `'light'` (`polarity: 'absorb'` on a near-white wall: the tubes ink a pale
+	 *  surface, since a bloom cannot read against white) or `'auto'` to follow the
+	 *  page's `prefers-color-scheme`. Either half is still yours to name. */
+	theme?: Theme;
 	/** The wall behind the sign (default near-black under `polarity: 'emit'`,
 	 *  near-white under 'absorb'; null = transparent canvas — compose the sign
 	 *  over your own backdrop). */
@@ -232,12 +238,23 @@ export function createNeonSign(
 	let art = opts.art;
 	let colorOpt = opts.color ?? undefined;
 	let gas: GasName = opts.gas ?? 'neon';
-	let polarity = opts.polarity ?? 'emit';
+	// The theme picks the whole trick: light means the tubes INK a pale wall
+	// (`polarity: 'absorb'`), which is the only honest way a neon sign lives on a
+	// bright page. Either half is still yours to name.
+	const themed = themeOwner(['polarity', 'wall'] as const);
+	themed.mark(opts);
+	let theme = opts.theme ?? 'dark';
+	let scheme = resolveTheme(theme);
+	let polarity: 'emit' | 'absorb' = opts.polarity ?? (scheme === 'light' ? 'absorb' : 'emit');
 	// A wall the consumer never named follows the polarity (dark for emitted
 	// light, pale for absorbed); an explicit one is theirs and never moves.
-	const wallExplicit = opts.wall !== undefined;
 	const defaultWall = () => (polarity === 'emit' ? '#0b0b0e' : '#f3f2ef');
 	let wall = opts.wall === null ? null : parseColor(opts.wall ?? defaultWall());
+	/** Move polarity and wall to the resolved scheme, minus whatever is named. */
+	function applyTheme() {
+		if (themed.owns('polarity')) polarity = scheme === 'light' ? 'absorb' : 'emit';
+		if (themed.owns('wall') && wall) wall = parseColor(defaultWall());
+	}
 	let on = opts.on ?? true;
 	let lineOn = opts.lineOn;
 	let glow = clamp01(opts.glow ?? 0.7);
@@ -893,6 +910,13 @@ export function createNeonSign(
 
 	applyAria();
 	const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => resize()) : null;
+	// `theme: 'auto'` follows the page: the sign flips polarity when the scheme does.
+	const repaintTheme = (next: 'dark' | 'light') => {
+		scheme = next;
+		applyTheme();
+		draw();
+	};
+	let stopTheme = watchTheme(theme, repaintTheme);
 	ro?.observe(canvas);
 	if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVis);
 	// First paint lands at its targets — no boot animation (sibling convention);
@@ -1010,6 +1034,17 @@ export function createNeonSign(
 		setOptions(patch) {
 			let rebuild = false;
 			let redraw = false;
+			// Anything named in this patch becomes the consumer's for good, so mark it
+			// before the theme gets a chance to move it.
+			themed.mark(patch);
+			if (patch.theme !== undefined && patch.theme !== theme) {
+				theme = patch.theme;
+				scheme = resolveTheme(theme);
+				stopTheme();
+				stopTheme = watchTheme(theme, repaintTheme);
+				applyTheme();
+				redraw = true;
+			}
 			if (patch.text !== undefined && patch.text !== text) {
 				this.setText(patch.text);
 			}
@@ -1064,7 +1099,7 @@ export function createNeonSign(
 			if (patch.polarity != null && patch.polarity !== polarity) {
 				polarity = patch.polarity;
 				// An unnamed wall follows the flip; the consumer's own never moves.
-				if (!wallExplicit && wall) wall = parseColor(defaultWall());
+				if (themed.owns('wall') && wall) wall = parseColor(defaultWall());
 				redraw = true;
 			}
 			if (patch.glow != null) {
@@ -1144,6 +1179,7 @@ export function createNeonSign(
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			stopTheme();
 			ro?.disconnect();
 			if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVis);
 			if (raf) cancelAnimationFrame(raf);
