@@ -52,6 +52,9 @@
 		backdrop = pale ? '#e9e8e3' : '#0a0a0e';
 	});
 	let crtOn = $state(false);
+	// How the circuit is wired: 'off' leaves each stroke its own run, the other two
+	// thread a section onto ONE tube and paint out the crossovers.
+	let crossover = $state<'off' | 'direct' | 'rail'>('off');
 	let panelOpen = $state(false);
 	const onKeydown = (e: KeyboardEvent) => {
 		if (e.key === 'Escape' && panelOpen) panelOpen = false;
@@ -97,6 +100,7 @@
 			speed,
 			wall: wallOn || polarity === 'absorb' ? wallColor : null,
 			polarity,
+			crossover: crossover === 'off' ? false : crossover,
 			sound: soundOn ? volume : 0
 		});
 	});
@@ -311,6 +315,18 @@
 					options={[
 						{ value: 'emit', label: 'Shine' },
 						{ value: 'absorb', label: 'Ink' }
+					]}
+				/>
+			</div>
+			<div class="row">
+				<span class="rlabel">wiring</span>
+				<Segmented
+					bind:value={crossover}
+					ariaLabel="crossover wiring"
+					options={[
+						{ value: 'off', label: 'Cut' },
+						{ value: 'direct', label: 'Bent' },
+						{ value: 'rail', label: 'Rail' }
 					]}
 				/>
 			</div>

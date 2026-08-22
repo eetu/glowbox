@@ -2,7 +2,7 @@
 import { expect, test, vi } from 'vitest';
 
 import { resolveFont } from '../font';
-import { layoutTubes, roundCorners } from '../layout';
+import { layoutTubes, type NeonLayout, roundCorners, type TubeSection } from '../layout';
 
 const sans = resolveFont('sans');
 
@@ -270,4 +270,60 @@ test("art: SVG path data accepted; tubes 'path' splits per subpath", () => {
 	const per = layoutTubes('', 'sans', { art: [{ d: 'M0 0L10 0M0 5L10 5', tubes: 'path' }] });
 	expect(per.sections.length).toBe(2);
 	expect(per.sections.every((s) => s.art === 0)).toBe(true);
+});
+
+const runLen = (s: [number, number][]) =>
+	s.reduce((a, p, k) => (k ? a + Math.hypot(p[0] - s[k - 1][0], p[1] - s[k - 1][1]) : 0), 0);
+
+test('crossover: a section threads onto one tube and the hops come back painted', () => {
+	const plain = layoutTubes('OPEN', 'sans', { tubes: 'word' });
+	const wired = layoutTubes('OPEN', 'sans', { tubes: 'word', crossover: 'direct' });
+	expect(plain.sections[0].painted).toBeUndefined(); // plain wiring carries no paint
+	const sec = wired.sections[0];
+	expect(sec.painted).toHaveLength(sec.strokes.length);
+	// Every painted run bridges the glass either side of it — its ends ARE its
+	// neighbours' ends, which is what makes the tube continuous.
+	sec.painted!.forEach((isPaint, i) => {
+		if (!isPaint) return;
+		const before = sec.strokes[i - 1];
+		const after = sec.strokes[i + 1];
+		const run = sec.strokes[i];
+		expect(before[before.length - 1]).toEqual(run[0]);
+		expect(after[0]).toEqual(run[run.length - 1]);
+	});
+	// The glass itself is untouched: same runs, same total length, either wiring.
+	const glass = (l: NeonLayout) =>
+		l.sections[0].strokes
+			.filter((_, i) => !l.sections[0].painted?.[i])
+			.reduce((sum, s) => sum + runLen(s), 0);
+	expect(glass(wired)).toBeCloseTo(glass(plain), 3);
+	// Still one electrode pair: the joints in between are glass under paint.
+	expect(sec.ends).toHaveLength(2);
+	expect(wired.width).toBeCloseTo(plain.width);
+});
+
+test('crossover: strokes that already meet need no run; the rail drops below the line', () => {
+	// The sans N bends as one continuous run — stem, diagonal, stem — so threading
+	// it asks for no paint at all.
+	const n = layoutTubes('N', 'sans', { crossover: 'direct' }).sections[0];
+	expect(n.painted?.some(Boolean) ?? false).toBe(false);
+	// The E has to double back, and the rail takes those returns under the baseline.
+	const deepestPaint = (sec: TubeSection) =>
+		Math.max(
+			...sec.strokes.flatMap((s, i) => (sec.painted?.[i] ? s.map(([, y]) => y) : [-Infinity]))
+		);
+	const direct = layoutTubes('OPEN', 'sans', { tubes: 'word', crossover: 'direct' }).sections[0];
+	const rail = layoutTubes('OPEN', 'sans', { tubes: 'word', crossover: 'rail' }).sections[0];
+	expect(deepestPaint(rail)).toBeGreaterThan(deepestPaint(direct));
+	expect(deepestPaint(rail)).toBeGreaterThan(0); // under the baseline, where a shop runs them
+});
+
+test('crossover: an opaque face cuts painted runs with their flags', () => {
+	const l = layoutTubes('OPEN', 'sans', {
+		tubes: 'word',
+		crossover: 'direct',
+		art: [{ d: 'M-40 -30L40 -30 40 30 -40 30Z', place: 'behind', size: 1.2, opaque: true }]
+	});
+	for (const sec of l.sections)
+		if (sec.painted) expect(sec.painted).toHaveLength(sec.strokes.length);
 });

@@ -2,8 +2,10 @@
 // split-flap `drum.ts` pattern): place stroke-font glyphs on baselines, group their
 // centrelines into TUBE SECTIONS (the strike/wear/flicker unit — one electrode pair
 // each), and round interior corners so sharp polylines read as bent glass. Grouping
-// is behavioural, not geometric: a 'word' section lights and dies as one tube, but
-// its glyph strokes are not stitched (real script signs carry blockout breaks).
+// is behavioural on its own: a 'word' section lights and dies as one tube while its
+// glyph strokes stay separate runs. `crossover` makes it geometric too — the strokes
+// are threaded onto one continuous tube and the hops between them come back as
+// BLOCKOUT runs, the coated glass a real sign carries between its letters.
 // ART pieces (the martini glass, the dice, the border ring) place the same way a
 // sign maker composes them: anchored to the text block — behind it or beside it —
 // never in the line of text.
@@ -17,6 +19,10 @@ export interface TubeSection {
 	/** Corner-rounded centreline polylines in sign units (y-down, baseline of the
 	 *  first text line at y = 0). */
 	strokes: [number, number][][];
+	/** Per-stroke: this run is BLOCKOUT — glass the sign maker coated so it carries
+	 *  the discharge without showing it (the crossover from one stroke to the next,
+	 *  bent back off the face plane and painted). Absent = every run is lit glass. */
+	painted?: boolean[];
 	/** The electrode pair: the free ends of the section's first and last stroke,
 	 *  each with an outward unit direction for the electrode stub. */
 	ends: { x: number; y: number; dx: number; dy: number }[];
@@ -77,8 +83,17 @@ export interface NeonArt {
  *  block letters, 'word' for connected script), 'line' = one tube per text line. */
 export type TubeGrouping = 'auto' | 'glyph' | 'word' | 'line';
 
+/** How a section's strokes are joined into one physical tube: `false` leaves them
+ *  as separate runs, `'direct'` hops straight from one to the next with a sag, and
+ *  `'rail'` drops the crossover to a rail under the text the way a sign shop keeps
+ *  the returns clear of the letterforms (art has no baseline, so it takes the
+ *  direct route either way). */
+export type Crossover = false | 'direct' | 'rail';
+
 export interface LayoutOptions {
 	tubes?: TubeGrouping;
+	/** Bend the crossover runs between a section's strokes (default false). */
+	crossover?: Crossover;
 	/** Per-line alignment (default 'center' — signs centre). */
 	align?: 'left' | 'center' | 'right';
 	/** Baseline-to-baseline advance as a multiple of the face's ascent+descent
@@ -202,6 +217,126 @@ function cutStroke(
 	return out.filter((r) => r.length >= 2);
 }
 
+// --- crossovers (the blockout runs) -------------------------------------------------
+// A real sign is ONE bent tube per circuit: where a stroke ends and the next begins,
+// the glass carries on — pushed back off the face plane and dipped in blockout paint,
+// so it conducts without showing. These are the runs that make a word read as tube
+// rather than as loose glyph fragments; the renderer draws them matte, and the light
+// leaks at the seam where the paint stops.
+
+/** One crossover run from `a` to `b`. `railY` (text only — art has no baseline) drops
+ *  the run under the letterforms instead of hopping straight across. */
+export function crossoverRun(
+	a: [number, number],
+	b: [number, number],
+	bendR: number,
+	railY?: number
+): [number, number][] {
+	// A hop shorter than a bend takes the short way whatever the sign is wired for:
+	// the returns inside one letterform are stubs, and railing them out to the
+	// baseline would run more painted glass than lit.
+	const span = Math.hypot(b[0] - a[0], b[1] - a[1]);
+	if (railY != null && span > bendR * 3) {
+		// Down to the rail, across, back up — the shop's own routing, and it keeps
+		// the return clear of the counters it would otherwise cut through.
+		const drop = Math.max(railY, a[1] + bendR, b[1] + bendR);
+		return roundCorners([a, [a[0], drop], [b[0], drop], b], bendR);
+	}
+	// The direct hop sags a little, the way a short return bends rather than
+	// meeting its neighbours at a corner.
+	if (span < 1e-6) return [a, b];
+	const sag = Math.min(span * 0.25, bendR * 2);
+	return roundCorners([a, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + sag], b], bendR);
+}
+
+/** Thread a section's strokes onto one tube the way a bender would: finish one
+ *  glyph before moving to the next (`groups` arrive in reading order), and inside a
+ *  glyph take whichever stroke is nearest, entered by its nearer end, so the glass
+ *  covers the letterform with as little doubling back as it can. The hops come back
+ *  as painted runs; where two strokes already meet there is nothing to bend. */
+const dist = (a: [number, number], b: [number, number]) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+const ends2 = (s: [number, number][]): [[number, number], [number, number]] => [
+	s[0],
+	s[s.length - 1]
+];
+
+// One glyph's strokes, ordered and oriented into a single run. Greedy nearest-next
+// from a given opening move, and every opening move is tried — a letter whose
+// strokes already chain end to end (the N: up the stem, down the diagonal, up the
+// other stem) then comes out with no returns at all, which is how it is bent.
+function route(
+	group: [number, number][][],
+	tail: [number, number] | null
+): { runs: [number, number][][]; hops: number[] } {
+	let bestRuns: [number, number][][] = [];
+	let bestHops: number[] = [];
+	let bestCost = Infinity;
+	for (let start = 0; start < group.length; start++) {
+		for (const flip of [false, true]) {
+			const left = group.map((s, i) => ({ s, i }));
+			const runs: [number, number][][] = [];
+			const hops: number[] = [];
+			let at = tail;
+			let cost = 0;
+			let pick = start;
+			let pickFlip = flip;
+			while (left.length) {
+				const k = left.findIndex((e) => e.i === pick);
+				const [{ s }] = left.splice(k < 0 ? 0 : k, 1);
+				const run = pickFlip ? [...s].reverse() : s;
+				const hop = at ? dist(at, run[0]) : 0;
+				hops.push(hop);
+				cost += hop;
+				runs.push(run);
+				at = run[run.length - 1];
+				let near = Infinity;
+				for (const e of left) {
+					const [h, l] = ends2(e.s);
+					const dh = dist(at, h);
+					const dl = dist(at, l);
+					if (Math.min(dh, dl) < near) {
+						near = Math.min(dh, dl);
+						pick = e.i;
+						pickFlip = dl < dh;
+					}
+				}
+			}
+			if (cost < bestCost) {
+				bestCost = cost;
+				bestRuns = runs;
+				bestHops = hops;
+			}
+		}
+	}
+	return { runs: bestRuns, hops: bestHops };
+}
+
+function thread(
+	groups: [number, number][][][],
+	mode: Exclude<Crossover, false>,
+	bendR: number,
+	railY?: number
+): { strokes: [number, number][][]; painted: boolean[] } {
+	const out: [number, number][][] = [];
+	const painted: boolean[] = [];
+	let tail: [number, number] | null = null;
+	for (const group of groups) {
+		const { runs, hops } = route(group, tail);
+		runs.forEach((run, i) => {
+			// A hop shorter than a bend is two strokes already meeting: nothing to bend,
+			// nothing to paint.
+			if (tail && hops[i] > bendR * 0.5) {
+				out.push(crossoverRun(tail, run[0], bendR, mode === 'rail' ? railY : undefined));
+				painted.push(true);
+			}
+			out.push(run);
+			painted.push(false);
+			tail = run[run.length - 1];
+		});
+	}
+	return { strokes: out, painted };
+}
+
 // The outward tangent at a stroke end — where the electrode stub points.
 function endOf(stroke: [number, number][], last: boolean): TubeSection['ends'][number] {
 	const p = stroke[last ? stroke.length - 1 : 0];
@@ -239,6 +374,29 @@ export function layoutTubes(
 
 	const lines = text.split(/\r?\n/);
 	const sections: TubeSection[] = [];
+	const crossover: Crossover = opts.crossover ?? false;
+
+	// One section, threaded onto one tube if the sign is wired that way. The
+	// electrode pair is the whole run's two free ends — every joint in between is
+	// glass the paint hides, not a place to put a stub.
+	const section = (
+		groups: [number, number][][][],
+		line: number,
+		railY?: number,
+		art?: number
+	): TubeSection => {
+		const flat = groups.flat();
+		const t = crossover && flat.length > 1 ? thread(groups, crossover, bendR, railY) : null;
+		const s = t?.strokes ?? flat;
+		const sec: TubeSection = {
+			strokes: s,
+			ends: [endOf(s[0], false), endOf(s[s.length - 1], true)],
+			line
+		};
+		if (t) sec.painted = t.painted;
+		if (art != null) sec.art = art;
+		return sec;
+	};
 
 	// Measure first (alignment needs the widest line), then place.
 	const measure = (line: string): number => {
@@ -259,18 +417,18 @@ export function layoutTubes(
 		const baseY = li * advance;
 		let x =
 			align === 'left' ? 0 : align === 'right' ? width - widths[li] : (width - widths[li]) / 2;
-		// A pending section accumulates glyph strokes until the grouping closes it.
-		let open: [number, number][][] | null = null;
+		// A pending section accumulates glyphs — one group of strokes each, in
+		// reading order — until the grouping closes it.
+		let open: [number, number][][][] | null = null;
+		// The crossover rail for this line: just under the baseline, where a shop
+		// runs the long returns so they miss the letterforms.
+		const railY = baseY + f.descent * 0.9;
 		const close = () => {
 			if (!open || !open.length) {
 				open = null;
 				return;
 			}
-			sections.push({
-				strokes: open,
-				ends: [endOf(open[0], false), endOf(open[open.length - 1], true)],
-				line: li
-			});
+			sections.push(section(open, li, railY));
 			open = null;
 		};
 		for (const ch of lines[li]) {
@@ -295,13 +453,9 @@ export function layoutTubes(
 					)
 				);
 				if (group === 'glyph') {
-					sections.push({
-						strokes: placed,
-						ends: [endOf(placed[0], false), endOf(placed[placed.length - 1], true)],
-						line: li
-					});
+					sections.push(section([placed], li, railY));
 				} else {
-					(open ??= []).push(...placed);
+					(open ??= []).push(placed);
 				}
 			}
 			x += g.adv + track;
@@ -414,12 +568,8 @@ export function layoutTubes(
 				topAll = Math.min(topAll, y);
 				botAll = Math.max(botAll, y);
 			}
-		const mk = (strokes: [number, number][][]): TubeSection => ({
-			strokes,
-			ends: [endOf(strokes[0], false), endOf(strokes[strokes.length - 1], true)],
-			line: 0,
-			art: ai
-		});
+		// A piece has no baseline to run a rail under, so its crossovers hop direct.
+		const mk = (strokes: [number, number][][]): TubeSection => section([strokes], 0, undefined, ai);
 		const secs = a.tubes === 'path' ? placed.map((s) => mk([s])) : [mk(placed)];
 		// Z-order = section order = 'reveal' strike order: backdrop pieces first
 		// (the border ring lights, then the word), side pieces after the text.
@@ -448,8 +598,18 @@ export function layoutTubes(
 			const applicable = cutBy.filter((f) => j < f.idx);
 			if (!applicable.length) continue;
 			const sec = sections[j];
-			for (const f of applicable)
-				sec.strokes = sec.strokes.flatMap((s) => cutStroke(s, f.face, BLOCKOUT));
+			for (const f of applicable) {
+				const kept: [number, number][][] = [];
+				const paint: boolean[] = [];
+				sec.strokes.forEach((s, si) => {
+					for (const run of cutStroke(s, f.face, BLOCKOUT)) {
+						kept.push(run);
+						paint.push(sec.painted?.[si] ?? false);
+					}
+				});
+				sec.strokes = kept;
+				if (sec.painted) sec.painted = paint;
+			}
 			if (!sec.strokes.length) continue;
 			sec.ends = [
 				endOf(sec.strokes[0], false),
