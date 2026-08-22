@@ -52,9 +52,11 @@
 		backdrop = pale ? '#e9e8e3' : '#0a0a0e';
 	});
 	let crtOn = $state(false);
-	// How the circuit is wired: 'off' leaves each stroke its own run, the other two
-	// thread a section onto ONE tube and paint out the crossovers.
-	let crossover = $state<'off' | 'direct' | 'rail'>('off');
+	// How the circuit is wired: wired (the default) runs a section as ONE circuit
+	// — the returns are painted out behind the sign, so what moves is the
+	// hardware: one electrode pair, at the routed ends. Off cuts every stroke
+	// group into its own tube with its own pair.
+	let crossover = $state(true);
 	let panelOpen = $state(false);
 	const onKeydown = (e: KeyboardEvent) => {
 		if (e.key === 'Escape' && panelOpen) panelOpen = false;
@@ -100,7 +102,7 @@
 			speed,
 			wall: wallOn || polarity === 'absorb' ? wallColor : null,
 			polarity,
-			crossover: crossover === 'off' ? false : crossover,
+			crossover,
 			sound: soundOn ? volume : 0
 		});
 	});
@@ -319,16 +321,7 @@
 				/>
 			</div>
 			<div class="row">
-				<span class="rlabel">wiring</span>
-				<Segmented
-					bind:value={crossover}
-					ariaLabel="crossover wiring"
-					options={[
-						{ value: 'off', label: 'Cut' },
-						{ value: 'direct', label: 'Bent' },
-						{ value: 'rail', label: 'Rail' }
-					]}
-				/>
+				<ToggleChip bind:checked={crossover} label="one tube per circuit" />
 			</div>
 			<div class="row">
 				<span class="rlabel">wall</span>

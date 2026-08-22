@@ -36,7 +36,6 @@ import { type Color, parseColor, type RGB } from './color';
 import { type NeonFont } from './font';
 import { GASES, type GasName, type GasSpec, pigment } from './gas';
 import {
-	type Crossover,
 	layoutTubes,
 	type NeonArt,
 	type NeonLayout,
@@ -110,17 +109,17 @@ export interface NeonSignOptions {
 	 *  against the `wall`: near-black on a dark wall, mid-grey on a pale one,
 	 *  where near-black specks read as dirt rather than hardware. */
 	electrode?: Color;
-	/** Wire each section as ONE bent tube (default false): the glass carries on
-	 *  between its strokes instead of stopping, and those crossover runs are
-	 *  BLOCKOUT — pushed back off the face plane and coated so they conduct
-	 *  without showing. `'rail'` drops them under the letterforms the way a shop
-	 *  keeps returns clear of the counters, `'direct'` (`true`) hops straight
-	 *  across; art has no baseline, so it always hops direct. */
-	crossover?: boolean | 'direct' | 'rail';
-	/** The blockout paint on those crossovers (default: against the `wall`, like
-	 *  the glass and the hardware — near-black on a dark wall, panel-grey on a
-	 *  pale one, since paint is an object and absorbs either way round). */
-	blackout?: Color;
+	/** Wire each section as ONE continuous tube (default true — how a real sign
+	 *  is bent). The crossover runs between its strokes are real but invisible —
+	 *  bent back off the face plane and painted out, exactly the part of a sign
+	 *  you never see — so what shows is the HARDWARE: one electrode pair per
+	 *  section, at the circuit's routed ends, and every interior stroke end reads
+	 *  as bare glass diving behind. Under `tubes: 'auto'` this wires the sans
+	 *  face per word (a circuit of one glyph is no circuit), and since a section
+	 *  is the strike/wear unit, the word lights and dies as one tube. `false`
+	 *  cuts the wiring back to one tube per stroke group — per-letter strikes,
+	 *  per-letter electrodes. */
+	crossover?: boolean;
 	/** Wear 0..1 (default 0): deterministic per-tube dimming; past ~0.7 the
 	 *  most-worn tube starts flickering, from ~0.95 it is dead glass while the
 	 *  runner-up takes over the flickering. */
@@ -220,10 +219,6 @@ const segDist2 = (px: number, py: number, a: [number, number], b: [number, numbe
 };
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 const fract = (x: number) => x - Math.floor(x);
-// `true` takes the direct hop; a shop routing returns under the letterforms asks
-// for the rail by name.
-const normalizeCrossover = (v: NeonSignOptions['crossover']): Crossover =>
-	v === true ? 'direct' : v === false || v == null ? false : v;
 
 // Tube thickness in font units (cap height 21) — the constant-width glass.
 const T = 1.9;
@@ -290,8 +285,7 @@ export function createNeonSign(
 	let program: NeonProgram = opts.program ?? 'steady';
 	let speed = Math.max(0.1, Math.min(8, opts.speed ?? 1));
 	let tubes: TubeGrouping = opts.tubes ?? 'auto';
-	let crossover = normalizeCrossover(opts.crossover);
-	let paintCol = opts.blackout != null ? parseColor(opts.blackout) : null;
+	let crossover = opts.crossover ?? true;
 	let align = opts.align ?? 'center';
 	let lineSpacing = opts.lineSpacing;
 	let letterSpacing = opts.letterSpacing;
@@ -325,7 +319,7 @@ export function createNeonSign(
 	let jit = new Float32Array(0);
 	let wear = new Float32Array(0);
 	let camOn: Uint8Array = new Uint8Array(0); // the cam's per-section switch state
-	let paths: ({ lit: Path2D; paint: Path2D | null } | null)[] = [];
+	let paths: (Path2D | null)[] = [];
 	let dying = -1;
 	let second = -1;
 	let dropRemain = 0; // a tired-transformer dropout in progress, seconds left
@@ -348,7 +342,7 @@ export function createNeonSign(
 		jit = new Float32Array(n);
 		wear = new Float32Array(n);
 		camOn = new Uint8Array(n).fill(1);
-		paths = new Array<{ lit: Path2D; paint: Path2D | null } | null>(n).fill(null);
+		paths = new Array<Path2D | null>(n).fill(null);
 		for (let i = 0; i < n; i++) {
 			jit[i] = Math.random();
 			wear[i] = 0.5 + 0.5 * Math.sin(seed + i * 12.9898);
@@ -423,36 +417,17 @@ export function createNeonSign(
 	let fitS = 0;
 	let fitTx = 0;
 	let fitTy = 0;
-	// Two paths per section: the glass that shows, and the blockout runs that
-	// carry the same discharge without showing it. `paint` is null on a sign wired
-	// the plain way, which is the whole of the fast path.
-	const pathFor = (i: number): { lit: Path2D; paint: Path2D | null } => {
+	const pathFor = (i: number): Path2D => {
 		let p = paths[i];
 		if (!p) {
-			const sec = lay.sections[i];
-			const glass = new Path2D();
-			let blockout: Path2D | null = null;
-			sec.strokes.forEach((s, si) => {
-				const target = sec.painted?.[si] ? (blockout ??= new Path2D()) : glass;
-				target.moveTo(s[0][0], s[0][1]);
-				for (let k = 1; k < s.length; k++) target.lineTo(s[k][0], s[k][1]);
-			});
-			p = paths[i] = { lit: glass, paint: blockout };
+			p = new Path2D();
+			for (const s of lay.sections[i].strokes) {
+				p.moveTo(s[0][0], s[0][1]);
+				for (let k = 1; k < s.length; k++) p.lineTo(s[k][0], s[k][1]);
+			}
+			paths[i] = p;
 		}
 		return p;
-	};
-
-	// Where the paint stops and the glass starts: light escapes at the seam, so a
-	// crossover's ends stay the brightest thing on an otherwise dark run.
-	const seamsFor = (i: number): [number, number][] => {
-		const sec = lay.sections[i];
-		if (!sec.painted) return [];
-		const out: [number, number][] = [];
-		sec.strokes.forEach((s, si) => {
-			if (!sec.painted![si]) return;
-			out.push(s[0], s[s.length - 1]);
-		});
-		return out;
 	};
 
 	// A section's tube spec: gas preset colours, or a `color` override riding the
@@ -571,40 +546,6 @@ export function createNeonSign(
 			ig.scale(s, s);
 		}
 
-		// The blockout runs go down FIRST, all of them, because that is where they
-		// physically are: bent back off the face plane, behind every tube that shows.
-		// Paint has thickness, so a coated run is fatter than the glass and matte —
-		// no halation, since nothing is getting out — and it keys off the WALL like
-		// the glass and the hardware, because paint is an object either polarity.
-		if (!micro) {
-			// Paint belongs to the wall's own palette — a coat mixed off the surface it
-			// hangs on, dark enough to read as an object without becoming a flyspeck.
-			// On a pale panel the shop paints the returns close to the surface so they
-			// keep quiet; on a dark wall the coat has to lift off the black to exist
-			// at all.
-			const coat =
-				paintCol ??
-				(wall
-					? mix(wall, paleWall ? BLACK : WHITE, paleWall ? 0.22 : 0.16)
-					: paleWall
-						? [0.72, 0.72, 0.7]
-						: [0.16, 0.16, 0.18]);
-			g.save();
-			g.translate(T * 0.75, T * 0.95); // the return runs a tube's width behind the face
-			g.shadowColor = rgba(coat, 0.5);
-			g.shadowBlur = blur(0.04);
-			// Behind the face and unlit, so it reads thinner than the tube in front of
-			// it — no bloom to widen it.
-			g.strokeStyle = rgba(coat, paleWall ? 0.7 : 0.95);
-			g.lineWidth = T * 0.95;
-			for (let i = 0; i < n; i++) {
-				const paint = pathFor(i).paint;
-				if (paint) g.stroke(paint);
-			}
-			g.shadowBlur = 0;
-			g.restore();
-		}
-
 		for (let i = 0; i < n; i++) {
 			const sec = lay.sections[i];
 			const spec = specFor(sec);
@@ -634,13 +575,13 @@ export function createNeonSign(
 					paleWall ? 0.24 : 0.1
 				);
 				g.lineWidth = T * 1.25;
-				g.stroke(p.lit);
+				g.stroke(p);
 				g.strokeStyle = rgba(
 					paleWall ? mix(spec.unlit, BLACK, 0.35) : spec.unlit,
 					spec.coated ? (paleWall ? 0.3 : 0.22) : paleWall ? 0.17 : 0.11
 				);
 				g.lineWidth = T * 0.95;
-				g.stroke(p.lit);
+				g.stroke(p);
 			}
 
 			// Electrode stubs: the metal cap + its ferrule dot at each free end. On a
@@ -715,24 +656,9 @@ export function createNeonSign(
 					t.shadowBlur = blur(blurF) * Math.min(1, lvl) * (emit ? 1 : 0.75);
 					t.strokeStyle = rgba(wm ? mix(gasCol, core, spec.core * wm) : gasCol, a);
 					t.lineWidth = T * lwF;
-					t.stroke(p.lit);
+					t.stroke(p);
 				}
 				t.shadowBlur = 0;
-
-				// The seam: paint stops, glass carries on. The discharge never stopped,
-				// so light escapes where the coat feathers out — a bright bead at each
-				// end of every crossover, and the tell that the tube is continuous.
-				if (p.paint && !micro) {
-					t.shadowColor = rgba(gasCol, 1);
-					t.shadowBlur = blur(0.12) * Math.min(1, lvl);
-					t.fillStyle = rgba(mix(gasCol, core, spec.core * 0.5), 0.5 * lvl * (emit ? 1 : 1.2));
-					for (const [sx, sy] of seamsFor(i)) {
-						t.beginPath();
-						t.arc(sx, sy, T * 0.5, 0, Math.PI * 2);
-						t.fill();
-					}
-					t.shadowBlur = 0;
-				}
 			}
 
 			// The electrode arc while the tube is still dark: bright sparks at both
@@ -1184,9 +1110,10 @@ export function createNeonSign(
 				tilt = patch.tilt;
 				rebuild = true;
 			}
-			if (patch.crossover !== undefined && normalizeCrossover(patch.crossover) !== crossover) {
-				// Re-wiring the circuit is a re-bend: the crossovers are geometry.
-				crossover = normalizeCrossover(patch.crossover);
+			if (patch.crossover !== undefined && patch.crossover !== crossover) {
+				// Re-wiring the circuit moves the electrodes (and, under auto
+				// grouping, the sectioning) — that is layout, not paint.
+				crossover = patch.crossover;
 				rebuild = true;
 			}
 			if (patch.art !== undefined && artKey(patch.art) !== artKey(art)) {
@@ -1229,10 +1156,6 @@ export function createNeonSign(
 			}
 			if (patch.electrode !== undefined) {
 				elecCol = patch.electrode != null ? parseColor(patch.electrode) : null;
-				redraw = true;
-			}
-			if (patch.blackout !== undefined) {
-				paintCol = patch.blackout != null ? parseColor(patch.blackout) : null;
 				redraw = true;
 			}
 			if (patch.age != null) {

@@ -3,9 +3,9 @@
 // centrelines into TUBE SECTIONS (the strike/wear/flicker unit — one electrode pair
 // each), and round interior corners so sharp polylines read as bent glass. Grouping
 // is behavioural on its own: a 'word' section lights and dies as one tube while its
-// glyph strokes stay separate runs. `crossover` makes it geometric too — the strokes
-// are threaded onto one continuous tube and the hops between them come back as
-// BLOCKOUT runs, the coated glass a real sign carries between its letters.
+// glyph strokes stay separate runs. `crossover` makes it electrical too — the section
+// is one CIRCUIT, its electrode pair routed to the tube's true ends, with the returns
+// between strokes real but painted out behind the sign, invisible by definition.
 // ART pieces (the martini glass, the dice, the border ring) place the same way a
 // sign maker composes them: anchored to the text block — behind it or beside it —
 // never in the line of text.
@@ -19,12 +19,10 @@ export interface TubeSection {
 	/** Corner-rounded centreline polylines in sign units (y-down, baseline of the
 	 *  first text line at y = 0). */
 	strokes: [number, number][][];
-	/** Per-stroke: this run is BLOCKOUT — glass the sign maker coated so it carries
-	 *  the discharge without showing it (the crossover from one stroke to the next,
-	 *  bent back off the face plane and painted). Absent = every run is lit glass. */
-	painted?: boolean[];
 	/** The electrode pair: the free ends of the section's first and last stroke,
-	 *  each with an outward unit direction for the electrode stub. */
+	 *  each with an outward unit direction for the electrode stub. Under
+	 *  `crossover` these are the CIRCUIT's two ends instead — the strokes between
+	 *  them join through invisible painted-out returns behind the sign. */
 	ends: { x: number; y: number; dx: number; dy: number }[];
 	/** 0-based text line the section sits on — per-line colours key off this. */
 	line: number;
@@ -83,17 +81,15 @@ export interface NeonArt {
  *  block letters, 'word' for connected script), 'line' = one tube per text line. */
 export type TubeGrouping = 'auto' | 'glyph' | 'word' | 'line';
 
-/** How a section's strokes are joined into one physical tube: `false` leaves them
- *  as separate runs, `'direct'` hops straight from one to the next with a sag, and
- *  `'rail'` drops the crossover to a rail under the text the way a sign shop keeps
- *  the returns clear of the letterforms (art has no baseline, so it takes the
- *  direct route either way). */
-export type Crossover = false | 'direct' | 'rail';
-
 export interface LayoutOptions {
 	tubes?: TubeGrouping;
-	/** Bend the crossover runs between a section's strokes (default false). */
-	crossover?: Crossover;
+	/** Wire each section as ONE continuous tube (default true — how a real sign
+	 *  is bent): the crossover runs between its strokes exist behind the sign,
+	 *  painted out — invisible — so what changes is the HARDWARE: one electrode
+	 *  pair per section, at the circuit's true ends, and every interior stroke
+	 *  end is bare glass diving behind. Under `tubes: 'auto'` this resolves the
+	 *  sans face to 'word' — a circuit of one glyph is no circuit. */
+	crossover?: boolean;
 	/** Per-line alignment (default 'center' — signs centre). */
 	align?: 'left' | 'center' | 'right';
 	/** Baseline-to-baseline advance as a multiple of the face's ascent+descent
@@ -217,145 +213,73 @@ function cutStroke(
 	return out.filter((r) => r.length >= 2);
 }
 
-// --- crossovers (the blockout runs) -------------------------------------------------
+// --- crossovers (the invisible returns) ----------------------------------------------
 // A real sign is ONE bent tube per circuit: where a stroke ends and the next begins,
 // the glass carries on — pushed back off the face plane and dipped in blockout paint,
-// so it conducts without showing. These are the runs that make a word read as tube
-// rather than as loose glyph fragments; the renderer draws them matte, and the light
-// leaks at the seam where the paint stops.
+// invisible against the panel. Nothing of that is drawn (paint done well is exactly
+// the part you cannot see); what it changes is the HARDWARE. A wired section carries
+// one electrode pair at the circuit's true ends, and every stroke end in between is
+// bare glass diving behind — the same cut-end read the `opaque` occlusion uses.
 
-/** One crossover run from `a` to `b`. Glass cannot corner: the run LEAVES along the
- *  tube's own direction (`adir`, the outward tangent at the stroke end) and ARRIVES
- *  along the next stroke's reversed one (`bdir`), with a lead straight enough to
- *  read as the same tube diving back before it bends. `railY` (text only — art has
- *  no baseline) takes a hop with real distance down under the letterforms, the way
- *  a shop routes a long return clear of the counters. */
-export function crossoverRun(
-	a: [number, number],
-	adir: [number, number],
-	b: [number, number],
-	bdir: [number, number],
-	bendR: number,
-	railY?: number
-): [number, number][] {
-	const span = Math.hypot(b[0] - a[0], b[1] - a[1]);
-	if (span < 1e-6) return [a, b];
-	// The dive: continue out of the glass before turning, and rise into the next
-	// stroke the same way. Short hops get shorter leads or they overshoot each other.
-	const lead = Math.min(bendR * 1.4, span * 0.35);
-	const pa: [number, number] = [a[0] + adir[0] * lead, a[1] + adir[1] * lead];
-	const pb: [number, number] = [b[0] + bdir[0] * lead, b[1] + bdir[1] * lead];
-	// A hop shorter than a few bends takes the short way whatever the sign is wired
-	// for: the returns inside one letterform are stubs, and railing them out to the
-	// baseline would run more painted glass than lit.
-	if (railY != null && span > bendR * 6) {
-		const drop = Math.max(railY, pa[1] + bendR, pb[1] + bendR);
-		return roundCorners([a, pa, [pa[0], drop], [pb[0], drop], pb, b], bendR * 2);
-	}
-	return roundCorners([a, pa, pb, b], bendR * 2);
-}
-
-/** Thread a section's strokes onto one tube the way a bender would: finish one
- *  glyph before moving to the next (`groups` arrive in reading order), and inside a
- *  glyph take whichever stroke is nearest, entered by its nearer end, so the glass
- *  covers the letterform with as little doubling back as it can. The hops come back
- *  as painted runs; where two strokes already meet there is nothing to bend. */
 const dist = (a: [number, number], b: [number, number]) => Math.hypot(b[0] - a[0], b[1] - a[1]);
-const ends2 = (s: [number, number][]): [[number, number], [number, number]] => [
-	s[0],
-	s[s.length - 1]
-];
 
-// One glyph's strokes, ordered and oriented into a single run. Greedy nearest-next
-// from a given opening move, and every opening move is tried — a letter whose
-// strokes already chain end to end (the N: up the stem, down the diagonal, up the
-// other stem) then comes out with no returns at all, which is how it is bent.
-function route(
-	group: [number, number][][],
-	tail: [number, number] | null
-): { runs: [number, number][][]; hops: number[] } {
-	let bestRuns: [number, number][][] = [];
-	let bestHops: number[] = [];
+/** Where the bender's tube starts and finishes. Strokes are routed greedily —
+ *  finish one glyph before the next (`groups` arrive in reading order), inside a
+ *  glyph take the nearest stroke entered by its nearer end — and every opening
+ *  move is tried, so a letterform already bent as one continuous run (the N: up
+ *  the stem, down the diagonal, up the other stem) routes with no returns at
+ *  all. The circuit's two free ends are what the electrodes sit on; nothing
+ *  about the drawn glass changes. */
+export function circuitEnds(groups: [number, number][][][]): {
+	first: [number, number][];
+	last: [number, number][];
+} {
+	let bestFirst: [number, number][] | null = null;
+	let bestLast: [number, number][] | null = null;
 	let bestCost = Infinity;
-	for (let start = 0; start < group.length; start++) {
+	// Openings are per whole circuit: the first glyph's every stroke, both ways
+	// round; later glyphs follow greedily from wherever the tube is.
+	for (let start = 0; start < groups[0].length; start++) {
 		for (const flip of [false, true]) {
-			const left = group.map((s, i) => ({ s, i }));
-			const runs: [number, number][][] = [];
-			const hops: number[] = [];
-			let at = tail;
+			let at: [number, number] | null = null;
+			let first: [number, number][] | null = null;
+			let last: [number, number][] | null = null;
 			let cost = 0;
-			let pick = start;
-			let pickFlip = flip;
-			while (left.length) {
-				const k = left.findIndex((e) => e.i === pick);
-				const [{ s }] = left.splice(k < 0 ? 0 : k, 1);
-				const run = pickFlip ? [...s].reverse() : s;
-				const hop = at ? dist(at, run[0]) : 0;
-				hops.push(hop);
-				cost += hop;
-				runs.push(run);
-				at = run[run.length - 1];
-				let near = Infinity;
-				for (const e of left) {
-					const [h, l] = ends2(e.s);
-					const dh = dist(at, h);
-					const dl = dist(at, l);
-					if (Math.min(dh, dl) < near) {
-						near = Math.min(dh, dl);
-						pick = e.i;
-						pickFlip = dl < dh;
+			for (const group of groups) {
+				const left = group.slice();
+				let pick: number = at ? -1 : start;
+				let pickFlip: boolean = at ? false : flip;
+				while (left.length) {
+					if (pick < 0) {
+						// The nearest remaining stroke, entered by its nearer end.
+						let near = Infinity;
+						for (let i = 0; i < left.length; i++) {
+							const dh = dist(at!, left[i][0]);
+							const dl = dist(at!, left[i][left[i].length - 1]);
+							if (Math.min(dh, dl) < near) {
+								near = Math.min(dh, dl);
+								pick = i;
+								pickFlip = dl < dh;
+							}
+						}
 					}
+					const s = left.splice(pick, 1)[0];
+					const run: [number, number][] = pickFlip ? [...s].reverse() : s;
+					if (at) cost += dist(at, run[0]);
+					first ??= run;
+					last = run;
+					at = run[run.length - 1];
+					pick = -1;
 				}
 			}
 			if (cost < bestCost) {
 				bestCost = cost;
-				bestRuns = runs;
-				bestHops = hops;
+				bestFirst = first;
+				bestLast = last;
 			}
 		}
 	}
-	return { runs: bestRuns, hops: bestHops };
-}
-
-function thread(
-	groups: [number, number][][][],
-	mode: Exclude<Crossover, false>,
-	bendR: number,
-	railY?: number
-): { strokes: [number, number][][]; painted: boolean[] } {
-	const out: [number, number][][] = [];
-	const painted: boolean[] = [];
-	let prev: [number, number][] | null = null;
-	for (const group of groups) {
-		const { runs, hops } = route(group, prev ? prev[prev.length - 1] : null);
-		for (let i = 0; i < runs.length; i++) {
-			const run = runs[i];
-			// A hop shorter than a bend is two strokes already meeting: nothing to bend,
-			// nothing to paint.
-			if (prev && hops[i] > bendR * 0.5) {
-				// The dive leaves the glass along ITS tangent and rises into the next
-				// stroke along its own — endOf is the same outward direction the
-				// electrode stubs use.
-				const ea = endOf(prev, true);
-				const eb = endOf(run, false);
-				out.push(
-					crossoverRun(
-						[ea.x, ea.y],
-						[ea.dx, ea.dy],
-						[eb.x, eb.y],
-						[eb.dx, eb.dy],
-						bendR,
-						mode === 'rail' ? railY : undefined
-					)
-				);
-				painted.push(true);
-			}
-			out.push(run);
-			painted.push(false);
-			prev = run;
-		}
-	}
-	return { strokes: out, painted };
+	return { first: bestFirst!, last: bestLast! };
 }
 
 // The outward tangent at a stroke end — where the electrode stub points.
@@ -384,8 +308,12 @@ export function layoutTubes(
 	opts: LayoutOptions = {}
 ): NeonLayout {
 	const f = resolveFont(font);
+	const crossover = opts.crossover ?? true;
 	const grouping: TubeGrouping = opts.tubes ?? 'auto';
-	const group = grouping === 'auto' ? (f.grouping ?? 'glyph') : grouping;
+	// A wired sign is circuits, and a circuit of one glyph is no circuit — so
+	// crossover resolves the auto grouping to 'word' where a face would default
+	// to per-glyph tubes. Naming `tubes` yourself still wins.
+	const group = grouping === 'auto' ? (crossover ? 'word' : (f.grouping ?? 'glyph')) : grouping;
 	const align = opts.align ?? 'center';
 	const advance = (f.ascent + f.descent) * Math.max(0.5, opts.lineSpacing ?? 1.1);
 	const track = (opts.letterSpacing ?? 0) * f.capHeight;
@@ -395,26 +323,21 @@ export function layoutTubes(
 
 	const lines = text.split(/\r?\n/);
 	const sections: TubeSection[] = [];
-	const crossover: Crossover = opts.crossover ?? false;
 
-	// One section, threaded onto one tube if the sign is wired that way. The
-	// electrode pair is the whole run's two free ends — every joint in between is
-	// glass the paint hides, not a place to put a stub.
-	const section = (
-		groups: [number, number][][][],
-		line: number,
-		railY?: number,
-		art?: number
-	): TubeSection => {
+	// One section — wired as one circuit when the sign asks for it: the drawn
+	// glass is identical either way, but a wired section's electrode pair sits on
+	// the routed circuit's two free ends, and every joint in between is glass the
+	// invisible painted-out return hides, not a place to put a stub.
+	const section = (groups: [number, number][][][], line: number, art?: number): TubeSection => {
 		const flat = groups.flat();
-		const t = crossover && flat.length > 1 ? thread(groups, crossover, bendR, railY) : null;
-		const s = t?.strokes ?? flat;
-		const sec: TubeSection = {
-			strokes: s,
-			ends: [endOf(s[0], false), endOf(s[s.length - 1], true)],
-			line
-		};
-		if (t) sec.painted = t.painted;
+		let ends: TubeSection['ends'];
+		if (crossover && flat.length > 1) {
+			const { first, last } = circuitEnds(groups);
+			ends = [endOf(first, false), endOf(last, true)];
+		} else {
+			ends = [endOf(flat[0], false), endOf(flat[flat.length - 1], true)];
+		}
+		const sec: TubeSection = { strokes: flat, ends, line };
 		if (art != null) sec.art = art;
 		return sec;
 	};
@@ -441,15 +364,12 @@ export function layoutTubes(
 		// A pending section accumulates glyphs — one group of strokes each, in
 		// reading order — until the grouping closes it.
 		let open: [number, number][][][] | null = null;
-		// The crossover rail for this line: just under the baseline, where a shop
-		// runs the long returns so they miss the letterforms.
-		const railY = baseY + f.descent * 0.9;
 		const close = () => {
 			if (!open || !open.length) {
 				open = null;
 				return;
 			}
-			sections.push(section(open, li, railY));
+			sections.push(section(open, li));
 			open = null;
 		};
 		for (const ch of lines[li]) {
@@ -474,7 +394,7 @@ export function layoutTubes(
 					)
 				);
 				if (group === 'glyph') {
-					sections.push(section([placed], li, railY));
+					sections.push(section([placed], li));
 				} else {
 					(open ??= []).push(placed);
 				}
@@ -590,7 +510,7 @@ export function layoutTubes(
 				botAll = Math.max(botAll, y);
 			}
 		// A piece has no baseline to run a rail under, so its crossovers hop direct.
-		const mk = (strokes: [number, number][][]): TubeSection => section([strokes], 0, undefined, ai);
+		const mk = (strokes: [number, number][][]): TubeSection => section([strokes], 0, ai);
 		const secs = a.tubes === 'path' ? placed.map((s) => mk([s])) : [mk(placed)];
 		// Z-order = section order = 'reveal' strike order: backdrop pieces first
 		// (the border ring lights, then the word), side pieces after the text.
@@ -619,23 +539,18 @@ export function layoutTubes(
 			const applicable = cutBy.filter((f) => j < f.idx);
 			if (!applicable.length) continue;
 			const sec = sections[j];
-			for (const f of applicable) {
-				const kept: [number, number][][] = [];
-				const paint: boolean[] = [];
-				sec.strokes.forEach((s, si) => {
-					for (const run of cutStroke(s, f.face, BLOCKOUT)) {
-						kept.push(run);
-						paint.push(sec.painted?.[si] ?? false);
-					}
-				});
-				sec.strokes = kept;
-				if (sec.painted) sec.painted = paint;
-			}
+			for (const f of applicable)
+				sec.strokes = sec.strokes.flatMap((s) => cutStroke(s, f.face, BLOCKOUT));
 			if (!sec.strokes.length) continue;
-			sec.ends = [
-				endOf(sec.strokes[0], false),
-				endOf(sec.strokes[sec.strokes.length - 1], true)
-			].filter((e) => !applicable.some((f) => covered(e.x, e.y, f.face, BLOCKOUT + 1.5)));
+			// A wired section keeps its routed circuit ends (the electrodes are real
+			// hardware wherever the glass got cut); an unwired one re-reads them off
+			// the surviving strokes. Either way an end under the face is a
+			// dive-behind, not an electrode.
+			sec.ends = (
+				crossover && sec.ends.length
+					? sec.ends
+					: [endOf(sec.strokes[0], false), endOf(sec.strokes[sec.strokes.length - 1], true)]
+			).filter((e) => !applicable.some((f) => covered(e.x, e.y, f.face, BLOCKOUT + 1.5)));
 		}
 		// A fully covered tube is no tube.
 		for (let j = sections.length - 1; j >= 0; j--)

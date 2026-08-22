@@ -11,8 +11,9 @@ test('imports under node without browser globals', async () => {
 	expect(typeof mod.createHum).toBe('function');
 	expect(typeof mod.parseColor).toBe('function');
 	expect(typeof mod.HERSHEY_LICENSE).toBe('string');
-	// The pure text→tube pipeline runs headless (the 3D-consumer seam).
-	expect(mod.layoutTubes('HI', 'sans').sections.length).toBe(2);
+	// The pure text→tube pipeline runs headless (the 3D-consumer seam); the word
+	// is wired as one circuit by default.
+	expect(mod.layoutTubes('HI', 'sans').sections.length).toBe(1);
 });
 
 test('createMechSound and createHum are silent no-ops without Web Audio', async () => {

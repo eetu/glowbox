@@ -6,14 +6,16 @@ import { layoutTubes, type NeonLayout, roundCorners, type TubeSection } from '..
 
 const sans = resolveFont('sans');
 
-test('single line: per-glyph sections, width = advances + tracking', () => {
+test('single line: one circuit per word by default, width = advances + tracking', () => {
 	const l = layoutTubes('HI', 'sans');
-	expect(l.sections.length).toBe(2);
+	expect(l.sections.length).toBe(1); // wired: the word is one tube
 	expect(l.sections.every((s) => s.line === 0)).toBe(true);
 	expect(l.width).toBe(sans.glyphs['H'].adv + sans.glyphs['I'].adv);
 	expect(l.top).toBe(-sans.ascent);
 	const tracked = layoutTubes('HI', 'sans', { letterSpacing: 0.5 });
 	expect(tracked.width).toBeCloseTo(l.width + 0.5 * sans.capHeight);
+	// Cutting the wiring restores the channel-letter default: a tube per glyph.
+	expect(layoutTubes('HI', 'sans', { crossover: false }).sections.length).toBe(2);
 });
 
 test('multi-line: line indices, advance, alignment', () => {
@@ -33,10 +35,11 @@ test('multi-line: line indices, advance, alignment', () => {
 	expect(minX(layoutTubes('NO\nVACANCY', 'sans', { align: 'right' }), 0)).toBeGreaterThan(centered);
 });
 
-test("grouping: script→word, sans→glyph under 'auto'; explicit overrides win", () => {
+test("grouping: 'auto' wires per word; sans falls back to per glyph only when cut", () => {
 	expect(layoutTubes('so hot', 'script').sections.length).toBe(2);
-	expect(layoutTubes('so hot', 'sans').sections.length).toBe(5);
-	expect(layoutTubes('so hot', 'sans', { tubes: 'word' }).sections.length).toBe(2);
+	expect(layoutTubes('so hot', 'sans').sections.length).toBe(2); // wired: circuits, not glyphs
+	expect(layoutTubes('so hot', 'sans', { crossover: false }).sections.length).toBe(5);
+	expect(layoutTubes('so hot', 'sans', { tubes: 'glyph' }).sections.length).toBe(5); // naming wins
 	expect(layoutTubes('so hot\nso cold', 'sans', { tubes: 'line' }).sections.length).toBe(2);
 });
 
@@ -92,8 +95,9 @@ test('empty text lays out to nothing', () => {
 });
 
 test('tilt rotates the text block about its centre; negative rises left-to-right', () => {
-	const flat = layoutTubes('HI', 'sans');
-	const tilted = layoutTubes('HI', 'sans', { tilt: -20 });
+	// Per-glyph sections so H and I can be sampled apart.
+	const flat = layoutTubes('HI', 'sans', { tubes: 'glyph' });
+	const tilted = layoutTubes('HI', 'sans', { tubes: 'glyph', tilt: -20 });
 	expect(tilted.height).toBeGreaterThan(flat.height); // the box grew to the diagonal
 	expect(tilted.left).toBeLessThan(0);
 	const meanY = (lay: ReturnType<typeof layoutTubes>, i: number) => {
@@ -272,58 +276,58 @@ test("art: SVG path data accepted; tubes 'path' splits per subpath", () => {
 	expect(per.sections.every((s) => s.art === 0)).toBe(true);
 });
 
-const runLen = (s: [number, number][]) =>
-	s.reduce((a, p, k) => (k ? a + Math.hypot(p[0] - s[k - 1][0], p[1] - s[k - 1][1]) : 0), 0);
+const strokeKey = (l: NeonLayout) =>
+	JSON.stringify(l.sections.map((s) => s.strokes).flat(Number.POSITIVE_INFINITY));
 
-test('crossover: a section threads onto one tube and the hops come back painted', () => {
-	const plain = layoutTubes('OPEN', 'sans', { tubes: 'word' });
-	const wired = layoutTubes('OPEN', 'sans', { tubes: 'word', crossover: 'direct' });
-	expect(plain.sections[0].painted).toBeUndefined(); // plain wiring carries no paint
-	const sec = wired.sections[0];
-	expect(sec.painted).toHaveLength(sec.strokes.length);
-	// Every painted run bridges the glass either side of it — its ends ARE its
-	// neighbours' ends, which is what makes the tube continuous.
-	sec.painted!.forEach((isPaint, i) => {
-		if (!isPaint) return;
-		const before = sec.strokes[i - 1];
-		const after = sec.strokes[i + 1];
-		const run = sec.strokes[i];
-		expect(before[before.length - 1]).toEqual(run[0]);
-		expect(after[0]).toEqual(run[run.length - 1]);
-	});
-	// The glass itself is untouched: same runs, same total length, either wiring.
-	const glass = (l: NeonLayout) =>
-		l.sections[0].strokes
-			.filter((_, i) => !l.sections[0].painted?.[i])
-			.reduce((sum, s) => sum + runLen(s), 0);
-	expect(glass(wired)).toBeCloseTo(glass(plain), 3);
-	// Still one electrode pair: the joints in between are glass under paint.
-	expect(sec.ends).toHaveLength(2);
+test('crossover: the drawn glass is identical — only the hardware moves', () => {
+	const plain = layoutTubes('OPEN', 'sans', { tubes: 'word', crossover: false });
+	const wired = layoutTubes('OPEN', 'sans', { tubes: 'word' });
+	// The returns are invisible (painted out behind the sign), so nothing about
+	// the strokes may change: same sections, same geometry, same bounds.
+	expect(wired.sections.length).toBe(plain.sections.length);
+	expect(strokeKey(wired)).toBe(strokeKey(plain));
 	expect(wired.width).toBeCloseTo(plain.width);
+	// One electrode pair per circuit, sitting on stroke ENDS — real glass, both.
+	const sec = wired.sections[0];
+	expect(sec.ends).toHaveLength(2);
+	const tips = sec.strokes.flatMap((s) => [s[0], s[s.length - 1]]);
+	for (const e of sec.ends) expect(tips.some(([x, y]) => x === e.x && y === e.y)).toBe(true);
 });
 
-test('crossover: strokes that already meet need no run; the rail drops below the line', () => {
-	// The sans N bends as one continuous run — stem, diagonal, stem — so threading
-	// it asks for no paint at all.
-	const n = layoutTubes('N', 'sans', { crossover: 'direct' }).sections[0];
-	expect(n.painted?.some(Boolean) ?? false).toBe(false);
-	// The E has to double back, and the rail takes those returns under the baseline.
-	const deepestPaint = (sec: TubeSection) =>
-		Math.max(
-			...sec.strokes.flatMap((s, i) => (sec.painted?.[i] ? s.map(([, y]) => y) : [-Infinity]))
-		);
-	const direct = layoutTubes('OPEN', 'sans', { tubes: 'word', crossover: 'direct' }).sections[0];
-	const rail = layoutTubes('OPEN', 'sans', { tubes: 'word', crossover: 'rail' }).sections[0];
-	expect(deepestPaint(rail)).toBeGreaterThan(deepestPaint(direct));
-	expect(deepestPaint(rail)).toBeGreaterThan(0); // under the baseline, where a shop runs them
+test('crossover: the electrodes sit where the bender starts and finishes, not where the data does', () => {
+	// Three collinear runs handed middle-first: reading order would put an
+	// electrode on the middle segment's tip, the routed circuit starts at the far
+	// left and finishes at the far right.
+	const piece = { d: 'M10 0L20 0M0 0L8 0M22 0L30 0' };
+	const naive = layoutTubes('', 'sans', { crossover: false, art: [piece] }).sections[0];
+	const wired = layoutTubes('', 'sans', { art: [piece] }).sections[0];
+	const xs = (sec: TubeSection) => sec.ends.map((e) => e.x).sort((a, b) => a - b);
+	const [nl, nr] = xs(naive);
+	const [wl, wr] = xs(wired);
+	expect(wl).toBeLessThan(nl); // reaches the true left end of the circuit
+	expect(wr).toBeCloseTo(nr); // the right electrode was already right
+	expect(strokeKey({ sections: [wired] } as NeonLayout)).toBe(
+		strokeKey({ sections: [naive] } as NeonLayout)
+	);
 });
 
-test('crossover: an opaque face cuts painted runs with their flags', () => {
+test('crossover: auto grouping wires the sans face per word', () => {
+	// A circuit of one glyph is no circuit — crossover resolves 'auto' to 'word',
+	// so OPEN is one tube with one electrode pair instead of four with eight.
+	const wired = layoutTubes('OPEN', 'sans');
+	expect(wired.sections.length).toBe(1);
+	expect(wired.sections[0].ends).toHaveLength(2);
+	// Naming the grouping yourself still wins.
+	const perGlyph = layoutTubes('OPEN', 'sans', { tubes: 'glyph' });
+	expect(perGlyph.sections.length).toBe(4);
+});
+
+test('crossover: an opaque face still cuts, and covered circuit ends lose their stubs', () => {
 	const l = layoutTubes('OPEN', 'sans', {
-		tubes: 'word',
-		crossover: 'direct',
+		crossover: true,
 		art: [{ d: 'M-40 -30L40 -30 40 30 -40 30Z', place: 'behind', size: 1.2, opaque: true }]
 	});
-	for (const sec of l.sections)
-		if (sec.painted) expect(sec.painted).toHaveLength(sec.strokes.length);
+	// The face swallows the word's middle; whatever glass survives keeps at most
+	// the two routed electrodes, and only where they are not under the face.
+	for (const sec of l.sections) expect(sec.ends.length).toBeLessThanOrEqual(2);
 });
