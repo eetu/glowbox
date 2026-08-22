@@ -21,7 +21,13 @@
 		polarity,
 		on,
 		lineOn,
+		wordOn,
+		wordColor,
 		glow,
+		face,
+		outline,
+		lineScale,
+		crossover,
 		glass,
 		electrode,
 		age,
@@ -61,9 +67,21 @@
 		polarity?: NeonSignOptions['polarity'];
 		/** Power — off leaves the unlit glass visible; on re-strikes. */
 		on?: boolean;
-		/** Per-text-line circuits (the motel sign's separately switched NO). */
+		/** Per-text-line circuits — a line that switches on its own. */
 		lineOn?: boolean[];
+		/** Per-word circuits, counted across the text in reading order. */
+		wordOn?: boolean[];
+		/** Per-word tube colour (`null` entries inherit the line's colour or the gas). */
+		wordColor?: NeonSignOptions['wordColor'];
 		glow?: number;
+		/** Painted letter slabs under the tubes, lit by their own circuit; one per line. */
+		face?: NeonSignOptions['face'];
+		/** Bend the tube around the letterform — its border, not its centreline. */
+		outline?: NeonSignOptions['outline'];
+		/** Per-line glyph scale; the tube keeps its regular width. */
+		lineScale?: number[];
+		/** How much glass shares one circuit: word-wired (default) or channel letters. */
+		crossover?: boolean;
 		/** The unlit tube itself. */
 		glass?: NeonSignOptions['glass'];
 		/** The electrode caps — metal, not light. */
@@ -123,7 +141,13 @@
 				polarity,
 				on,
 				lineOn,
+				wordOn,
+				wordColor,
 				glow,
+				face,
+				outline,
+				lineScale,
+				crossover,
 				glass,
 				electrode,
 				age,
@@ -174,7 +198,13 @@
 			polarity,
 			on,
 			lineOn,
+			wordOn,
+			wordColor,
 			glow,
+			face,
+			outline,
+			lineScale,
+			crossover,
 			glass,
 			electrode,
 			age,

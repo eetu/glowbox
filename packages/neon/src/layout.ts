@@ -34,8 +34,8 @@ export interface TubeSection {
 	/** 0-based text line the section sits on — per-line colours key off this. */
 	line: number;
 	/** 0-based WORD the section belongs to, counted across the whole text in
-	 *  reading order — the motel sign's own circuit unit: `wordOn` switches it,
-	 *  `wordColor` paints it. Absent on art sections. */
+	 *  reading order — the circuit unit `wordOn` switches and `wordColor`
+	 *  paints. Absent on art sections. */
 	word?: number;
 	/** Index into the sign's `art` list when this section is artwork, not text. */
 	art?: number;
@@ -64,8 +64,8 @@ export interface NeonArt {
 	gas?: GasName;
 	color?: Color;
 	/** The piece's painted face — a wide slab of paint under its tubes that
-	 *  catches their light, the motel-letter pattern (default: none; the sign's
-	 *  per-line `face` never bleeds onto art). */
+	 *  catches their light (default: none; the sign's per-line `face` never
+	 *  bleeds onto art). */
 	face?: Color;
 	/** The piece's own discharge direction, overriding the sign's: a white tube
 	 *  can shine BLACK ('absorb') on a pale wall while the lettering beside it
@@ -109,13 +109,12 @@ export interface LayoutOptions {
 	/** Bend the tube around the letterform instead of along it (default false):
 	 *  each glyph's tube becomes the CONTOUR of its slab — the border of the
 	 *  painted letter — while the centrelines move to `skeleton` for the `face`
-	 *  paint. The movie-motel pattern: fat painted typography, a normal-width
-	 *  tube tracing its edge. One flag, or one per text line (art follows the
-	 *  single-flag form only). */
+	 *  paint. Fat painted typography, a normal-width tube tracing its edge. One
+	 *  flag, or one per text line (art follows the single-flag form only). */
 	outline?: boolean | boolean[];
-	/** Per-line glyph scale (default all 1) — the headline pattern: HOTEL twice
-	 *  the size of the NO VACANCY under it. The tube keeps its regular width
-	 *  whatever the letter size; an outlined line's slab scales with it. */
+	/** Per-line glyph scale (default all 1) — a headline line at twice the size
+	 *  of the line under it. The tube keeps its regular width whatever the
+	 *  letter size; an outlined line's slab scales with it. */
 	lineScale?: number[];
 	/** Per-line alignment (default 'center' — signs centre). */
 	align?: 'left' | 'center' | 'right';
@@ -483,9 +482,9 @@ export function layoutTubes(
 
 	const lines = text.split(/\r?\n/);
 	const sections: TubeSection[] = [];
-	// The headline pattern: per-line glyph scale — HOTEL twice the size of the NO
-	// VACANCY under it. The tube stays its regular width (glass is glass whatever
-	// the letter), so a scaled line simply carries more letter per tube.
+	// Per-line glyph scale: a headline line at twice the size of the one under
+	// it. The tube stays its regular width (glass is glass whatever the letter),
+	// so a scaled line simply carries more letter per tube.
 	const scaleOf = (li: number): number => {
 		const s = opts.lineScale?.[li % Math.max(1, opts.lineScale?.length ?? 1)] ?? 1;
 		return s > 0 ? s : 1;
@@ -547,9 +546,9 @@ export function layoutTubes(
 	const widths = lines.map((line, li) => measure(line, scaleOf(li)));
 	const width = Math.max(0, ...widths);
 
-	// Words count across the whole text in reading order — HOTEL 0, NO 1,
-	// VACANCY 2 — so `wordOn`/`wordColor` address the motel's own circuit unit.
-	// A 'line' section spans words and takes its first one's index.
+	// Words count across the whole text in reading order, so `wordOn` and
+	// `wordColor` can address one word's circuit among its neighbours. A 'line'
+	// section spans words and takes its first one's index.
 	let wordIdx = 0;
 	let inWord = false;
 	const endWord = () => {

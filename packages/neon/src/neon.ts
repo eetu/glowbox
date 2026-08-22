@@ -96,23 +96,23 @@ export interface NeonSignOptions {
 	polarity?: 'emit' | 'absorb';
 	/** Power (default true). Off is not blank: the unlit glass stays visible. */
 	on?: boolean;
-	/** Per-text-line circuits (default: all on) — the motel sign's separately
-	 *  switched NO. An off line stays as unlit glass; switching it back on
-	 *  strikes. Missing entries mean on; art pieces ride the main switch. */
+	/** Per-text-line circuits (default: all on) — a line that switches on its
+	 *  own. An off line stays as unlit glass; switching it back on strikes.
+	 *  Missing entries mean on; art pieces ride the main switch. */
 	lineOn?: boolean[];
 	/** Per-WORD circuits (default: all on), counted across the whole text in
-	 *  reading order — the motel sign proper: HOTEL 0, NO 1, VACANCY 2, and the
-	 *  NO cuts out on its own while VACANCY stays lit. Missing entries mean on;
-	 *  a 'line'-grouped section spans words and follows its first one. */
+	 *  reading order — one word can cut to unlit glass and strike back on its
+	 *  own while its neighbours on the same line stay lit. Missing entries mean
+	 *  on; a 'line'-grouped section spans words and follows its first one. */
 	wordOn?: boolean[];
 	/** Per-WORD tube colour, same indexing as `wordOn` (`null` entries inherit
-	 *  the line's colour or the gas) — the red NO riding a blue VACANCY. */
+	 *  the line's colour or the gas) — one word in its own light beside the
+	 *  rest of the line. */
 	wordColor?: (Color | null)[];
 	/** Glow strength 0..1 (default 0.7). */
 	glow?: number;
-	/** Painted letter FACES — the motel-sign pattern: each letterform painted on
-	 *  the panel as a wide slab under its tube, an object that catches the tube's
-	 *  light. One colour, or one per text line (`null` entries skip a line), and
+	/** Painted letter FACES: each letterform painted on the panel as a wide
+	 *  slab under its tube, an object that catches the tube's light. One colour, or one per text line (`null` entries skip a line), and
 	 *  the paint is lit by ITS OWN circuit: unlit it sits as dim paint against
 	 *  the wall, lit it washes toward its colour with a hint of the gas — so
 	 *  flicker, wear and strikes play across the letter, not just the glass.
@@ -120,16 +120,15 @@ export interface NeonSignOptions {
 	 *  their own `face` per piece. Default: no faces — bare tubes. */
 	face?: Color | (Color | null)[] | null;
 	/** Bend the tube around the letterform instead of along it (default false):
-	 *  the movie-motel pattern — fat painted typography with a normal-width tube
-	 *  tracing its border. The `face` paint keeps the letterform itself; the
-	 *  tube, its electrodes, strikes and taps all live on the contour. One flag
-	 *  or one per text line (HOTEL outlined, NO VACANCY bare — art follows the
-	 *  single-flag form only). Best with a `face`, and with text (art corners
-	 *  are not rounded, and a sharp corner offsets poorly). */
+	 *  fat painted typography with a normal-width tube tracing its border. The
+	 *  `face` paint keeps the letterform itself; the tube, its electrodes,
+	 *  strikes and taps all live on the contour. One flag or one per text line
+	 *  (art follows the single-flag form only). Best with a `face`, and with
+	 *  text (art corners are not rounded, and a sharp corner offsets poorly). */
 	outline?: boolean | boolean[];
-	/** Per-line glyph scale (default all 1) — the headline pattern: HOTEL twice
-	 *  the size of the NO VACANCY under it. The tube keeps its regular width
-	 *  whatever the letter size; an outlined line's slab scales with it. */
+	/** Per-line glyph scale (default all 1) — a headline line at twice the size
+	 *  of the line under it. The tube keeps its regular width whatever the
+	 *  letter size; an outlined line's slab scales with it. */
 	lineScale?: number[];
 	/** The unlit tube itself — the glass you see with the power off. Defaults to a
 	 *  neutral grey picked to contrast with the `wall` (light glass on a dark wall,
@@ -609,7 +608,7 @@ export function createNeonSign(
 			ig.scale(s, s);
 		}
 
-		// The painted letter faces — the motel-sign pattern: each letterform is a
+		// The painted letter faces: each letterform is a
 		// wide slab of paint on the panel with its tube riding it. Paint is an
 		// object (visible unlit, keyed against the wall like the glass and the
 		// hardware), and it is LIT BY ITS OWN CIRCUIT: the wash follows the
