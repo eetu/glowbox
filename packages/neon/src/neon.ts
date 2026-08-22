@@ -109,16 +109,16 @@ export interface NeonSignOptions {
 	 *  against the `wall`: near-black on a dark wall, mid-grey on a pale one,
 	 *  where near-black specks read as dirt rather than hardware. */
 	electrode?: Color;
-	/** Wire each section as ONE continuous tube (default true — how a real sign
-	 *  is bent). The crossover runs between its strokes are real but invisible —
-	 *  bent back off the face plane and painted out, exactly the part of a sign
-	 *  you never see — so what shows is the HARDWARE: one electrode pair per
-	 *  section, at the circuit's routed ends, and every interior stroke end reads
-	 *  as bare glass diving behind. Under `tubes: 'auto'` this wires the sans
-	 *  face per word (a circuit of one glyph is no circuit), and since a section
-	 *  is the strike/wear unit, the word lights and dies as one tube. `false`
-	 *  cuts the wiring back to one tube per stroke group — per-letter strikes,
-	 *  per-letter electrodes. */
+	/** How much glass shares one circuit (default true — how a real sign is
+	 *  bent). Under `tubes: 'auto'` the sans face wires per WORD: the whole word
+	 *  is one tube behind one electrode pair, its crossover runs bent back off
+	 *  the face plane and painted out — real but invisible, exactly the part of
+	 *  a sign you never see — and every interior stroke end reads as bare glass
+	 *  diving behind. A section being the strike/wear unit, the word lights and
+	 *  dies as one tube. `false` cuts back to channel-letter circuits: per-letter
+	 *  tubes, strikes, wear and electrode pairs. Placement is not this option's
+	 *  to move — every circuit's pair always sits on its routed run's two free
+	 *  ends, never wherever the font data happened to start. */
 	crossover?: boolean;
 	/** Wear 0..1 (default 0): deterministic per-tube dimming; past ~0.7 the
 	 *  most-worn tube starts flickering, from ~0.95 it is dead glass while the

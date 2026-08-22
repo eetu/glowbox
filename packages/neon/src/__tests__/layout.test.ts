@@ -2,7 +2,7 @@
 import { expect, test, vi } from 'vitest';
 
 import { resolveFont } from '../font';
-import { layoutTubes, type NeonLayout, roundCorners, type TubeSection } from '../layout';
+import { layoutTubes, type NeonLayout, roundCorners } from '../layout';
 
 const sans = resolveFont('sans');
 
@@ -294,21 +294,19 @@ test('crossover: the drawn glass is identical — only the hardware moves', () =
 	for (const e of sec.ends) expect(tips.some(([x, y]) => x === e.x && y === e.y)).toBe(true);
 });
 
-test('crossover: the electrodes sit where the bender starts and finishes, not where the data does', () => {
-	// Three collinear runs handed middle-first: reading order would put an
-	// electrode on the middle segment's tip, the routed circuit starts at the far
-	// left and finishes at the far right.
+test('electrodes sit where the bender starts and finishes, not where the data does', () => {
+	// Three collinear runs handed middle-first: font/author order would put an
+	// electrode on the middle segment's tip; the routed circuit starts at the far
+	// left and finishes at the far right — and it does so whatever the wiring,
+	// because a section is one bent tube either way.
 	const piece = { d: 'M10 0L20 0M0 0L8 0M22 0L30 0' };
-	const naive = layoutTubes('', 'sans', { crossover: false, art: [piece] }).sections[0];
-	const wired = layoutTubes('', 'sans', { art: [piece] }).sections[0];
-	const xs = (sec: TubeSection) => sec.ends.map((e) => e.x).sort((a, b) => a - b);
-	const [nl, nr] = xs(naive);
-	const [wl, wr] = xs(wired);
-	expect(wl).toBeLessThan(nl); // reaches the true left end of the circuit
-	expect(wr).toBeCloseTo(nr); // the right electrode was already right
-	expect(strokeKey({ sections: [wired] } as NeonLayout)).toBe(
-		strokeKey({ sections: [naive] } as NeonLayout)
-	);
+	for (const crossover of [true, false]) {
+		const sec = layoutTubes('', 'sans', { crossover, art: [piece] }).sections[0];
+		const xs = sec.strokes.flat().map(([x]) => x);
+		const ends = sec.ends.map((e) => e.x).sort((a, b) => a - b);
+		expect(ends[0]).toBeCloseTo(Math.min(...xs)); // the true left tip
+		expect(ends[1]).toBeCloseTo(Math.max(...xs)); // …and the true right one
+	}
 });
 
 test('crossover: auto grouping wires the sans face per word', () => {

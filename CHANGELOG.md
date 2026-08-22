@@ -16,17 +16,18 @@ the pigment itself, and the tubes stop fogging the wall between them.
   value per preset rather than a formula over the lit colour. It is where the invention
   lives: `co2`'s near-white fill inverts into a literal black light, while `gold` inks
   warm and `green` inks green.
-- **neon: `crossover` — one tube per circuit, the way a sign is bent (default on).** A
-  section's strokes join through crossover runs bent back off the face plane and painted
-  out: real but invisible, exactly the part of a sign you never see. What shows is the
-  hardware — ONE electrode pair per section, routed to the circuit's true ends (the
-  bender's own greedy path, so a letterform bent as one run keeps no returns at all),
-  with every interior stroke end reading as bare glass diving behind. Under
-  `tubes: 'auto'` the sans face wires per word — VACANCY carries two electrodes, not
-  fourteen — and, a section being the strike/wear unit, a word now lights and dies as
-  one tube. `crossover: false` cuts the wiring back to per-letter channel tubes with
-  per-letter strikes (the dying-letter MOT L look). The neon size budget grows 14 → 15 kB
-  for the router and the ink table.
+- **neon: circuit wiring — one tube per circuit, the way a sign is bent.** A section's
+  strokes join through crossover runs bent back off the face plane and painted out: real
+  but invisible, exactly the part of a sign you never see. What shows is the hardware —
+  ONE electrode pair per section, always sitting on the routed run's two free ends (the
+  bender's own greedy path, so a letterform bent as one run keeps no returns at all;
+  never wherever the font data happened to start), with every interior stroke end
+  reading as bare glass diving behind. `crossover` (default on) decides how much glass
+  shares one circuit: under `tubes: 'auto'` the sans face wires per word — VACANCY
+  carries two electrodes, not fourteen — and, a section being the strike/wear unit, a
+  word now lights and dies as one tube. `crossover: false` cuts back to channel-letter
+  circuits with per-letter strikes (the dying-letter MOT L look). The neon size budget
+  grows 14 → 15 kB for the router and the ink table.
 
 ### Fixed
 

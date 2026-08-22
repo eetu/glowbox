@@ -19,10 +19,10 @@ export interface TubeSection {
 	/** Corner-rounded centreline polylines in sign units (y-down, baseline of the
 	 *  first text line at y = 0). */
 	strokes: [number, number][][];
-	/** The electrode pair: the free ends of the section's first and last stroke,
-	 *  each with an outward unit direction for the electrode stub. Under
-	 *  `crossover` these are the CIRCUIT's two ends instead — the strokes between
-	 *  them join through invisible painted-out returns behind the sign. */
+	/** The electrode pair: the CIRCUIT's two free ends — the routed bent tube's
+	 *  start and finish, each with an outward unit direction for the electrode
+	 *  stub. The strokes between them join through invisible painted-out returns
+	 *  behind the sign. */
 	ends: { x: number; y: number; dx: number; dy: number }[];
 	/** 0-based text line the section sits on — per-line colours key off this. */
 	line: number;
@@ -83,12 +83,13 @@ export type TubeGrouping = 'auto' | 'glyph' | 'word' | 'line';
 
 export interface LayoutOptions {
 	tubes?: TubeGrouping;
-	/** Wire each section as ONE continuous tube (default true — how a real sign
-	 *  is bent): the crossover runs between its strokes exist behind the sign,
-	 *  painted out — invisible — so what changes is the HARDWARE: one electrode
-	 *  pair per section, at the circuit's true ends, and every interior stroke
-	 *  end is bare glass diving behind. Under `tubes: 'auto'` this resolves the
-	 *  sans face to 'word' — a circuit of one glyph is no circuit. */
+	/** How much glass shares one circuit (default true — how a real sign is
+	 *  bent): under `tubes: 'auto'` the sans face wires per WORD instead of per
+	 *  glyph, so the whole word is one tube behind one electrode pair, its
+	 *  crossover runs painted out behind the sign — invisible — and every
+	 *  interior stroke end bare glass diving behind. `false` cuts back to
+	 *  channel-letter circuits. Electrode PLACEMENT is not this option's:
+	 *  every section's pair always sits on its routed run's two free ends. */
 	crossover?: boolean;
 	/** Per-line alignment (default 'center' — signs centre). */
 	align?: 'left' | 'center' | 'right';
@@ -324,18 +325,19 @@ export function layoutTubes(
 	const lines = text.split(/\r?\n/);
 	const sections: TubeSection[] = [];
 
-	// One section — wired as one circuit when the sign asks for it: the drawn
-	// glass is identical either way, but a wired section's electrode pair sits on
-	// the routed circuit's two free ends, and every joint in between is glass the
-	// invisible painted-out return hides, not a place to put a stub.
+	// One section = one circuit = one bent tube, whatever `crossover` grouped into
+	// it — so its electrode pair ALWAYS sits on the routed run's two free ends
+	// (stroke data arrives in font/author order, which is no place to hang
+	// hardware), and every joint in between is glass the invisible painted-out
+	// return hides, not a place to put a stub.
 	const section = (groups: [number, number][][][], line: number, art?: number): TubeSection => {
 		const flat = groups.flat();
 		let ends: TubeSection['ends'];
-		if (crossover && flat.length > 1) {
+		if (flat.length > 1) {
 			const { first, last } = circuitEnds(groups);
 			ends = [endOf(first, false), endOf(last, true)];
 		} else {
-			ends = [endOf(flat[0], false), endOf(flat[flat.length - 1], true)];
+			ends = [endOf(flat[0], false), endOf(flat[0], true)];
 		}
 		const sec: TubeSection = { strokes: flat, ends, line };
 		if (art != null) sec.art = art;
@@ -542,15 +544,12 @@ export function layoutTubes(
 			for (const f of applicable)
 				sec.strokes = sec.strokes.flatMap((s) => cutStroke(s, f.face, BLOCKOUT));
 			if (!sec.strokes.length) continue;
-			// A wired section keeps its routed circuit ends (the electrodes are real
-			// hardware wherever the glass got cut); an unwired one re-reads them off
-			// the surviving strokes. Either way an end under the face is a
+			// The routed circuit ends are real hardware wherever the glass got cut —
+			// they only go when the face covers them, and then the end is a
 			// dive-behind, not an electrode.
-			sec.ends = (
-				crossover && sec.ends.length
-					? sec.ends
-					: [endOf(sec.strokes[0], false), endOf(sec.strokes[sec.strokes.length - 1], true)]
-			).filter((e) => !applicable.some((f) => covered(e.x, e.y, f.face, BLOCKOUT + 1.5)));
+			sec.ends = sec.ends.filter(
+				(e) => !applicable.some((f) => covered(e.x, e.y, f.face, BLOCKOUT + 1.5))
+			);
 		}
 		// A fully covered tube is no tube.
 		for (let j = sections.length - 1; j >= 0; j--)
