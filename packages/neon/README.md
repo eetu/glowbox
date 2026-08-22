@@ -189,13 +189,12 @@ to steady, snaps strikes, and disables flicker/tired.
 | `lineScale`     | all 1         | per-line glyph scale (the headline HOTEL at twice the NO VACANCY); tube width holds |
 | `glass`         | vs the wall   | the unlit tube (the gas still tints it)                                             |
 | `electrode`     | vs the wall   | the metal end caps: near-black on a dark wall, mid-grey on a pale one               |
-| `crossover`     | `true`        | how much glass shares one circuit: word-wired; `false` = channel letters            |
 | `age`           | `0`           | wear 0..1: dimming → flickering tube → dead glass                                   |
 | `flicker`       | `0`           | electrical instability: sparse scheduled dips                                       |
 | `tired`         | `false`       | failing transformer: whole-sign dropouts + re-strikes                               |
 | `program`       | `'steady'`    | the flasher cam (rate-capped)                                                       |
 | `speed`         | `1`           | cam rate multiplier (the cap always wins)                                           |
-| `tubes`         | `'auto'`      | sectioning: per word when wired, sans→glyph when cut; or `glyph`/`word`/`line`      |
+| `tubes`         | `'auto'`      | circuit granularity: per word; or `glyph` (channel letters) / `word` / `line`       |
 | `align`         | `'center'`    | per-line alignment                                                                  |
 | `lineSpacing`   | `1.1`         | baseline advance × the face's ascent+descent                                        |
 | `letterSpacing` | `0`           | extra tracking (fraction of cap height); breaks script joins                        |
@@ -225,14 +224,13 @@ diving behind: the joints link through crossover runs bent back off the face
 plane and painted out — real but invisible, exactly the part of a sign you
 never see.
 
-`crossover` decides how much glass shares one circuit. By default (`true` —
-how a real sign is bent) `tubes: 'auto'` wires the sans face **per word**, a
-circuit of one glyph being no circuit; script words were always one bent tube,
-and `tubes: 'line'` gives one circuit per text line (per-line colours pair
-well). `crossover: false` cuts back to channel-letter circuits — per-letter
-tubes with their own pairs, per-letter strikes and per-letter wear (the
-classic dying-letter MOT L needs this, since a wired word lights and dies as
-one tube).
+`tubes` picks how much glass shares one circuit. `'auto'` (the default) wires
+**per word** — how a real sign is bent, a circuit of one glyph being no
+circuit; script words were always one bent tube. `tubes: 'glyph'` cuts to
+channel-letter circuits — per-letter tubes with their own pairs, per-letter
+strikes and per-letter wear (the classic dying-letter MOT L needs this, since
+a wired word lights and dies as one tube) — and `tubes: 'line'` gives one
+circuit per text line (per-line colours pair well).
 
 The switch panel matches: `lineOn` cuts whole lines, and `wordOn`/`wordColor`
 address WORDS, counted across the text in reading order — the motel sign

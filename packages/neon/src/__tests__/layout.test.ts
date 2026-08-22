@@ -14,8 +14,8 @@ test('single line: one circuit per word by default, width = advances + tracking'
 	expect(l.top).toBe(-sans.ascent);
 	const tracked = layoutTubes('HI', 'sans', { letterSpacing: 0.5 });
 	expect(tracked.width).toBeCloseTo(l.width + 0.5 * sans.capHeight);
-	// Cutting the wiring restores the channel-letter default: a tube per glyph.
-	expect(layoutTubes('HI', 'sans', { crossover: false }).sections.length).toBe(2);
+	// Channel letters on request: a tube per glyph, each its own circuit.
+	expect(layoutTubes('HI', 'sans', { tubes: 'glyph' }).sections.length).toBe(2);
 });
 
 test('multi-line: line indices, advance, alignment', () => {
@@ -35,11 +35,10 @@ test('multi-line: line indices, advance, alignment', () => {
 	expect(minX(layoutTubes('NO\nVACANCY', 'sans', { align: 'right' }), 0)).toBeGreaterThan(centered);
 });
 
-test("grouping: 'auto' wires per word; sans falls back to per glyph only when cut", () => {
+test("grouping: 'auto' wires per word; naming `tubes` picks the granularity", () => {
 	expect(layoutTubes('so hot', 'script').sections.length).toBe(2);
-	expect(layoutTubes('so hot', 'sans').sections.length).toBe(2); // wired: circuits, not glyphs
-	expect(layoutTubes('so hot', 'sans', { crossover: false }).sections.length).toBe(5);
-	expect(layoutTubes('so hot', 'sans', { tubes: 'glyph' }).sections.length).toBe(5); // naming wins
+	expect(layoutTubes('so hot', 'sans').sections.length).toBe(2); // circuits, not glyphs
+	expect(layoutTubes('so hot', 'sans', { tubes: 'glyph' }).sections.length).toBe(5);
 	expect(layoutTubes('so hot\nso cold', 'sans', { tubes: 'line' }).sections.length).toBe(2);
 });
 
@@ -279,12 +278,15 @@ test("art: SVG path data accepted; tubes 'path' splits per subpath", () => {
 const strokeKey = (l: NeonLayout) =>
 	JSON.stringify(l.sections.map((s) => s.strokes).flat(Number.POSITIVE_INFINITY));
 
-test('crossover: the drawn glass is identical — only the hardware moves', () => {
-	const plain = layoutTubes('OPEN', 'sans', { tubes: 'word', crossover: false });
+test('the drawn glass is identical whatever the wiring — only the hardware moves', () => {
+	// The same word cut into channel letters and wired as one circuit: the
+	// returns are invisible (painted out behind the sign), so the stroke
+	// geometry and bounds must be identical either way — only the sectioning
+	// and the electrodes differ.
+	const plain = layoutTubes('OPEN', 'sans', { tubes: 'glyph' });
 	const wired = layoutTubes('OPEN', 'sans', { tubes: 'word' });
-	// The returns are invisible (painted out behind the sign), so nothing about
-	// the strokes may change: same sections, same geometry, same bounds.
-	expect(wired.sections.length).toBe(plain.sections.length);
+	expect(plain.sections.length).toBe(4);
+	expect(wired.sections.length).toBe(1);
 	expect(strokeKey(wired)).toBe(strokeKey(plain));
 	expect(wired.width).toBeCloseTo(plain.width);
 	// One electrode pair per circuit, sitting on stroke ENDS — real glass, both.
@@ -368,8 +370,8 @@ test('electrodes sit where the bender starts and finishes, not where the data do
 	// left and finishes at the far right — and it does so whatever the wiring,
 	// because a section is one bent tube either way.
 	const piece = { d: 'M10 0L20 0M0 0L8 0M22 0L30 0' };
-	for (const crossover of [true, false]) {
-		const sec = layoutTubes('', 'sans', { crossover, art: [piece] }).sections[0];
+	for (const tubes of ['auto', 'glyph'] as const) {
+		const sec = layoutTubes('', 'sans', { tubes, art: [piece] }).sections[0];
 		const xs = sec.strokes.flat().map(([x]) => x);
 		const ends = sec.ends.map((e) => e.x).sort((a, b) => a - b);
 		expect(ends[0]).toBeCloseTo(Math.min(...xs)); // the true left tip
@@ -377,9 +379,9 @@ test('electrodes sit where the bender starts and finishes, not where the data do
 	}
 });
 
-test('crossover: auto grouping wires the sans face per word', () => {
-	// A circuit of one glyph is no circuit — crossover resolves 'auto' to 'word',
-	// so OPEN is one tube with one electrode pair instead of four with eight.
+test('auto grouping wires the sans face per word', () => {
+	// A circuit of one glyph is no circuit — 'auto' wires per word, so OPEN is
+	// one tube with one electrode pair instead of four with eight.
 	const wired = layoutTubes('OPEN', 'sans');
 	expect(wired.sections.length).toBe(1);
 	expect(wired.sections[0].ends).toHaveLength(2);
@@ -388,9 +390,8 @@ test('crossover: auto grouping wires the sans face per word', () => {
 	expect(perGlyph.sections.length).toBe(4);
 });
 
-test('crossover: an opaque face still cuts, and covered circuit ends lose their stubs', () => {
+test('wired circuits: an opaque face still cuts, and covered circuit ends lose their stubs', () => {
 	const l = layoutTubes('OPEN', 'sans', {
-		crossover: true,
 		art: [{ d: 'M-40 -30L40 -30 40 30 -40 30Z', place: 'behind', size: 1.2, opaque: true }]
 	});
 	// The face swallows the word's middle; whatever glass survives keeps at most

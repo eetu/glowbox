@@ -7,7 +7,6 @@ import type { PackedFace } from '../font';
 import { HERSHEY_LICENSE } from './hershey-license';
 
 export const SANS: PackedFace = {
-	grouping: 'glyph',
 	baseline: 9,
 	capHeight: 21,
 	ascent: 25,

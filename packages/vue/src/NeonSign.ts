@@ -70,8 +70,6 @@ export const NeonSign = defineComponent({
 		},
 		/** Per-line glyph scale; the tube keeps its regular width. */
 		lineScale: { type: Array as PropType<number[]>, default: undefined },
-		/** How much glass shares one circuit: word-wired (default) or channel letters. */
-		crossover: { type: Boolean, default: undefined },
 		/** The unlit tube itself. */
 		glass: { type: [String, Array] as PropType<NeonSignOptions['glass']>, default: undefined },
 		/** The electrode caps — metal, not light. */
@@ -88,7 +86,7 @@ export const NeonSign = defineComponent({
 		/** The flasher cam: 'steady' | 'flash' | 'chase' | 'reveal' (rate-capped). */
 		program: { type: String as PropType<NeonSignOptions['program']>, default: undefined },
 		speed: { type: Number, default: undefined },
-		/** Tube sectioning: 'auto' | 'glyph' | 'word' | 'line'. */
+		/** Circuit granularity: 'auto' (= per word) | 'glyph' | 'word' | 'line'. */
 		tubes: { type: String as PropType<NeonSignOptions['tubes']>, default: undefined },
 		align: { type: String as PropType<NeonSignOptions['align']>, default: undefined },
 		lineSpacing: { type: Number, default: undefined },
@@ -133,7 +131,6 @@ export const NeonSign = defineComponent({
 			face: props.face,
 			outline: props.outline,
 			lineScale: props.lineScale,
-			crossover: props.crossover,
 			glass: props.glass,
 			electrode: props.electrode,
 			age: props.age,

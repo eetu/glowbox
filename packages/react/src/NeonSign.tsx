@@ -47,8 +47,6 @@ export interface NeonSignProps {
 	outline?: NeonSignOptions['outline'];
 	/** Per-line glyph scale; the tube keeps its regular width. */
 	lineScale?: number[];
-	/** How much glass shares one circuit: word-wired (default) or channel letters. */
-	crossover?: boolean;
 	/** The unlit tube itself. */
 	glass?: NeonSignOptions['glass'];
 	/** The electrode caps — metal, not light. */
@@ -62,7 +60,7 @@ export interface NeonSignProps {
 	/** The flasher cam: 'steady' | 'flash' | 'chase' | 'reveal' (rate-capped). */
 	program?: NeonSignOptions['program'];
 	speed?: number;
-	/** Tube sectioning: 'auto' | 'glyph' | 'word' | 'line'. */
+	/** Circuit granularity: 'auto' (= per word) | 'glyph' | 'word' | 'line'. */
 	tubes?: NeonSignOptions['tubes'];
 	align?: NeonSignOptions['align'];
 	lineSpacing?: number;
@@ -115,7 +113,6 @@ export const NeonSign = forwardRef<NeonSignHandle | null, NeonSignProps>(
 			face,
 			outline,
 			lineScale,
-			crossover,
 			glass,
 			electrode,
 			age,
@@ -166,7 +163,6 @@ export const NeonSign = forwardRef<NeonSignHandle | null, NeonSignProps>(
 				face: p.face,
 				outline: p.outline,
 				lineScale: p.lineScale,
-				crossover: p.crossover,
 				glass: p.glass,
 				electrode: p.electrode,
 				age: p.age,
@@ -224,7 +220,6 @@ export const NeonSign = forwardRef<NeonSignHandle | null, NeonSignProps>(
 				face,
 				outline,
 				lineScale,
-				crossover,
 				glass,
 				electrode,
 				age,
@@ -261,7 +256,6 @@ export const NeonSign = forwardRef<NeonSignHandle | null, NeonSignProps>(
 			face,
 			outline,
 			lineScale,
-			crossover,
 			glass,
 			electrode,
 			age,

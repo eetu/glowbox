@@ -52,11 +52,6 @@
 		backdrop = pale ? '#e9e8e3' : '#0a0a0e';
 	});
 	let crtOn = $state(false);
-	// How the circuit is wired: wired (the default) runs a section as ONE circuit
-	// — the returns are painted out behind the sign, so what moves is the
-	// hardware: one electrode pair, at the routed ends. Off cuts every stroke
-	// group into its own tube with its own pair.
-	let crossover = $state(true);
 	let panelOpen = $state(false);
 	const onKeydown = (e: KeyboardEvent) => {
 		if (e.key === 'Escape' && panelOpen) panelOpen = false;
@@ -70,6 +65,8 @@
 	let tinkerFlicker = $state(0);
 	let tinkerTired = $state(false);
 	let tinkerProgram = $state<'steady' | 'flash' | 'chase' | 'reveal'>('steady');
+	// Circuit granularity: auto wires per word; glyph cuts to channel letters.
+	let tinkerTubes = $state<'auto' | 'glyph' | 'line'>('auto');
 
 	// The sign — created once for the canvas; appearance updates go through
 	// setOptions, content through the shows.
@@ -102,7 +99,6 @@
 			speed,
 			wall: wallOn || polarity === 'absorb' ? wallColor : null,
 			polarity,
-			crossover,
 			sound: soundOn ? volume : 0
 		});
 	});
@@ -135,7 +131,8 @@
 			age: tinkerAge,
 			flicker: tinkerFlicker,
 			tired: tinkerTired,
-			program: tinkerProgram
+			program: tinkerProgram,
+			tubes: tinkerTubes
 		});
 	});
 
@@ -336,9 +333,6 @@
 						{ value: 'absorb', label: 'Ink' }
 					]}
 				/>
-			</div>
-			<div class="row">
-				<ToggleChip bind:checked={crossover} label="one tube per circuit" />
 			</div>
 			<div class="row">
 				<span class="rlabel">wall</span>

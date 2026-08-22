@@ -42,11 +42,11 @@ the pigment itself, and the tubes stop fogging the wall between them.
   ONE electrode pair per section, always sitting on the routed run's two free ends (the
   bender's own greedy path, so a letterform bent as one run keeps no returns at all;
   never wherever the font data happened to start), with every interior stroke end
-  reading as bare glass diving behind. `crossover` (default on) decides how much glass
-  shares one circuit: under `tubes: 'auto'` the sans face wires per word — VACANCY
-  carries two electrodes, not fourteen — and, a section being the strike/wear unit, a
-  word now lights and dies as one tube. `crossover: false` cuts back to channel-letter
-  circuits with per-letter strikes (the dying-letter MOT L look). The neon size budget
+  reading as bare glass diving behind. `tubes` picks how much glass shares one circuit,
+  and `'auto'` now wires per word — VACANCY carries two electrodes, not fourteen — and,
+  a section being the strike/wear unit, a word lights and dies as one tube.
+  `tubes: 'glyph'` cuts to channel-letter circuits with per-letter strikes (the
+  dying-letter MOT L look). The neon size budget
   grows 14 → 16 kB for the router, the ink table and the outline geometry.
 
 ### Fixed

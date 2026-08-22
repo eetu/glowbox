@@ -27,7 +27,6 @@
 		face,
 		outline,
 		lineScale,
-		crossover,
 		glass,
 		electrode,
 		age,
@@ -80,8 +79,6 @@
 		outline?: NeonSignOptions['outline'];
 		/** Per-line glyph scale; the tube keeps its regular width. */
 		lineScale?: number[];
-		/** How much glass shares one circuit: word-wired (default) or channel letters. */
-		crossover?: boolean;
 		/** The unlit tube itself. */
 		glass?: NeonSignOptions['glass'];
 		/** The electrode caps — metal, not light. */
@@ -95,7 +92,7 @@
 		/** The flasher cam: 'steady' | 'flash' | 'chase' | 'reveal' (rate-capped). */
 		program?: NeonSignOptions['program'];
 		speed?: number;
-		/** Tube sectioning: 'auto' | 'glyph' | 'word' | 'line'. */
+		/** Circuit granularity: 'auto' (= per word) | 'glyph' | 'word' | 'line'. */
 		tubes?: NeonSignOptions['tubes'];
 		align?: NeonSignOptions['align'];
 		lineSpacing?: number;
@@ -147,7 +144,6 @@
 				face,
 				outline,
 				lineScale,
-				crossover,
 				glass,
 				electrode,
 				age,
@@ -204,7 +200,6 @@
 			face,
 			outline,
 			lineScale,
-			crossover,
 			glass,
 			electrode,
 			age,

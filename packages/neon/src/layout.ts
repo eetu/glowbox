@@ -1,11 +1,10 @@
 // @glowbox/neon layout — pure text→tube arithmetic, node-testable by design (the
 // split-flap `drum.ts` pattern): place stroke-font glyphs on baselines, group their
 // centrelines into TUBE SECTIONS (the strike/wear/flicker unit — one electrode pair
-// each), and round interior corners so sharp polylines read as bent glass. Grouping
-// is behavioural on its own: a 'word' section lights and dies as one tube while its
-// glyph strokes stay separate runs. `crossover` makes it electrical too — the section
-// is one CIRCUIT, its electrode pair routed to the tube's true ends, with the returns
-// between strokes real but painted out behind the sign, invisible by definition.
+// each), and round interior corners so sharp polylines read as bent glass. A section
+// is one CIRCUIT: its electrode pair routed to the tube's true ends, the returns
+// between its strokes real but painted out behind the sign, invisible by definition —
+// `tubes` picks the granularity, and 'auto' wires a word as one circuit.
 // ART pieces (the martini glass, the dice, the border ring) place the same way a
 // sign maker composes them: anchored to the text block — behind it or beside it —
 // never in the line of text.
@@ -92,20 +91,14 @@ export interface NeonArt {
 	opaque?: boolean;
 }
 
-/** How glyphs group into sections. 'auto' = the face's own default ('glyph' for
- *  block letters, 'word' for connected script), 'line' = one tube per text line. */
+/** How glyphs group into sections — the circuit granularity. 'auto' = the
+ *  face's own default, which is 'word' for both vendored faces (a sign wires a
+ *  word as one circuit); 'glyph' = separately switched channel letters; 'line'
+ *  = one tube per text line. */
 export type TubeGrouping = 'auto' | 'glyph' | 'word' | 'line';
 
 export interface LayoutOptions {
 	tubes?: TubeGrouping;
-	/** How much glass shares one circuit (default true — how a real sign is
-	 *  bent): under `tubes: 'auto'` the sans face wires per WORD instead of per
-	 *  glyph, so the whole word is one tube behind one electrode pair, its
-	 *  crossover runs painted out behind the sign — invisible — and every
-	 *  interior stroke end bare glass diving behind. `false` cuts back to
-	 *  channel-letter circuits. Electrode PLACEMENT is not this option's:
-	 *  every section's pair always sits on its routed run's two free ends. */
-	crossover?: boolean;
 	/** Bend the tube around the letterform instead of along it (default false):
 	 *  each glyph's tube becomes the CONTOUR of its slab — the border of the
 	 *  painted letter — while the centrelines move to `skeleton` for the `face`
@@ -462,17 +455,17 @@ export function layoutTubes(
 	opts: LayoutOptions = {}
 ): NeonLayout {
 	const f = resolveFont(font);
-	const crossover = opts.crossover ?? true;
 	const outline = opts.outline ?? false;
 	// Whether THIS section's tube borders its letterform: per line for text, and
 	// art only under the single-flag form.
 	const outlined = (line: number, isArt: boolean): boolean =>
 		Array.isArray(outline) ? !isArt && (outline[line % outline.length] ?? false) : outline;
 	const grouping: TubeGrouping = opts.tubes ?? 'auto';
-	// A wired sign is circuits, and a circuit of one glyph is no circuit — so
-	// crossover resolves the auto grouping to 'word' where a face would default
-	// to per-glyph tubes. Naming `tubes` yourself still wins.
-	const group = grouping === 'auto' ? (crossover ? 'word' : (f.grouping ?? 'glyph')) : grouping;
+	// A section is a CIRCUIT, and a sign wires a word as one — its joints carried
+	// by returns painted out behind the panel, one electrode pair on the routed
+	// run's true ends. A face can declare 'glyph' to default to channel letters;
+	// naming `tubes` yourself always wins.
+	const group = grouping === 'auto' ? (f.grouping ?? 'word') : grouping;
 	const align = opts.align ?? 'center';
 	const spacing = Math.max(0.5, opts.lineSpacing ?? 1.1);
 	const track = (opts.letterSpacing ?? 0) * f.capHeight;
@@ -495,7 +488,7 @@ export function layoutTubes(
 	for (let li = 1; li < lines.length; li++)
 		baseYs.push(baseYs[li - 1] + (f.descent * scaleOf(li - 1) + f.ascent * scaleOf(li)) * spacing);
 
-	// One section = one circuit = one bent tube, whatever `crossover` grouped into
+	// One section = one circuit = one bent tube, whatever `tubes` grouped into
 	// it — so its electrode pair ALWAYS sits on the routed run's two free ends
 	// (stroke data arrives in font/author order, which is no place to hang
 	// hardware), and every joint in between is glass the invisible painted-out
@@ -721,7 +714,6 @@ export function layoutTubes(
 				topAll = Math.min(topAll, y);
 				botAll = Math.max(botAll, y);
 			}
-		// A piece has no baseline to run a rail under, so its crossovers hop direct.
 		const mk = (strokes: [number, number][][]): TubeSection => section([strokes], 0, undefined, ai);
 		const secs = a.tubes === 'path' ? placed.map((s) => mk([s])) : [mk(placed)];
 		// Z-order = section order = 'reveal' strike order: backdrop pieces first

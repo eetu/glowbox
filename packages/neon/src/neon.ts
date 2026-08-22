@@ -138,17 +138,6 @@ export interface NeonSignOptions {
 	 *  against the `wall`: near-black on a dark wall, mid-grey on a pale one,
 	 *  where near-black specks read as dirt rather than hardware. */
 	electrode?: Color;
-	/** How much glass shares one circuit (default true — how a real sign is
-	 *  bent). Under `tubes: 'auto'` the sans face wires per WORD: the whole word
-	 *  is one tube behind one electrode pair, its crossover runs bent back off
-	 *  the face plane and painted out — real but invisible, exactly the part of
-	 *  a sign you never see — and every interior stroke end reads as bare glass
-	 *  diving behind. A section being the strike/wear unit, the word lights and
-	 *  dies as one tube. `false` cuts back to channel-letter circuits: per-letter
-	 *  tubes, strikes, wear and electrode pairs. Placement is not this option's
-	 *  to move — every circuit's pair always sits on its routed run's two free
-	 *  ends, never wherever the font data happened to start. */
-	crossover?: boolean;
 	/** Wear 0..1 (default 0): deterministic per-tube dimming; past ~0.7 the
 	 *  most-worn tube starts flickering, from ~0.95 it is dead glass while the
 	 *  runner-up takes over the flickering. */
@@ -163,8 +152,12 @@ export interface NeonSignOptions {
 	program?: NeonProgram;
 	/** Cam rate multiplier (default 1; the sub-3-events/s cap always wins). */
 	speed?: number;
-	/** Tube sectioning: 'auto' (script→word, sans→glyph) | 'glyph' | 'word' |
-	 *  'line' (default 'auto'). A section strikes, flickers and dies as one tube. */
+	/** Circuit granularity (default 'auto' = one circuit per WORD — the whole
+	 *  word one tube behind one electrode pair, its crossover runs bent back off
+	 *  the face plane and painted out, real but invisible, every interior stroke
+	 *  end bare glass diving behind). 'glyph' cuts to separately switched channel
+	 *  letters — per-letter tubes, strikes, wear and pairs; 'line' wires a whole
+	 *  text line. A section strikes, flickers and dies as one circuit. */
 	tubes?: TubeGrouping;
 	/** Per-line alignment (default 'center'). */
 	align?: 'left' | 'center' | 'right';
@@ -317,7 +310,6 @@ export function createNeonSign(
 	let program: NeonProgram = opts.program ?? 'steady';
 	let speed = Math.max(0.1, Math.min(8, opts.speed ?? 1));
 	let tubes: TubeGrouping = opts.tubes ?? 'auto';
-	let crossover = opts.crossover ?? true;
 	let outline = opts.outline ?? false;
 	let lineScale = opts.lineScale;
 	const outlineKey = (v: NeonSignOptions['outline']) => JSON.stringify(v ?? false);
@@ -362,7 +354,6 @@ export function createNeonSign(
 	function relayout() {
 		lay = layoutTubes(text, font, {
 			tubes,
-			crossover,
 			outline,
 			lineScale,
 			align,
@@ -1211,12 +1202,6 @@ export function createNeonSign(
 			}
 			if (patch.tilt !== undefined && patch.tilt !== tilt) {
 				tilt = patch.tilt;
-				rebuild = true;
-			}
-			if (patch.crossover !== undefined && patch.crossover !== crossover) {
-				// Re-wiring the circuit moves the electrodes (and, under auto
-				// grouping, the sectioning) — that is layout, not paint.
-				crossover = patch.crossover;
 				rebuild = true;
 			}
 			if (patch.outline !== undefined && outlineKey(patch.outline) !== outlineKey(outline)) {

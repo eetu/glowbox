@@ -31,8 +31,10 @@ export interface NeonFont {
 	/** Extremes above/below the baseline across the face, as positive numbers. */
 	ascent: number;
 	descent: number;
-	/** Default tube sectioning under `tubes: 'auto'`: 'glyph' for block letters
-	 *  (one bent tube per letter), 'word' for connected script (default 'glyph'). */
+	/** The face's default circuit grouping under `tubes: 'auto'` (default
+	 *  'word' — a sign wires a word as one circuit, its returns painted out
+	 *  behind the panel). Declare 'glyph' for a face meant to run as separately
+	 *  switched channel letters. */
 	grouping?: 'glyph' | 'word';
 	glyphs: Record<string, NeonGlyph>;
 	/** Attribution that must travel with the font data (the Hershey terms). */
@@ -41,7 +43,7 @@ export interface NeonFont {
 
 /** A vendored face before decoding: raw JHF pair strings (see faces/*.ts). */
 export interface PackedFace {
-	grouping: 'glyph' | 'word';
+	grouping?: 'glyph' | 'word';
 	/** The face's baseline y in raw JHF units (Hershey convention: 9). */
 	baseline: number;
 	capHeight: number;
