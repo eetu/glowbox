@@ -174,8 +174,14 @@ const BASE: Partial<NeonSignOptions> = {
 	tubes: 'auto',
 	align: 'center',
 	lineSpacing: 1.1, // the core defaults, stated so no show inherits another's
+	letterSpacing: 0,
 	tilt: 0,
-	lineOn: []
+	lineOn: [],
+	wordOn: [],
+	wordColor: [],
+	face: null,
+	outline: false,
+	lineScale: []
 };
 
 /** The hero: a rising rose script "Cocktails" across a gold martini glass —
