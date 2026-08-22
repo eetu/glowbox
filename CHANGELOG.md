@@ -4,6 +4,69 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [Unreleased]
+
+**The absorbing sign inks in colour** — `polarity: 'absorb'` gets the model it needed to
+carry a diagram, not just a word: each gas discharges its own ink, a colour you name is
+the pigment itself, and the tubes stop fogging the wall between them.
+
+### Added
+
+- **`GasSpec.ink`** — the pigment each gas discharges under `polarity: 'absorb'`, a table
+  value per preset rather than a formula over the lit colour. It is where the invention
+  lives: `co2`'s near-white fill inverts into a literal black light, while `gold` inks
+  warm and `green` inks green.
+- **neon: `face` + `outline` — the movie-motel letters.** `face` paints each letterform
+  on the panel as a wide slab, an object that catches its own tube's light: the wash
+  follows the section's level and sits brightest beside the glass, so strikes, flicker
+  and the wear arc play across the letter itself. Paint is visible unlit, keyed against
+  the wall, and never as bright as the tube; an absorbing tube gives no light to catch.
+  `outline` bends the tube **around** the letterform instead of along it — a
+  normal-width tube tracing the painted letter's border, counters included (an O really
+  is two tubes), with electrodes, strikes and taps all living on the contour. Both take
+  one value or one per text line, and art pieces carry their own `face`. The gallery's
+  motel show now runs HOTEL as outlined ice tube on painted faces over a bare red NO
+  VACANCY.
+- **neon: the word channel — `wordOn`, `wordColor`, `lineScale`.** Words are circuits
+  under the default wiring, so the switch panel now reaches them: words count across
+  the text in reading order (HOTEL 0, NO 1, VACANCY 2), `wordOn` cuts one to unlit
+  glass and strikes it back like `lineOn` does a line, and `wordColor` paints one
+  (`null` inherits the line or the gas) — the motel sign proper, a red NO striking in
+  beside a blue VACANCY that never goes out. `lineScale` sizes the typography per line
+  (the headline HOTEL at twice the NO VACANCY beneath it) while the tube keeps its
+  regular width, and an outlined line's slab scales with its letters. The gallery's
+  motel show wires all of it to a "hotel full" toggle.
+- **neon: circuit wiring — one tube per circuit, the way a sign is bent.** A section's
+  strokes join through crossover runs bent back off the face plane and painted out: real
+  but invisible, exactly the part of a sign you never see. What shows is the hardware —
+  ONE electrode pair per section, always sitting on the routed run's two free ends (the
+  bender's own greedy path, so a letterform bent as one run keeps no returns at all;
+  never wherever the font data happened to start), with every interior stroke end
+  reading as bare glass diving behind. `tubes` picks how much glass shares one circuit,
+  and `'auto'` now wires per word — VACANCY carries two electrodes, not fourteen — and,
+  a section being the strike/wear unit, a word lights and dies as one tube.
+  `tubes: 'glyph'` cuts to channel-letter circuits with per-letter strikes (the
+  dying-letter MOT L look). The neon size budget
+  grows 14 → 16 kB for the router, the ink table and the outline geometry.
+
+### Fixed
+
+- **neon: an absorbing sign keeps the colour information a lit one has.** A colour you
+  name is the ink it lays down, so its lightness means the same thing inking as it does
+  lit — a pale tube leaves a faint mark, a saturated one a deep mark, and two tubes of
+  different lightness stay two tubes. A gauge (a quiet track ring under a bright meter
+  arc) now reads as one instrument in both themes with one set of colours.
+- **neon: the hot core of an inking tube is a second coat of its own pigment**, not a
+  march to neutral black, so a green tube inks green at its very centre instead of
+  arriving at the same near-black as every other fill.
+- **neon: absorbed ink bleeds tighter than emitted light blooms.** Ink density now falls
+  with each pass's blur — a pigment sits in the surface while light scatters through the
+  air — which clears the grey haze that used to fill the space between neighbouring
+  tubes on a pale wall.
+- **neon: unlit glass reads as an object on a pale wall**, at a contrast in the same
+  league as the glass on a dark one, so an absorbing sign's off state is hardware rather
+  than a suggestion.
+
 ## [1.11.0] — 2026-08-21
 
 **Light mode, per core** — a `theme` option on all eight displays, where "light" is each

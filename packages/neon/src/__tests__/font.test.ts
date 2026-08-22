@@ -62,8 +62,11 @@ test("'H' spans exactly baseline to cap top", () => {
 	}
 });
 
-test('face grouping defaults: sans per glyph, script per word', () => {
-	expect(resolveFont('sans').grouping).toBe('glyph');
+test('face grouping: script declares word; sans leaves the wiring default', () => {
+	// A face only declares grouping when it means something physical — script
+	// words are one continuously-bent tube. Sans falls to the sign-wide default
+	// (a word wired as one circuit), overridable per sign via tubes.
+	expect(resolveFont('sans').grouping).toBeUndefined();
 	expect(resolveFont('script').grouping).toBe('word');
 	expect(resolveFont(undefined)).toBe(resolveFont('script')); // memoised default
 });

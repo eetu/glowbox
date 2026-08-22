@@ -2,18 +2,20 @@
 import { expect, test, vi } from 'vitest';
 
 import { resolveFont } from '../font';
-import { layoutTubes, roundCorners } from '../layout';
+import { layoutTubes, type NeonLayout, roundCorners } from '../layout';
 
 const sans = resolveFont('sans');
 
-test('single line: per-glyph sections, width = advances + tracking', () => {
+test('single line: one circuit per word by default, width = advances + tracking', () => {
 	const l = layoutTubes('HI', 'sans');
-	expect(l.sections.length).toBe(2);
+	expect(l.sections.length).toBe(1); // wired: the word is one tube
 	expect(l.sections.every((s) => s.line === 0)).toBe(true);
 	expect(l.width).toBe(sans.glyphs['H'].adv + sans.glyphs['I'].adv);
 	expect(l.top).toBe(-sans.ascent);
 	const tracked = layoutTubes('HI', 'sans', { letterSpacing: 0.5 });
 	expect(tracked.width).toBeCloseTo(l.width + 0.5 * sans.capHeight);
+	// Channel letters on request: a tube per glyph, each its own circuit.
+	expect(layoutTubes('HI', 'sans', { tubes: 'glyph' }).sections.length).toBe(2);
 });
 
 test('multi-line: line indices, advance, alignment', () => {
@@ -33,10 +35,10 @@ test('multi-line: line indices, advance, alignment', () => {
 	expect(minX(layoutTubes('NO\nVACANCY', 'sans', { align: 'right' }), 0)).toBeGreaterThan(centered);
 });
 
-test("grouping: script→word, sans→glyph under 'auto'; explicit overrides win", () => {
+test("grouping: 'auto' wires per word; naming `tubes` picks the granularity", () => {
 	expect(layoutTubes('so hot', 'script').sections.length).toBe(2);
-	expect(layoutTubes('so hot', 'sans').sections.length).toBe(5);
-	expect(layoutTubes('so hot', 'sans', { tubes: 'word' }).sections.length).toBe(2);
+	expect(layoutTubes('so hot', 'sans').sections.length).toBe(2); // circuits, not glyphs
+	expect(layoutTubes('so hot', 'sans', { tubes: 'glyph' }).sections.length).toBe(5);
 	expect(layoutTubes('so hot\nso cold', 'sans', { tubes: 'line' }).sections.length).toBe(2);
 });
 
@@ -92,8 +94,9 @@ test('empty text lays out to nothing', () => {
 });
 
 test('tilt rotates the text block about its centre; negative rises left-to-right', () => {
-	const flat = layoutTubes('HI', 'sans');
-	const tilted = layoutTubes('HI', 'sans', { tilt: -20 });
+	// Per-glyph sections so H and I can be sampled apart.
+	const flat = layoutTubes('HI', 'sans', { tubes: 'glyph' });
+	const tilted = layoutTubes('HI', 'sans', { tubes: 'glyph', tilt: -20 });
 	expect(tilted.height).toBeGreaterThan(flat.height); // the box grew to the diagonal
 	expect(tilted.left).toBeLessThan(0);
 	const meanY = (lay: ReturnType<typeof layoutTubes>, i: number) => {
@@ -270,4 +273,128 @@ test("art: SVG path data accepted; tubes 'path' splits per subpath", () => {
 	const per = layoutTubes('', 'sans', { art: [{ d: 'M0 0L10 0M0 5L10 5', tubes: 'path' }] });
 	expect(per.sections.length).toBe(2);
 	expect(per.sections.every((s) => s.art === 0)).toBe(true);
+});
+
+const strokeKey = (l: NeonLayout) =>
+	JSON.stringify(l.sections.map((s) => s.strokes).flat(Number.POSITIVE_INFINITY));
+
+test('the drawn glass is identical whatever the wiring — only the hardware moves', () => {
+	// The same word cut into channel letters and wired as one circuit: the
+	// returns are invisible (painted out behind the sign), so the stroke
+	// geometry and bounds must be identical either way — only the sectioning
+	// and the electrodes differ.
+	const plain = layoutTubes('OPEN', 'sans', { tubes: 'glyph' });
+	const wired = layoutTubes('OPEN', 'sans', { tubes: 'word' });
+	expect(plain.sections.length).toBe(4);
+	expect(wired.sections.length).toBe(1);
+	expect(strokeKey(wired)).toBe(strokeKey(plain));
+	expect(wired.width).toBeCloseTo(plain.width);
+	// One electrode pair per circuit, sitting on stroke ENDS — real glass, both.
+	const sec = wired.sections[0];
+	expect(sec.ends).toHaveLength(2);
+	const tips = sec.strokes.flatMap((s) => [s[0], s[s.length - 1]]);
+	for (const e of sec.ends) expect(tips.some(([x, y]) => x === e.x && y === e.y)).toBe(true);
+});
+
+test('outline: the tube borders the slab, the skeleton stays for the paint', () => {
+	const plain = layoutTubes('I', 'sans');
+	const sec = layoutTubes('I', 'sans', { outline: true }).sections[0];
+	// The letterform moved to the skeleton, identical to the plain tube.
+	expect(JSON.stringify(sec.skeleton)).toBe(JSON.stringify(plain.sections[0].strokes));
+	// The contour is a ring around it: every point sits a slab's radius off the
+	// skeleton, and the bounds grew by that radius all round.
+	const skel = sec.skeleton![0];
+	for (const run of sec.strokes)
+		for (const [x, y] of run) {
+			const d = skel.reduce(
+				(best, _, i) => (i ? Math.min(best, segDist(x, y, skel[i - 1], skel[i])) : best),
+				Infinity
+			);
+			expect(d).toBeGreaterThan(2.5);
+			// The sides run at the slab radius; a square-cut terminal's corners
+			// reach out to R·√2 before their fillet.
+			expect(d).toBeLessThan(3.1 * Math.SQRT2 + 0.1);
+		}
+	// An O's slab is an annulus — the outer ring and the counter, two tubes.
+	const o = layoutTubes('O', 'sans', { outline: true }).sections[0];
+	expect(o.strokes.length).toBe(2);
+	// Per-line: HOTEL outlined, the second line bare.
+	const two = layoutTubes('I\nI', 'sans', { outline: [true, false] });
+	expect(two.sections[0].skeleton).toBeDefined();
+	expect(two.sections[1].skeleton).toBeUndefined();
+});
+
+const segDist = (px: number, py: number, a: [number, number], b: [number, number]) => {
+	const dx = b[0] - a[0];
+	const dy = b[1] - a[1];
+	const t = Math.max(
+		0,
+		Math.min(1, ((px - a[0]) * dx + (py - a[1]) * dy) / (dx * dx + dy * dy || 1))
+	);
+	return Math.hypot(a[0] + t * dx - px, a[1] + t * dy - py);
+};
+
+test('words are circuits: counted across the text, whatever the grouping', () => {
+	// HOTEL 0, NO 1, VACANCY 2 — the motel switch panel's own indexing.
+	const wired = layoutTubes('HOTEL\nNO VACANCY', 'sans');
+	expect(wired.sections.map((s) => s.word)).toEqual([0, 1, 2]);
+	// Per-glyph sections carry their word too, so the NO's letters cut together.
+	const glyphs = layoutTubes('HOTEL\nNO VACANCY', 'sans', { tubes: 'glyph' });
+	expect(glyphs.sections.filter((s) => s.word === 1).length).toBe(2);
+	expect(glyphs.sections.filter((s) => s.word === 2).length).toBe(7);
+	// Art carries no word — it rides the main switch.
+	const art = layoutTubes('HI', 'sans', { art: [{ d: 'M0 0L10 0' }] });
+	expect(art.sections.find((s) => s.art != null)?.word).toBeUndefined();
+});
+
+test('lineScale: the headline line grows, the tube-width constant does not exist here', () => {
+	const plain = layoutTubes('HOTEL\nNO VACANCY', 'sans');
+	const scaled = layoutTubes('HOTEL\nNO VACANCY', 'sans', { lineScale: [2, 1] });
+	const lineW = (l: NeonLayout, li: number) => {
+		const xs = l.sections.filter((s) => s.line === li).flatMap((s) => s.strokes.flat());
+		return Math.max(...xs.map(([x]) => x)) - Math.min(...xs.map(([x]) => x));
+	};
+	// The scaled line doubles; the other holds; the block grows between them.
+	expect(lineW(scaled, 0) / lineW(plain, 0)).toBeCloseTo(2, 1);
+	expect(lineW(scaled, 1)).toBeCloseTo(lineW(plain, 1), 1);
+	expect(scaled.top).toBeCloseTo(plain.top * 2, 1);
+	expect(scaled.height).toBeGreaterThan(plain.height);
+	// The scale rides the section for the slab paint.
+	expect(scaled.sections[0].scale).toBe(2);
+	expect(scaled.sections[1].scale).toBeUndefined();
+});
+
+test('electrodes sit where the bender starts and finishes, not where the data does', () => {
+	// Three collinear runs handed middle-first: font/author order would put an
+	// electrode on the middle segment's tip; the routed circuit starts at the far
+	// left and finishes at the far right — and it does so whatever the wiring,
+	// because a section is one bent tube either way.
+	const piece = { d: 'M10 0L20 0M0 0L8 0M22 0L30 0' };
+	for (const tubes of ['auto', 'glyph'] as const) {
+		const sec = layoutTubes('', 'sans', { tubes, art: [piece] }).sections[0];
+		const xs = sec.strokes.flat().map(([x]) => x);
+		const ends = sec.ends.map((e) => e.x).sort((a, b) => a - b);
+		expect(ends[0]).toBeCloseTo(Math.min(...xs)); // the true left tip
+		expect(ends[1]).toBeCloseTo(Math.max(...xs)); // …and the true right one
+	}
+});
+
+test('auto grouping wires the sans face per word', () => {
+	// A circuit of one glyph is no circuit — 'auto' wires per word, so OPEN is
+	// one tube with one electrode pair instead of four with eight.
+	const wired = layoutTubes('OPEN', 'sans');
+	expect(wired.sections.length).toBe(1);
+	expect(wired.sections[0].ends).toHaveLength(2);
+	// Naming the grouping yourself still wins.
+	const perGlyph = layoutTubes('OPEN', 'sans', { tubes: 'glyph' });
+	expect(perGlyph.sections.length).toBe(4);
+});
+
+test('wired circuits: an opaque face still cuts, and covered circuit ends lose their stubs', () => {
+	const l = layoutTubes('OPEN', 'sans', {
+		art: [{ d: 'M-40 -30L40 -30 40 30 -40 30Z', place: 'behind', size: 1.2, opaque: true }]
+	});
+	// The face swallows the word's middle; whatever glass survives keeps at most
+	// the two routed electrodes, and only where they are not under the face.
+	for (const sec of l.sections) expect(sec.ends.length).toBeLessThanOrEqual(2);
 });

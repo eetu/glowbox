@@ -69,7 +69,7 @@
 				"@glowbox/seven-segment",
 				"@glowbox/vfd"
 			],
-			"limit": "2.5 kB"
+			"limit": "3 kB"
 		}
 	],
 	"peerDependencies": {

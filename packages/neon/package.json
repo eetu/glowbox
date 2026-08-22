@@ -49,7 +49,7 @@
 		{
 			"name": "esm (core + two vendored Hershey stroke faces + SVG path parser)",
 			"path": "dist/index.js",
-			"limit": "14 kB"
+			"limit": "16 kB"
 		}
 	],
 	"devDependencies": {

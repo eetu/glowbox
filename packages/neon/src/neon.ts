@@ -12,6 +12,11 @@
 //   • `polarity: 'absorb'` is the one INVENTED part: an element whose discharge
 //     runs dark, inking a pale wall instead of lighting a dark one — the same
 //     ramp multiplied in rather than added, so neon can live in a light theme.
+//     Each `gas` carries its own ink (that's where a near-white fill inverts into
+//     a black light) while a colour you NAME is the pigment itself, so a pale tube
+//     inks faintly and a saturated one deeply — two tubes stay two tubes either
+//     way round. Ink bleeds tighter than light blooms, and the hot core is a
+//     second coat of the same pigment rather than a march to neutral black.
 //   • A strike is a SEQUENCE, not a fade-in: the electrodes arc while the tube
 //     stays dark, ignition takes with a few partial pops, overshoots white-hot and
 //     settles. Turn-off is near-instant — the discharge just stops.
@@ -29,11 +34,12 @@
 // under node/SSR (no browser globals at module scope; Path2D built lazily).
 import { type Color, parseColor, type RGB } from './color';
 import { type NeonFont } from './font';
-import { GASES, type GasName, type GasSpec } from './gas';
+import { GASES, type GasName, type GasSpec, pigment } from './gas';
 import {
 	layoutTubes,
 	type NeonArt,
 	type NeonLayout,
+	SLAB_R,
 	type TubeGrouping,
 	type TubeSection
 } from './layout';
@@ -61,11 +67,13 @@ export interface NeonSignOptions {
 	 *  first under 'reveal'. See `NeonArt`. */
 	art?: NeonArt[];
 	/** Tube colour, or one per text line. Overrides the `gas` preset's colour;
-	 *  the preset still shapes the hot core and dead glass. Patch `null` to clear
-	 *  back to the gas colour. */
+	 *  the preset still shapes the hot core and dead glass. Under
+	 *  `polarity: 'absorb'` the colour you name IS the ink, so its lightness reads
+	 *  the same way round as it does lit: pale inks faintly, saturated inks deep.
+	 *  Patch `null` to clear back to the gas colour. */
 	color?: Color | Color[] | null;
 	/** What's in the glass (default 'neon' — the red-orange): picks the lit
-	 *  colour, the hot-core whiteness and the unlit tint. */
+	 *  colour, the absorbed ink, the hot-core whiteness and the unlit tint. */
 	gas?: GasName;
 	/** Colour bundle: `'dark'` (default — lit tubes on a near-black wall),
 	 *  `'light'` (`polarity: 'absorb'` on a near-white wall: the tubes ink a pale
@@ -82,17 +90,46 @@ export interface NeonSignOptions {
 	 *  multiplied into the surface rather than added to it. No such gas exists;
 	 *  that's the joke, and it's the honest way to put a neon sign on a pale wall
 	 *  (a bloom cannot read against white — the light-theme answer). Colours still
-	 *  come from `gas`/`color`, darkened into ink: a white tube inverts into a
-	 *  literal black light. */
+	 *  come from `gas`/`color` under two rules: a `gas` discharges its own ink,
+	 *  which is where a near-white fill inverts into a literal black light, and a
+	 *  `color` you name is the pigment itself, so lightness keeps its meaning. */
 	polarity?: 'emit' | 'absorb';
 	/** Power (default true). Off is not blank: the unlit glass stays visible. */
 	on?: boolean;
-	/** Per-text-line circuits (default: all on) — the motel sign's separately
-	 *  switched NO. An off line stays as unlit glass; switching it back on
-	 *  strikes. Missing entries mean on; art pieces ride the main switch. */
+	/** Per-text-line circuits (default: all on) — a line that switches on its
+	 *  own. An off line stays as unlit glass; switching it back on strikes.
+	 *  Missing entries mean on; art pieces ride the main switch. */
 	lineOn?: boolean[];
+	/** Per-WORD circuits (default: all on), counted across the whole text in
+	 *  reading order — one word can cut to unlit glass and strike back on its
+	 *  own while its neighbours on the same line stay lit. Missing entries mean
+	 *  on; a 'line'-grouped section spans words and follows its first one. */
+	wordOn?: boolean[];
+	/** Per-WORD tube colour, same indexing as `wordOn` (`null` entries inherit
+	 *  the line's colour or the gas) — one word in its own light beside the
+	 *  rest of the line. */
+	wordColor?: (Color | null)[];
 	/** Glow strength 0..1 (default 0.7). */
 	glow?: number;
+	/** Painted letter FACES: each letterform painted on the panel as a wide
+	 *  slab under its tube, an object that catches the tube's light. One colour, or one per text line (`null` entries skip a line), and
+	 *  the paint is lit by ITS OWN circuit: unlit it sits as dim paint against
+	 *  the wall, lit it washes toward its colour with a hint of the gas — so
+	 *  flicker, wear and strikes play across the letter, not just the glass.
+	 *  Absorbing tubes give no light, so their faces stay paint. Art pieces take
+	 *  their own `face` per piece. Default: no faces — bare tubes. */
+	face?: Color | (Color | null)[] | null;
+	/** Bend the tube around the letterform instead of along it (default false):
+	 *  fat painted typography with a normal-width tube tracing its border. The
+	 *  `face` paint keeps the letterform itself; the tube, its electrodes,
+	 *  strikes and taps all live on the contour. One flag or one per text line
+	 *  (art follows the single-flag form only). Best with a `face`, and with
+	 *  text (art corners are not rounded, and a sharp corner offsets poorly). */
+	outline?: boolean | boolean[];
+	/** Per-line glyph scale (default all 1) — a headline line at twice the size
+	 *  of the line under it. The tube keeps its regular width whatever the
+	 *  letter size; an outlined line's slab scales with it. */
+	lineScale?: number[];
 	/** The unlit tube itself — the glass you see with the power off. Defaults to a
 	 *  neutral grey picked to contrast with the `wall` (light glass on a dark wall,
 	 *  darker glass on a pale one); the gas still tints it on top. */
@@ -115,8 +152,12 @@ export interface NeonSignOptions {
 	program?: NeonProgram;
 	/** Cam rate multiplier (default 1; the sub-3-events/s cap always wins). */
 	speed?: number;
-	/** Tube sectioning: 'auto' (script→word, sans→glyph) | 'glyph' | 'word' |
-	 *  'line' (default 'auto'). A section strikes, flickers and dies as one tube. */
+	/** Circuit granularity (default 'auto' = one circuit per WORD — the whole
+	 *  word one tube behind one electrode pair, its crossover runs bent back off
+	 *  the face plane and painted out, real but invisible, every interior stroke
+	 *  end bare glass diving behind). 'glyph' cuts to separately switched channel
+	 *  letters — per-letter tubes, strikes, wear and pairs; 'line' wires a whole
+	 *  text line. A section strikes, flickers and dies as one circuit. */
 	tubes?: TubeGrouping;
 	/** Per-line alignment (default 'center'). */
 	align?: 'left' | 'center' | 'right';
@@ -257,8 +298,11 @@ export function createNeonSign(
 	}
 	let on = opts.on ?? true;
 	let lineOn = opts.lineOn;
+	let wordOn = opts.wordOn;
+	let wordColor = opts.wordColor;
 	let glow = clamp01(opts.glow ?? 0.7);
 	let glassCol = opts.glass != null ? parseColor(opts.glass) : null;
+	let faceOpt = opts.face ?? undefined;
 	let elecCol = opts.electrode != null ? parseColor(opts.electrode) : null;
 	let age = clamp01(opts.age ?? 0);
 	let flicker = clamp01(opts.flicker ?? 0);
@@ -266,6 +310,9 @@ export function createNeonSign(
 	let program: NeonProgram = opts.program ?? 'steady';
 	let speed = Math.max(0.1, Math.min(8, opts.speed ?? 1));
 	let tubes: TubeGrouping = opts.tubes ?? 'auto';
+	let outline = opts.outline ?? false;
+	let lineScale = opts.lineScale;
+	const outlineKey = (v: NeonSignOptions['outline']) => JSON.stringify(v ?? false);
 	let align = opts.align ?? 'center';
 	let lineSpacing = opts.lineSpacing;
 	let letterSpacing = opts.letterSpacing;
@@ -299,13 +346,22 @@ export function createNeonSign(
 	let jit = new Float32Array(0);
 	let wear = new Float32Array(0);
 	let camOn: Uint8Array = new Uint8Array(0); // the cam's per-section switch state
-	let paths: (Path2D | null)[] = [];
+	let paths: ({ tube: Path2D; slab: Path2D } | null)[] = [];
 	let dying = -1;
 	let second = -1;
 	let dropRemain = 0; // a tired-transformer dropout in progress, seconds left
 
 	function relayout() {
-		lay = layoutTubes(text, font, { tubes, align, lineSpacing, letterSpacing, tilt, art });
+		lay = layoutTubes(text, font, {
+			tubes,
+			outline,
+			lineScale,
+			align,
+			lineSpacing,
+			letterSpacing,
+			tilt,
+			art
+		});
 		n = lay.sections.length;
 		lit = new Float32Array(n);
 		strikeT = new Float32Array(n).fill(-1);
@@ -314,7 +370,7 @@ export function createNeonSign(
 		jit = new Float32Array(n);
 		wear = new Float32Array(n);
 		camOn = new Uint8Array(n).fill(1);
-		paths = new Array<Path2D | null>(n).fill(null);
+		paths = new Array<{ tube: Path2D; slab: Path2D } | null>(n).fill(null);
 		for (let i = 0; i < n; i++) {
 			jit[i] = Math.random();
 			wear[i] = 0.5 + 0.5 * Math.sin(seed + i * 12.9898);
@@ -331,7 +387,9 @@ export function createNeonSign(
 	const isDead = (i: number) => age >= DIE_AT && i === dying;
 	// A text line whose own circuit is switched off (art rides the main switch).
 	const lineCut = (i: number) =>
-		lay.sections[i].art == null && lineOn?.[lay.sections[i].line] === false;
+		lay.sections[i].art == null &&
+		(lineOn?.[lay.sections[i].line] === false ||
+			(lay.sections[i].word != null && wordOn?.[lay.sections[i].word!] === false));
 	// What the tube should sit at once nothing is in flight.
 	const targetOf = (i: number) =>
 		on && !isDead(i) && camOn[i] && !lineCut(i) && dropRemain <= 0 ? 1 : 0;
@@ -389,15 +447,22 @@ export function createNeonSign(
 	let fitS = 0;
 	let fitTx = 0;
 	let fitTy = 0;
-	const pathFor = (i: number): Path2D => {
+	const toPath = (strokes: [number, number][][]): Path2D => {
+		const p = new Path2D();
+		for (const s of strokes) {
+			p.moveTo(s[0][0], s[0][1]);
+			for (let k = 1; k < s.length; k++) p.lineTo(s[k][0], s[k][1]);
+		}
+		return p;
+	};
+	// The glass, and — under `outline` — the letterform it borders, which is what
+	// the face paint strokes; a centreline tube paints its own path.
+	const pathFor = (i: number): { tube: Path2D; slab: Path2D } => {
 		let p = paths[i];
 		if (!p) {
-			p = new Path2D();
-			for (const s of lay.sections[i].strokes) {
-				p.moveTo(s[0][0], s[0][1]);
-				for (let k = 1; k < s.length; k++) p.lineTo(s[k][0], s[k][1]);
-			}
-			paths[i] = p;
+			const sec = lay.sections[i];
+			const tube = toPath(sec.strokes);
+			p = paths[i] = { tube, slab: sec.skeleton ? toPath(sec.skeleton) : tube };
 		}
 		return p;
 	};
@@ -405,8 +470,12 @@ export function createNeonSign(
 	// A section's tube spec: gas preset colours, or a `color` override riding the
 	// preset's core/coating character. Art carries its own gas/colour; without one
 	// it follows the sign's gas or single-colour override — never a per-line array.
+	// A named colour is also the ink it lays down when absorbing: the preset's own
+	// ink is an invented inversion, but a colour the caller picked means what it
+	// looks like, so the pale-vs-saturated ordering survives the polarity flip.
 	const overrideSpec = (c: RGB, base: GasSpec): GasSpec => ({
 		color: c,
+		ink: pigment(c),
 		core: base.core,
 		unlit: mix(c, [0.5, 0.5, 0.55], 0.55),
 		coated: base.coated
@@ -422,6 +491,9 @@ export function createNeonSign(
 			return own != null ? overrideSpec(parseColor(own), base) : base;
 		}
 		const base = GASES[gas];
+		// A word's own paint order beats the line's; both beat the gas.
+		const wc = sec.word != null ? wordColor?.[sec.word] : undefined;
+		if (wc != null) return overrideSpec(parseColor(wc), base);
 		if (colorOpt == null) return base;
 		const single = singleColor(colorOpt);
 		const c =
@@ -429,6 +501,19 @@ export function createNeonSign(
 				? parseColor(single)
 				: parseColor((colorOpt as Color[])[sec.line % (colorOpt as Color[]).length]);
 		return overrideSpec(c, base);
+	}
+	// A section's painted face, if the sign has one there: art carries its own,
+	// text follows the sign's — one colour or one per line, `null` skips a line.
+	function faceFor(sec: TubeSection): RGB | null {
+		if (sec.art != null) {
+			const f = art?.[sec.art]?.face;
+			return f != null ? parseColor(f) : null;
+		}
+		if (faceOpt == null) return null;
+		if (!Array.isArray(faceOpt) || typeof faceOpt[0] === 'number')
+			return parseColor(faceOpt as Color);
+		const perLine = (faceOpt as (Color | null)[])[sec.line % faceOpt.length];
+		return perLine != null ? parseColor(perLine) : null;
 	}
 
 	// Absorbing tubes are composited ONCE per frame, not once per pass. A blend
@@ -514,6 +599,47 @@ export function createNeonSign(
 			ig.scale(s, s);
 		}
 
+		// The painted letter faces: each letterform is a
+		// wide slab of paint on the panel with its tube riding it. Paint is an
+		// object (visible unlit, keyed against the wall like the glass and the
+		// hardware), and it is LIT BY ITS OWN CIRCUIT: the wash follows the
+		// section's level toward the face colour with a hint of the gas, so
+		// strikes, flicker and the wear arc play across the letter itself. All
+		// faces go down before any glass — they are the panel's paint, behind
+		// every tube on the sign. An absorbing tube gives no light to catch.
+		g.shadowBlur = 0;
+		for (let i = 0; i < n; i++) {
+			const sec = lay.sections[i];
+			const faceCol = faceFor(sec);
+			if (!faceCol) continue;
+			const spec = specFor(sec);
+			const emit =
+				((sec.art != null ? art?.[sec.art]?.polarity : undefined) ?? polarity) === 'emit';
+			const lvl = emit ? Math.min(1, lit[i]) * worn(i) * dip[i] : 0;
+			const p = pathFor(i);
+			// The slab: paint, so it never reaches the tube's brightness — a lit
+			// face is washed paint, not a second light source. Wide enough to read
+			// as typography with a tube on it, not as a rim around the glass.
+			const unlitPaint = mix(faceCol, BLACK, paleWall ? 0.16 : 0.74);
+			const litPaint = mix(mix(faceCol, BLACK, 0.3), spec.color, 0.15);
+			// The slab is typography: it scales with its line. Outlined letters are
+			// cut square, matching the border tube's square-cut terminals.
+			g.lineWidth = SLAB_R * 2 * (sec.scale ?? 1);
+			if (sec.skeleton) g.lineCap = 'square';
+			g.strokeStyle = rgba(mix(unlitPaint, litPaint, lvl), 1);
+			g.stroke(p.slab);
+			g.lineCap = 'round';
+			// The wash comes from the GLASS: paint is brightest beside the tube and
+			// falls back to plain paint away from it — so it follows the tube's own
+			// path, which is the border under `outline` and the letterform itself
+			// on a centreline sign.
+			if (lvl > 0.02) {
+				g.lineWidth = T * 2.6;
+				g.strokeStyle = rgba(mix(faceCol, spec.color, 0.12), 0.35 * lvl);
+				g.stroke(p.tube);
+			}
+		}
+
 		for (let i = 0; i < n; i++) {
 			const sec = lay.sections[i];
 			const spec = specFor(sec);
@@ -525,10 +651,13 @@ export function createNeonSign(
 			// that still shines gold.
 			const emit =
 				((sec.art != null ? art?.[sec.art]?.polarity : undefined) ?? polarity) === 'emit';
-			const core = emit ? WHITE : BLACK;
-			// The ink an absorbing tube discharges: the gas colour taken down toward
-			// black, so a white tube really does shine black.
-			const gasCol = emit ? spec.color : mix(spec.color, BLACK, 0.5);
+			// What the tube discharges: its light, or its ink — the gas's own pigment
+			// (a near-white fill inverts to black) or the colour the caller named.
+			const gasCol = emit ? spec.color : spec.ink;
+			// Emitted light overshoots toward white at the centre of the tube; ink
+			// just gets denser, and a second coat of a pigment multiplies through
+			// itself. Squaring keeps the hue that a march to neutral black would lose.
+			const core: RGB = emit ? WHITE : [gasCol[0] ** 2, gasCol[1] ** 2, gasCol[2] ** 2];
 
 			// The glass itself — always there, lit or not. Coated tubes show their
 			// paint; clear ones pale glass with a hint of the gas. On a pale wall the
@@ -536,17 +665,17 @@ export function createNeonSign(
 			if (!(micro && lvl > 0.5)) {
 				g.shadowBlur = 0;
 				g.strokeStyle = rgba(
-					glassCol ?? (paleWall ? [0.29, 0.3, 0.33] : [0.62, 0.64, 0.69]),
-					paleWall ? 0.13 : 0.1
+					glassCol ?? (paleWall ? [0.26, 0.27, 0.3] : [0.62, 0.64, 0.69]),
+					paleWall ? 0.24 : 0.1
 				);
 				g.lineWidth = T * 1.25;
-				g.stroke(p);
+				g.stroke(p.tube);
 				g.strokeStyle = rgba(
-					emit ? spec.unlit : mix(spec.unlit, BLACK, 0.35),
-					spec.coated ? 0.22 : 0.11
+					paleWall ? mix(spec.unlit, BLACK, 0.35) : spec.unlit,
+					spec.coated ? (paleWall ? 0.3 : 0.22) : paleWall ? 0.17 : 0.11
 				);
 				g.lineWidth = T * 0.95;
-				g.stroke(p);
+				g.stroke(p.tube);
 			}
 
 			// Electrode stubs: the metal cap + its ferrule dot at each free end. On a
@@ -608,17 +737,20 @@ export function createNeonSign(
 				// Emitted light goes straight on the wall; absorbed light accumulates
 				// on the ink layer and is multiplied in once, after the loop.
 				const t = emit || !ig ? g : ig;
-				// Accumulating on a layer and multiplying once is lighter than
-				// multiplying every pass in turn, so the ink gets a nudge back to the
-				// density the per-pass version had.
-				const density = emit ? 1 : 1.35;
 				t.shadowColor = rgba(gasCol, 1);
 				for (const [blurF, alpha, lwF, wm] of layers) {
+					// Light scatters on its way through the air, so the halation is the
+					// widest thing a lit tube does; ink sits IN the surface, where the
+					// bleed is tighter and thinner than the mark that made it. Density
+					// therefore falls with the pass's blur — the body and core keep the
+					// weight the single multiply needs, the outer haze gives it up, and
+					// a pale wall stops fogging between neighbouring tubes.
+					const density = emit ? 1 : Math.max(0.35, 1.35 - 1.4 * blurF);
 					const a = (wm >= 0.6 ? alpha * lvl * lvl : alpha * lvl) * density;
-					t.shadowBlur = blur(blurF) * Math.min(1, lvl);
+					t.shadowBlur = blur(blurF) * Math.min(1, lvl) * (emit ? 1 : 0.75);
 					t.strokeStyle = rgba(wm ? mix(gasCol, core, spec.core * wm) : gasCol, a);
 					t.lineWidth = T * lwF;
-					t.stroke(p);
+					t.stroke(p.tube);
 				}
 				t.shadowBlur = 0;
 			}
@@ -1072,6 +1204,19 @@ export function createNeonSign(
 				tilt = patch.tilt;
 				rebuild = true;
 			}
+			if (patch.outline !== undefined && outlineKey(patch.outline) !== outlineKey(outline)) {
+				// Bending the tube around the letters instead of along them is new
+				// glass, not a new coat.
+				outline = patch.outline;
+				rebuild = true;
+			}
+			if (
+				patch.lineScale !== undefined &&
+				JSON.stringify(patch.lineScale) !== JSON.stringify(lineScale)
+			) {
+				lineScale = patch.lineScale;
+				rebuild = true;
+			}
 			if (patch.art !== undefined && artKey(patch.art) !== artKey(art)) {
 				// Content compare (the drum-zones precedent): a wrapper re-passing an
 				// equal art list every render must never re-glass the sign.
@@ -1110,6 +1255,10 @@ export function createNeonSign(
 				glassCol = patch.glass != null ? parseColor(patch.glass) : null;
 				redraw = true;
 			}
+			if (patch.face !== undefined) {
+				faceOpt = patch.face ?? undefined; // null clears back to bare tubes
+				redraw = true;
+			}
 			if (patch.electrode !== undefined) {
 				elecCol = patch.electrode != null ? parseColor(patch.electrode) : null;
 				redraw = true;
@@ -1144,11 +1293,16 @@ export function createNeonSign(
 					lastHum = -1;
 				}
 			}
-			if (patch.lineOn !== undefined && JSON.stringify(patch.lineOn) !== JSON.stringify(lineOn)) {
-				// Flipping a line's circuit ON strikes it in; OFF just cuts the discharge.
+			if (
+				(patch.lineOn !== undefined && JSON.stringify(patch.lineOn) !== JSON.stringify(lineOn)) ||
+				(patch.wordOn !== undefined && JSON.stringify(patch.wordOn) !== JSON.stringify(wordOn))
+			) {
+				// Flipping a circuit ON strikes it in; OFF just cuts the discharge —
+				// per line or per word, the switch panel works the same.
 				const was = new Uint8Array(n);
 				for (let i = 0; i < n; i++) was[i] = targetOf(i);
-				lineOn = patch.lineOn;
+				if (patch.lineOn !== undefined) lineOn = patch.lineOn;
+				if (patch.wordOn !== undefined) wordOn = patch.wordOn;
 				if (!reduced && strikeMs > 0) {
 					for (let i = 0; i < n; i++)
 						if (!was[i] && targetOf(i) === 1) {
@@ -1157,6 +1311,13 @@ export function createNeonSign(
 							wait[i] = jit[i] * 0.12;
 						}
 				}
+			}
+			if (
+				patch.wordColor !== undefined &&
+				JSON.stringify(patch.wordColor) !== JSON.stringify(wordColor)
+			) {
+				wordColor = patch.wordColor ?? undefined;
+				redraw = true;
 			}
 			if (patch.label !== undefined) {
 				label = patch.label;

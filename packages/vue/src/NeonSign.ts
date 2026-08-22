@@ -48,9 +48,28 @@ export const NeonSign = defineComponent({
 		// defaults apply when the prop is omitted.
 		/** Power — off leaves the unlit glass visible; on re-strikes. */
 		on: { type: Boolean, default: undefined },
-		/** Per-text-line circuits (the motel sign's separately switched NO). */
+		/** Per-text-line circuits — a line that switches on its own. */
 		lineOn: { type: Array as PropType<boolean[]>, default: undefined },
+		/** Per-word circuits, counted across the text in reading order. */
+		wordOn: { type: Array as PropType<boolean[]>, default: undefined },
+		/** Per-word tube colour (`null` entries inherit the line's colour or the gas). */
+		wordColor: {
+			type: Array as PropType<NeonSignOptions['wordColor']>,
+			default: undefined
+		},
 		glow: { type: Number, default: undefined },
+		/** Painted letter slabs under the tubes, lit by their own circuit; one per line. */
+		face: {
+			type: [String, Array] as PropType<NeonSignOptions['face']>,
+			default: undefined
+		},
+		/** Bend the tube around the letterform — its border, not its centreline. */
+		outline: {
+			type: [Boolean, Array] as PropType<NeonSignOptions['outline']>,
+			default: undefined
+		},
+		/** Per-line glyph scale; the tube keeps its regular width. */
+		lineScale: { type: Array as PropType<number[]>, default: undefined },
 		/** The unlit tube itself. */
 		glass: { type: [String, Array] as PropType<NeonSignOptions['glass']>, default: undefined },
 		/** The electrode caps — metal, not light. */
@@ -67,7 +86,7 @@ export const NeonSign = defineComponent({
 		/** The flasher cam: 'steady' | 'flash' | 'chase' | 'reveal' (rate-capped). */
 		program: { type: String as PropType<NeonSignOptions['program']>, default: undefined },
 		speed: { type: Number, default: undefined },
-		/** Tube sectioning: 'auto' | 'glyph' | 'word' | 'line'. */
+		/** Circuit granularity: 'auto' (= per word) | 'glyph' | 'word' | 'line'. */
 		tubes: { type: String as PropType<NeonSignOptions['tubes']>, default: undefined },
 		align: { type: String as PropType<NeonSignOptions['align']>, default: undefined },
 		lineSpacing: { type: Number, default: undefined },
@@ -106,7 +125,12 @@ export const NeonSign = defineComponent({
 			polarity: props.polarity,
 			on: props.on,
 			lineOn: props.lineOn,
+			wordOn: props.wordOn,
+			wordColor: props.wordColor,
 			glow: props.glow,
+			face: props.face,
+			outline: props.outline,
+			lineScale: props.lineScale,
 			glass: props.glass,
 			electrode: props.electrode,
 			age: props.age,

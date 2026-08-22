@@ -174,8 +174,14 @@ const BASE: Partial<NeonSignOptions> = {
 	tubes: 'auto',
 	align: 'center',
 	lineSpacing: 1.1, // the core defaults, stated so no show inherits another's
+	letterSpacing: 0,
 	tilt: 0,
-	lineOn: []
+	lineOn: [],
+	wordOn: [],
+	wordColor: [],
+	face: null,
+	outline: false,
+	lineScale: []
 };
 
 /** The hero: a rising rose script "Cocktails" across a gold martini glass —
@@ -219,27 +225,33 @@ const makeRick: NeonShowFn = (sign) => {
 	};
 };
 
-/** The motel gag: a worn two-line NO / VACANCY on per-glyph tubes, one line red,
- *  one ice-blue — the sign is old, so some letter is dying and the wear decides
- *  which. The NO rides its own circuit (`lineOn`): the motel fills and empties,
- *  the NO strikes in and cuts out while its glass stays on the wall. */
+/** The movie motel: HOTEL up top at twice the size — painted square-cut letter
+ *  faces with an ice tube bent around their borders, the paint catching its own
+ *  tube's light so the sign's flicker and wear play across the letters, not
+ *  just the glass — VACANCY below in bare ice-blue tube, and the red NO on its
+ *  own circuit (`wordOn`), owned by the page's toggle: the visitor fills the
+ *  motel and the NO strikes in beside the VACANCY that never goes out, its
+ *  glass staying on the wall either way. Per-glyph circuits keep the
+ *  dying-letter arc. */
 const makeVacancy: NeonShowFn = (sign) => {
 	sign.setOptions({
 		...BASE,
 		font: 'sans',
 		tubes: 'glyph',
-		color: ['#ff3b30', '#7cd5ff'],
-		age: 0.88,
-		flicker: 0.25,
-		lineSpacing: 1.25
+		color: ['#dceeff', '#7cd5ff'],
+		wordColor: [null, '#ff3b30', null],
+		face: ['#e8e4da', null],
+		outline: [true, false],
+		lineScale: [2, 1],
+		age: 0.82,
+		flicker: 0.2,
+		lineSpacing: 1.1,
+		// Outlined letters are wider than their skeletons — space them like the
+		// panel cutter would.
+		letterSpacing: 0.32
 	});
-	sign.setText('NO\nVACANCY');
-	let full = true;
-	const timer = setInterval(() => {
-		full = !full;
-		sign.setOptions({ lineOn: [full] });
-	}, 6000);
-	return () => clearInterval(timer);
+	sign.setText('HOTEL\nNO VACANCY');
+	return () => undefined;
 };
 
 /** The dice sign: two nib-authored dice flanking the word — each die its own
@@ -272,9 +284,18 @@ const makeOpen: NeonShowFn = (sign) => {
 	return () => sign.setOptions({ art: [] });
 };
 
-/** The chase marquee: gold block letters, a dark slot running the line. */
+/** The chase marquee: gold block letters, a dark slot running the line — which
+ *  needs a section per LETTER, so this sign is built as channel letters rather
+ *  than word circuits. */
 const makeMarquee: NeonShowFn = (sign) => {
-	sign.setOptions({ ...BASE, font: 'sans', gas: 'gold', program: 'chase', speed: 1.3 });
+	sign.setOptions({
+		...BASE,
+		font: 'sans',
+		gas: 'gold',
+		program: 'chase',
+		speed: 1.3,
+		tubes: 'glyph'
+	});
 	sign.setText('LIVE MUSIC');
 	return () => undefined;
 };

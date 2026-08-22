@@ -65,6 +65,8 @@
 	let tinkerFlicker = $state(0);
 	let tinkerTired = $state(false);
 	let tinkerProgram = $state<'steady' | 'flash' | 'chase' | 'reveal'>('steady');
+	// Circuit granularity: auto wires per word; glyph cuts to channel letters.
+	let tinkerTubes = $state<'auto' | 'glyph' | 'line'>('auto');
 
 	// The sign — created once for the canvas; appearance updates go through
 	// setOptions, content through the shows.
@@ -109,6 +111,14 @@
 		return NEON_SHOWS[show](s, { text: () => untrack(() => freeText) });
 	});
 
+	// The motel's NO circuit (word 1: HOTEL 0, NO 1, VACANCY 2) — the visitor
+	// fills and empties the motel. The VACANCY never goes out; the NO strikes in
+	// and cuts out beside it while its glass stays on the wall.
+	let vacancyFull = $state(true);
+	$effect(() => {
+		if (show === 'vacancy') sign?.setOptions({ wordOn: [true, vacancyFull, true] });
+	});
+
 	// The text show's live edits: content re-glasses, the tinker options apply on top.
 	$effect(() => {
 		if (show === 'text') sign?.setText(freeText);
@@ -121,7 +131,8 @@
 			age: tinkerAge,
 			flicker: tinkerFlicker,
 			tired: tinkerTired,
-			program: tinkerProgram
+			program: tinkerProgram,
+			tubes: tinkerTubes
 		});
 	});
 
@@ -206,6 +217,15 @@
 				<X size={18} />
 			</button>
 		</div>
+
+		{#if show === 'vacancy'}
+			<section>
+				<h2>show</h2>
+				<div class="row">
+					<ToggleChip bind:checked={vacancyFull} label="hotel full" />
+				</div>
+			</section>
+		{/if}
 
 		{#if show === 'text'}
 			<section>
