@@ -224,29 +224,35 @@ function cutStroke(
 // rather than as loose glyph fragments; the renderer draws them matte, and the light
 // leaks at the seam where the paint stops.
 
-/** One crossover run from `a` to `b`. `railY` (text only — art has no baseline) drops
- *  the run under the letterforms instead of hopping straight across. */
+/** One crossover run from `a` to `b`. Glass cannot corner: the run LEAVES along the
+ *  tube's own direction (`adir`, the outward tangent at the stroke end) and ARRIVES
+ *  along the next stroke's reversed one (`bdir`), with a lead straight enough to
+ *  read as the same tube diving back before it bends. `railY` (text only — art has
+ *  no baseline) takes a hop with real distance down under the letterforms, the way
+ *  a shop routes a long return clear of the counters. */
 export function crossoverRun(
 	a: [number, number],
+	adir: [number, number],
 	b: [number, number],
+	bdir: [number, number],
 	bendR: number,
 	railY?: number
 ): [number, number][] {
-	// A hop shorter than a bend takes the short way whatever the sign is wired for:
-	// the returns inside one letterform are stubs, and railing them out to the
-	// baseline would run more painted glass than lit.
 	const span = Math.hypot(b[0] - a[0], b[1] - a[1]);
-	if (railY != null && span > bendR * 3) {
-		// Down to the rail, across, back up — the shop's own routing, and it keeps
-		// the return clear of the counters it would otherwise cut through.
-		const drop = Math.max(railY, a[1] + bendR, b[1] + bendR);
-		return roundCorners([a, [a[0], drop], [b[0], drop], b], bendR);
-	}
-	// The direct hop sags a little, the way a short return bends rather than
-	// meeting its neighbours at a corner.
 	if (span < 1e-6) return [a, b];
-	const sag = Math.min(span * 0.25, bendR * 2);
-	return roundCorners([a, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + sag], b], bendR);
+	// The dive: continue out of the glass before turning, and rise into the next
+	// stroke the same way. Short hops get shorter leads or they overshoot each other.
+	const lead = Math.min(bendR * 1.4, span * 0.35);
+	const pa: [number, number] = [a[0] + adir[0] * lead, a[1] + adir[1] * lead];
+	const pb: [number, number] = [b[0] + bdir[0] * lead, b[1] + bdir[1] * lead];
+	// A hop shorter than a few bends takes the short way whatever the sign is wired
+	// for: the returns inside one letterform are stubs, and railing them out to the
+	// baseline would run more painted glass than lit.
+	if (railY != null && span > bendR * 6) {
+		const drop = Math.max(railY, pa[1] + bendR, pb[1] + bendR);
+		return roundCorners([a, pa, [pa[0], drop], [pb[0], drop], pb, b], bendR * 2);
+	}
+	return roundCorners([a, pa, pb, b], bendR * 2);
 }
 
 /** Thread a section's strokes onto one tube the way a bender would: finish one
@@ -319,20 +325,35 @@ function thread(
 ): { strokes: [number, number][][]; painted: boolean[] } {
 	const out: [number, number][][] = [];
 	const painted: boolean[] = [];
-	let tail: [number, number] | null = null;
+	let prev: [number, number][] | null = null;
 	for (const group of groups) {
-		const { runs, hops } = route(group, tail);
-		runs.forEach((run, i) => {
+		const { runs, hops } = route(group, prev ? prev[prev.length - 1] : null);
+		for (let i = 0; i < runs.length; i++) {
+			const run = runs[i];
 			// A hop shorter than a bend is two strokes already meeting: nothing to bend,
 			// nothing to paint.
-			if (tail && hops[i] > bendR * 0.5) {
-				out.push(crossoverRun(tail, run[0], bendR, mode === 'rail' ? railY : undefined));
+			if (prev && hops[i] > bendR * 0.5) {
+				// The dive leaves the glass along ITS tangent and rises into the next
+				// stroke along its own — endOf is the same outward direction the
+				// electrode stubs use.
+				const ea = endOf(prev, true);
+				const eb = endOf(run, false);
+				out.push(
+					crossoverRun(
+						[ea.x, ea.y],
+						[ea.dx, ea.dy],
+						[eb.x, eb.y],
+						[eb.dx, eb.dy],
+						bendR,
+						mode === 'rail' ? railY : undefined
+					)
+				);
 				painted.push(true);
 			}
 			out.push(run);
 			painted.push(false);
-			tail = run[run.length - 1];
-		});
+			prev = run;
+		}
 	}
 	return { strokes: out, painted };
 }
