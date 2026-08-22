@@ -182,6 +182,8 @@ to steady, snaps strikes, and disables flicker/tired.
 | `on`            | `true`        | off is not blank — the unlit glass stays visible                               |
 | `lineOn`        | all on        | per-line circuits (the motel sign's separately switched NO)                    |
 | `glow`          | `0.7`         | halation strength                                                              |
+| `face`          | —             | painted letter slabs under the tubes, lit by their own circuit; one per line   |
+| `outline`       | `false`       | bend the tube around the letterform (the HOTEL border); one flag or per line   |
 | `glass`         | vs the wall   | the unlit tube (the gas still tints it)                                        |
 | `electrode`     | vs the wall   | the metal end caps: near-black on a dark wall, mid-grey on a pale one          |
 | `crossover`     | `true`        | how much glass shares one circuit: word-wired; `false` = channel letters       |
@@ -228,6 +230,29 @@ well). `crossover: false` cuts back to channel-letter circuits — per-letter
 tubes with their own pairs, per-letter strikes and per-letter wear (the
 classic dying-letter MOT L needs this, since a wired word lights and dies as
 one tube).
+
+## Painted faces & outlined letters
+
+`face` is the movie-motel pattern: each letterform painted on the panel as a
+**wide slab**, an object that catches the tube's light. The paint shows unlit
+(keyed against the wall, like the glass and the hardware) and is lit by **its
+own circuit** — the wash follows the section's level and sits brightest beside
+the glass, falling back to plain paint away from it — so strikes, flicker and
+the wear arc play across the letter itself, not just the tube. One colour or
+one per text line (`null` skips a line: `face: ['#e8e4da', null]` paints HOTEL
+and leaves NO VACANCY bare), and an art piece takes its own `face`. Paint
+never reaches the tube's brightness — a lit face is washed paint, not a second
+light source — and an absorbing tube gives no light to catch, so its face
+stays paint.
+
+`outline` completes the pattern: the tube is **bent around the letterform**
+instead of along it — a normal-width tube tracing the painted letter's border,
+the counters included, the way the classic HOTEL signs are built. The `face`
+paint keeps the letterform itself; the tube, its electrodes, strikes and taps
+all live on the contour (an O really is two tubes, the outer ring and the
+counter). One flag or one per line, like `face`. Outlined letters are wider
+than their skeletons, so pair with a little `letterSpacing`; art corners are
+not rounded and offset poorly, so outline is at its best on text.
 
 ## The sound engine
 

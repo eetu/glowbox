@@ -370,6 +370,38 @@ test('an absorbing sign on a transparent canvas composites to the white-wall ren
 		}
 });
 
+test('a painted face is an object its own tube lights', () => {
+	// The motel-letter pattern: the slab shows unlit (paint on the panel), and
+	// powering the tube washes it — so a faced sign moves more energy across the
+	// switch than the glass alone accounts for.
+	const opts: NeonSignOptions = { text: 'HI', font: 'sans', strikeMs: 0 };
+	const bare = mount(opts);
+	const faced = mount({ ...opts, face: '#e8e4da' });
+	bare.sign.power(false);
+	faced.sign.power(false);
+	const bareOff = energy(bare.canvas);
+	const facedOff = energy(faced.canvas);
+	expect(facedOff).toBeGreaterThan(bareOff * 1.1); // the paint is there in the dark
+	faced.sign.power(true);
+	bare.sign.power(true);
+	const washGain = energy(faced.canvas) - facedOff;
+	const glassGain = energy(bare.canvas) - bareOff;
+	expect(washGain).toBeGreaterThan(glassGain * 1.05); // …and the light lands on it
+});
+
+test('faces go per line, and a null line stays bare tube', () => {
+	// The same sign twice with the array flipped: whichever line holds the face
+	// carries its slabs, the null line stays glass — so the top region outweighs
+	// its twin exactly when the face is on line 0.
+	const opts: NeonSignOptions = { text: 'HO\nNO', font: 'sans', strikeMs: 0, lineSpacing: 1.4 };
+	const a = mount({ ...opts, face: ['#ffffff', null] });
+	const b = mount({ ...opts, face: [null, '#ffffff'] });
+	a.sign.power(false); // paint alone — no glow to muddy the comparison
+	b.sign.power(false);
+	expect(energy(a.canvas, 0, 0.5)).toBeGreaterThan(energy(b.canvas, 0, 0.5) * 1.2);
+	expect(energy(b.canvas, 0.5, 1)).toBeGreaterThan(energy(a.canvas, 0.5, 1) * 1.2);
+});
+
 test('sectionAt hit-tests the glass; jolt makes that tube stutter', async () => {
 	// 'I' is a single centred stem in the sans face, so the canvas centre is on
 	// the tube and the corners are nowhere near it.

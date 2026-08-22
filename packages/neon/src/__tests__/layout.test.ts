@@ -294,6 +294,42 @@ test('crossover: the drawn glass is identical — only the hardware moves', () =
 	for (const e of sec.ends) expect(tips.some(([x, y]) => x === e.x && y === e.y)).toBe(true);
 });
 
+test('outline: the tube borders the slab, the skeleton stays for the paint', () => {
+	const plain = layoutTubes('I', 'sans');
+	const sec = layoutTubes('I', 'sans', { outline: true }).sections[0];
+	// The letterform moved to the skeleton, identical to the plain tube.
+	expect(JSON.stringify(sec.skeleton)).toBe(JSON.stringify(plain.sections[0].strokes));
+	// The contour is a ring around it: every point sits a slab's radius off the
+	// skeleton, and the bounds grew by that radius all round.
+	const skel = sec.skeleton![0];
+	for (const run of sec.strokes)
+		for (const [x, y] of run) {
+			const d = skel.reduce(
+				(best, _, i) => (i ? Math.min(best, segDist(x, y, skel[i - 1], skel[i])) : best),
+				Infinity
+			);
+			expect(d).toBeGreaterThan(2.5);
+			expect(d).toBeLessThan(3.7);
+		}
+	// An O's slab is an annulus — the outer ring and the counter, two tubes.
+	const o = layoutTubes('O', 'sans', { outline: true }).sections[0];
+	expect(o.strokes.length).toBe(2);
+	// Per-line: HOTEL outlined, the second line bare.
+	const two = layoutTubes('I\nI', 'sans', { outline: [true, false] });
+	expect(two.sections[0].skeleton).toBeDefined();
+	expect(two.sections[1].skeleton).toBeUndefined();
+});
+
+const segDist = (px: number, py: number, a: [number, number], b: [number, number]) => {
+	const dx = b[0] - a[0];
+	const dy = b[1] - a[1];
+	const t = Math.max(
+		0,
+		Math.min(1, ((px - a[0]) * dx + (py - a[1]) * dy) / (dx * dx + dy * dy || 1))
+	);
+	return Math.hypot(a[0] + t * dx - px, a[1] + t * dy - py);
+};
+
 test('electrodes sit where the bender starts and finishes, not where the data does', () => {
 	// Three collinear runs handed middle-first: font/author order would put an
 	// electrode on the middle segment's tip; the routed circuit starts at the far

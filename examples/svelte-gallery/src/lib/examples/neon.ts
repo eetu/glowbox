@@ -219,25 +219,32 @@ const makeRick: NeonShowFn = (sign) => {
 	};
 };
 
-/** The motel gag: a worn two-line NO / VACANCY on per-glyph tubes, one line red,
- *  one ice-blue — the sign is old, so some letter is dying and the wear decides
- *  which. The NO rides its own circuit (`lineOn`): the motel fills and empties,
- *  the NO strikes in and cuts out while its glass stays on the wall. */
+/** The movie motel: HOTEL up top in ice tubes riding painted white letter
+ *  faces — the paint catches its own tube's light, so the sign's flicker and
+ *  wear play across the letters, not just the glass — and NO VACANCY below in
+ *  bare gold tube. Per-glyph circuits keep the dying-letter arc, and the NO
+ *  VACANCY line rides its own switch (`lineOn`): the motel fills and empties,
+ *  the line strikes in and cuts out while its glass stays on the wall. */
 const makeVacancy: NeonShowFn = (sign) => {
 	sign.setOptions({
 		...BASE,
 		font: 'sans',
 		tubes: 'glyph',
-		color: ['#ff3b30', '#7cd5ff'],
-		age: 0.88,
-		flicker: 0.25,
-		lineSpacing: 1.25
+		color: ['#dceeff', '#ff3b30'],
+		face: ['#e8e4da', null],
+		outline: [true, false],
+		age: 0.82,
+		flicker: 0.2,
+		lineSpacing: 1.45,
+		// Outlined letters are wider than their skeletons — space them like the
+		// panel cutter would.
+		letterSpacing: 0.32
 	});
-	sign.setText('NO\nVACANCY');
+	sign.setText('HOTEL\nNO VACANCY');
 	let full = true;
 	const timer = setInterval(() => {
 		full = !full;
-		sign.setOptions({ lineOn: [full] });
+		sign.setOptions({ lineOn: [true, full] });
 	}, 6000);
 	return () => clearInterval(timer);
 };

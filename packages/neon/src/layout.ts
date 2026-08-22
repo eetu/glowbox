@@ -17,8 +17,12 @@ import { pathToStrokes } from './path';
 /** One tube section — the unit that strikes, flickers, ages and dies together. */
 export interface TubeSection {
 	/** Corner-rounded centreline polylines in sign units (y-down, baseline of the
-	 *  first text line at y = 0). */
+	 *  first text line at y = 0). Under `outline` these are the CONTOUR the tube
+	 *  is bent around the letterform, not the letterform itself. */
 	strokes: [number, number][][];
+	/** Under `outline`: the letterform's own centrelines — what the painted
+	 *  `face` slab is stroked from, kept because the tube no longer runs there. */
+	skeleton?: [number, number][][];
 	/** The electrode pair: the CIRCUIT's two free ends — the routed bent tube's
 	 *  start and finish, each with an outward unit direction for the electrode
 	 *  stub. The strokes between them join through invisible painted-out returns
@@ -52,6 +56,10 @@ export interface NeonArt {
 	 *  per-line colour arrays never bleed onto art). */
 	gas?: GasName;
 	color?: Color;
+	/** The piece's painted face — a wide slab of paint under its tubes that
+	 *  catches their light, the motel-letter pattern (default: none; the sign's
+	 *  per-line `face` never bleeds onto art). */
+	face?: Color;
 	/** The piece's own discharge direction, overriding the sign's: a white tube
 	 *  can shine BLACK ('absorb') on a pale wall while the lettering beside it
 	 *  still shines its colour ('emit') — one sign, mixed polarity, because it's
@@ -91,6 +99,13 @@ export interface LayoutOptions {
 	 *  channel-letter circuits. Electrode PLACEMENT is not this option's:
 	 *  every section's pair always sits on its routed run's two free ends. */
 	crossover?: boolean;
+	/** Bend the tube around the letterform instead of along it (default false):
+	 *  each glyph's tube becomes the CONTOUR of its slab — the border of the
+	 *  painted letter — while the centrelines move to `skeleton` for the `face`
+	 *  paint. The movie-motel pattern: fat painted typography, a normal-width
+	 *  tube tracing its edge. One flag, or one per text line (art follows the
+	 *  single-flag form only). */
+	outline?: boolean | boolean[];
 	/** Per-line alignment (default 'center' — signs centre). */
 	align?: 'left' | 'center' | 'right';
 	/** Baseline-to-baseline advance as a multiple of the face's ascent+descent
@@ -283,6 +298,128 @@ export function circuitEnds(groups: [number, number][][][]): {
 	return { first: bestFirst!, last: bestLast! };
 }
 
+// --- outline (the tube bent around the painted letter) -------------------------------
+// The slab half-width in sign units (cap height 21): the painted letterform is the
+// skeleton stroked this wide each side, and the outline tube runs its contour. One
+// constant shared with the renderer, so the border always sits on the paint's edge.
+// Sized so the counters survive — the sans E's bars sit ~10 units apart, and a
+// fatter slab welds them into a block no outline can save.
+export const SLAB_R = 3.1;
+
+const distToStroke = (px: number, py: number, s: [number, number][]): number => {
+	let best = Infinity;
+	for (let i = 1; i < s.length; i++) {
+		const [ax, ay] = s[i - 1];
+		const [bx, by] = s[i];
+		const dx = bx - ax;
+		const dy = by - ay;
+		const t = Math.max(
+			0,
+			Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy || 1))
+		);
+		const ex = ax + t * dx - px;
+		const ey = ay + t * dy - py;
+		best = Math.min(best, ex * ex + ey * ey);
+	}
+	return Math.sqrt(best);
+};
+
+// One stroke's slab contour at radius R: offset curves both sides, semicircular
+// caps at open ends. The skeleton's corners are already filleted, so per-sample
+// normals rotate smoothly and a plain perpendicular offset stays a clean curve.
+function contourOf(stroke: [number, number][], R: number): [number, number][][] {
+	// Densify so the offset follows the fillets.
+	const dense: [number, number][] = [stroke[0]];
+	for (let i = 1; i < stroke.length; i++) {
+		const [ax, ay] = stroke[i - 1];
+		const [bx, by] = stroke[i];
+		const steps = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / 1.4));
+		for (let k = 1; k <= steps; k++)
+			dense.push([ax + ((bx - ax) * k) / steps, ay + ((by - ay) * k) / steps]);
+	}
+	const m = dense.length;
+	if (m < 2) return [];
+	const normal = (i: number): [number, number] => {
+		const a = dense[Math.max(0, i - 1)];
+		const b = dense[Math.min(m - 1, i + 1)];
+		const d = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+		return [-(b[1] - a[1]) / d, (b[0] - a[0]) / d];
+	};
+	const left: [number, number][] = [];
+	const right: [number, number][] = [];
+	for (let i = 0; i < m; i++) {
+		const [nx, ny] = normal(i);
+		left.push([dense[i][0] + nx * R, dense[i][1] + ny * R]);
+		right.push([dense[i][0] - nx * R, dense[i][1] - ny * R]);
+	}
+	const closed =
+		Math.hypot(...([0, 1].map((k) => dense[0][k] - dense[m - 1][k]) as [number, number])) < R * 0.5;
+	if (closed) {
+		// A closed skeleton's slab is an annulus: outer ring and inner ring, two
+		// separate tubes.
+		left.push(left[0]);
+		right.push(right[0]);
+		return [left, right];
+	}
+	// Open: one stadium — down the left side, around the far cap, back up the
+	// right, around the near cap, home. Each cap is the semicircle that passes
+	// through the stroke's OUTWARD tangent — the other one runs through the body.
+	const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
+	const cap = (at: [number, number], from: [number, number], out: [number, number]) => {
+		const a0 = Math.atan2(from[1] - at[1], from[0] - at[0]);
+		const aOut = Math.atan2(out[1], out[0]);
+		const sweep = wrap(aOut - a0) >= 0 ? Math.PI : -Math.PI;
+		const pts: [number, number][] = [];
+		const steps = Math.max(3, Math.ceil((Math.PI * R) / 1.4));
+		for (let k = 1; k < steps; k++) {
+			const a = a0 + (sweep * k) / steps;
+			pts.push([at[0] + Math.cos(a) * R, at[1] + Math.sin(a) * R]);
+		}
+		return pts;
+	};
+	const outFar: [number, number] = [
+		dense[m - 1][0] - dense[m - 2][0],
+		dense[m - 1][1] - dense[m - 2][1]
+	];
+	const outNear: [number, number] = [dense[0][0] - dense[1][0], dense[0][1] - dense[1][1]];
+	const ring: [number, number][] = [
+		...left,
+		...cap(dense[m - 1], left[m - 1], outFar),
+		...[...right].reverse(),
+		...cap(dense[0], right[0], outNear),
+		left[0]
+	];
+	return [ring];
+}
+
+// One glyph's outline: each stroke's contour, cut where it runs inside a SIBLING
+// stroke's slab — the union's border emerges without polygon booleans, the same
+// coverage-test trick the `opaque` cuts use.
+function outlineGlyph(group: [number, number][][], R: number): [number, number][][] {
+	const out: [number, number][][] = [];
+	for (let gi = 0; gi < group.length; gi++) {
+		const siblings = group.filter((_, i) => i !== gi);
+		for (const loop of contourOf(group[gi], R)) {
+			if (!siblings.length) {
+				out.push(loop);
+				continue;
+			}
+			let run: [number, number][] | null = null;
+			for (const p of loop) {
+				const inside = siblings.some((s) => distToStroke(p[0], p[1], s) < R * 0.98);
+				if (inside) run = null;
+				else if (run) run.push(p);
+				else out.push((run = [p]));
+			}
+		}
+	}
+	// A sliver of contour left at a junction's tangent point is not a tube anyone
+	// would bend — the cut swallows it.
+	const runLen = (r: [number, number][]) =>
+		r.reduce((a, p, k) => (k ? a + Math.hypot(p[0] - r[k - 1][0], p[1] - r[k - 1][1]) : 0), 0);
+	return out.filter((r) => r.length >= 2 && runLen(r) > R * 0.8);
+}
+
 // The outward tangent at a stroke end — where the electrode stub points.
 function endOf(stroke: [number, number][], last: boolean): TubeSection['ends'][number] {
 	const p = stroke[last ? stroke.length - 1 : 0];
@@ -310,6 +447,11 @@ export function layoutTubes(
 ): NeonLayout {
 	const f = resolveFont(font);
 	const crossover = opts.crossover ?? true;
+	const outline = opts.outline ?? false;
+	// Whether THIS section's tube borders its letterform: per line for text, and
+	// art only under the single-flag form.
+	const outlined = (line: number, isArt: boolean): boolean =>
+		Array.isArray(outline) ? !isArt && (outline[line % outline.length] ?? false) : outline;
 	const grouping: TubeGrouping = opts.tubes ?? 'auto';
 	// A wired sign is circuits, and a circuit of one glyph is no circuit — so
 	// crossover resolves the auto grouping to 'word' where a face would default
@@ -331,6 +473,13 @@ export function layoutTubes(
 	// hardware), and every joint in between is glass the invisible painted-out
 	// return hides, not a place to put a stub.
 	const section = (groups: [number, number][][][], line: number, art?: number): TubeSection => {
+		// Outlined glass: the tube is bent around each glyph's slab, and the
+		// letterform's own centrelines move to the skeleton for the face paint.
+		let skeleton: [number, number][][] | undefined;
+		if (outlined(line, art != null)) {
+			skeleton = groups.flat();
+			groups = groups.map((g) => outlineGlyph(g, SLAB_R));
+		}
 		const flat = groups.flat();
 		let ends: TubeSection['ends'];
 		if (flat.length > 1) {
@@ -340,6 +489,7 @@ export function layoutTubes(
 			ends = [endOf(flat[0], false), endOf(flat[0], true)];
 		}
 		const sec: TubeSection = { strokes: flat, ends, line };
+		if (skeleton) sec.skeleton = skeleton;
 		if (art != null) sec.art = art;
 		return sec;
 	};
@@ -426,7 +576,13 @@ export function layoutTubes(
 		];
 		for (const sec of sections) {
 			sec.strokes = sec.strokes.map((s) => s.map(rot));
-			sec.ends = [endOf(sec.strokes[0], false), endOf(sec.strokes[sec.strokes.length - 1], true)];
+			if (sec.skeleton) sec.skeleton = sec.skeleton.map((s) => s.map(rot));
+			// The electrodes are hardware on the glass: they ride the rotation, they
+			// are not re-picked by it.
+			sec.ends = sec.ends.map((e) => {
+				const [x, y] = rot([e.x, e.y]);
+				return { x, y, dx: e.dx * cos - e.dy * sin, dy: e.dx * sin + e.dy * cos };
+			});
 		}
 		// Bounds follow the rotated block box; art keeps anchoring to the untilted one.
 		left = Infinity;
@@ -541,8 +697,12 @@ export function layoutTubes(
 			const applicable = cutBy.filter((f) => j < f.idx);
 			if (!applicable.length) continue;
 			const sec = sections[j];
-			for (const f of applicable)
+			for (const f of applicable) {
 				sec.strokes = sec.strokes.flatMap((s) => cutStroke(s, f.face, BLOCKOUT));
+				// The paint under an outlined tube is cut by the same front face.
+				if (sec.skeleton)
+					sec.skeleton = sec.skeleton.flatMap((s) => cutStroke(s, f.face, BLOCKOUT));
+			}
 			if (!sec.strokes.length) continue;
 			// The routed circuit ends are real hardware wherever the glass got cut —
 			// they only go when the face covers them, and then the end is a

@@ -16,6 +16,17 @@ the pigment itself, and the tubes stop fogging the wall between them.
   value per preset rather than a formula over the lit colour. It is where the invention
   lives: `co2`'s near-white fill inverts into a literal black light, while `gold` inks
   warm and `green` inks green.
+- **neon: `face` + `outline` — the movie-motel letters.** `face` paints each letterform
+  on the panel as a wide slab, an object that catches its own tube's light: the wash
+  follows the section's level and sits brightest beside the glass, so strikes, flicker
+  and the wear arc play across the letter itself. Paint is visible unlit, keyed against
+  the wall, and never as bright as the tube; an absorbing tube gives no light to catch.
+  `outline` bends the tube **around** the letterform instead of along it — a
+  normal-width tube tracing the painted letter's border, counters included (an O really
+  is two tubes), with electrodes, strikes and taps all living on the contour. Both take
+  one value or one per text line, and art pieces carry their own `face`. The gallery's
+  motel show now runs HOTEL as outlined ice tube on painted faces over a bare red NO
+  VACANCY.
 - **neon: circuit wiring — one tube per circuit, the way a sign is bent.** A section's
   strokes join through crossover runs bent back off the face plane and painted out: real
   but invisible, exactly the part of a sign you never see. What shows is the hardware —
@@ -27,7 +38,7 @@ the pigment itself, and the tubes stop fogging the wall between them.
   carries two electrodes, not fourteen — and, a section being the strike/wear unit, a
   word now lights and dies as one tube. `crossover: false` cuts back to channel-letter
   circuits with per-letter strikes (the dying-letter MOT L look). The neon size budget
-  grows 14 → 15 kB for the router and the ink table.
+  grows 14 → 16 kB for the router, the ink table and the outline geometry.
 
 ### Fixed
 
