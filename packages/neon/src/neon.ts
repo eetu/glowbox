@@ -100,6 +100,14 @@ export interface NeonSignOptions {
 	 *  switched NO. An off line stays as unlit glass; switching it back on
 	 *  strikes. Missing entries mean on; art pieces ride the main switch. */
 	lineOn?: boolean[];
+	/** Per-WORD circuits (default: all on), counted across the whole text in
+	 *  reading order — the motel sign proper: HOTEL 0, NO 1, VACANCY 2, and the
+	 *  NO cuts out on its own while VACANCY stays lit. Missing entries mean on;
+	 *  a 'line'-grouped section spans words and follows its first one. */
+	wordOn?: boolean[];
+	/** Per-WORD tube colour, same indexing as `wordOn` (`null` entries inherit
+	 *  the line's colour or the gas) — the red NO riding a blue VACANCY. */
+	wordColor?: (Color | null)[];
 	/** Glow strength 0..1 (default 0.7). */
 	glow?: number;
 	/** Painted letter FACES — the motel-sign pattern: each letterform painted on
@@ -119,6 +127,10 @@ export interface NeonSignOptions {
 	 *  single-flag form only). Best with a `face`, and with text (art corners
 	 *  are not rounded, and a sharp corner offsets poorly). */
 	outline?: boolean | boolean[];
+	/** Per-line glyph scale (default all 1) — the headline pattern: HOTEL twice
+	 *  the size of the NO VACANCY under it. The tube keeps its regular width
+	 *  whatever the letter size; an outlined line's slab scales with it. */
+	lineScale?: number[];
 	/** The unlit tube itself — the glass you see with the power off. Defaults to a
 	 *  neutral grey picked to contrast with the `wall` (light glass on a dark wall,
 	 *  darker glass on a pale one); the gas still tints it on top. */
@@ -294,6 +306,8 @@ export function createNeonSign(
 	}
 	let on = opts.on ?? true;
 	let lineOn = opts.lineOn;
+	let wordOn = opts.wordOn;
+	let wordColor = opts.wordColor;
 	let glow = clamp01(opts.glow ?? 0.7);
 	let glassCol = opts.glass != null ? parseColor(opts.glass) : null;
 	let faceOpt = opts.face ?? undefined;
@@ -306,6 +320,7 @@ export function createNeonSign(
 	let tubes: TubeGrouping = opts.tubes ?? 'auto';
 	let crossover = opts.crossover ?? true;
 	let outline = opts.outline ?? false;
+	let lineScale = opts.lineScale;
 	const outlineKey = (v: NeonSignOptions['outline']) => JSON.stringify(v ?? false);
 	let align = opts.align ?? 'center';
 	let lineSpacing = opts.lineSpacing;
@@ -350,6 +365,7 @@ export function createNeonSign(
 			tubes,
 			crossover,
 			outline,
+			lineScale,
 			align,
 			lineSpacing,
 			letterSpacing,
@@ -381,7 +397,9 @@ export function createNeonSign(
 	const isDead = (i: number) => age >= DIE_AT && i === dying;
 	// A text line whose own circuit is switched off (art rides the main switch).
 	const lineCut = (i: number) =>
-		lay.sections[i].art == null && lineOn?.[lay.sections[i].line] === false;
+		lay.sections[i].art == null &&
+		(lineOn?.[lay.sections[i].line] === false ||
+			(lay.sections[i].word != null && wordOn?.[lay.sections[i].word!] === false));
 	// What the tube should sit at once nothing is in flight.
 	const targetOf = (i: number) =>
 		on && !isDead(i) && camOn[i] && !lineCut(i) && dropRemain <= 0 ? 1 : 0;
@@ -483,6 +501,9 @@ export function createNeonSign(
 			return own != null ? overrideSpec(parseColor(own), base) : base;
 		}
 		const base = GASES[gas];
+		// A word's own paint order beats the line's; both beat the gas.
+		const wc = sec.word != null ? wordColor?.[sec.word] : undefined;
+		if (wc != null) return overrideSpec(parseColor(wc), base);
 		if (colorOpt == null) return base;
 		const single = singleColor(colorOpt);
 		const c =
@@ -611,9 +632,13 @@ export function createNeonSign(
 			// as typography with a tube on it, not as a rim around the glass.
 			const unlitPaint = mix(faceCol, BLACK, paleWall ? 0.16 : 0.74);
 			const litPaint = mix(mix(faceCol, BLACK, 0.3), spec.color, 0.15);
-			g.lineWidth = SLAB_R * 2;
+			// The slab is typography: it scales with its line. Outlined letters are
+			// cut square, matching the border tube's square-cut terminals.
+			g.lineWidth = SLAB_R * 2 * (sec.scale ?? 1);
+			if (sec.skeleton) g.lineCap = 'square';
 			g.strokeStyle = rgba(mix(unlitPaint, litPaint, lvl), 1);
 			g.stroke(p.slab);
+			g.lineCap = 'round';
 			// The wash comes from the GLASS: paint is brightest beside the tube and
 			// falls back to plain paint away from it — so it follows the tube's own
 			// path, which is the border under `outline` and the letterform itself
@@ -1201,6 +1226,13 @@ export function createNeonSign(
 				outline = patch.outline;
 				rebuild = true;
 			}
+			if (
+				patch.lineScale !== undefined &&
+				JSON.stringify(patch.lineScale) !== JSON.stringify(lineScale)
+			) {
+				lineScale = patch.lineScale;
+				rebuild = true;
+			}
 			if (patch.art !== undefined && artKey(patch.art) !== artKey(art)) {
 				// Content compare (the drum-zones precedent): a wrapper re-passing an
 				// equal art list every render must never re-glass the sign.
@@ -1277,11 +1309,16 @@ export function createNeonSign(
 					lastHum = -1;
 				}
 			}
-			if (patch.lineOn !== undefined && JSON.stringify(patch.lineOn) !== JSON.stringify(lineOn)) {
-				// Flipping a line's circuit ON strikes it in; OFF just cuts the discharge.
+			if (
+				(patch.lineOn !== undefined && JSON.stringify(patch.lineOn) !== JSON.stringify(lineOn)) ||
+				(patch.wordOn !== undefined && JSON.stringify(patch.wordOn) !== JSON.stringify(wordOn))
+			) {
+				// Flipping a circuit ON strikes it in; OFF just cuts the discharge —
+				// per line or per word, the switch panel works the same.
 				const was = new Uint8Array(n);
 				for (let i = 0; i < n; i++) was[i] = targetOf(i);
-				lineOn = patch.lineOn;
+				if (patch.lineOn !== undefined) lineOn = patch.lineOn;
+				if (patch.wordOn !== undefined) wordOn = patch.wordOn;
 				if (!reduced && strikeMs > 0) {
 					for (let i = 0; i < n; i++)
 						if (!was[i] && targetOf(i) === 1) {
@@ -1290,6 +1327,13 @@ export function createNeonSign(
 							wait[i] = jit[i] * 0.12;
 						}
 				}
+			}
+			if (
+				patch.wordColor !== undefined &&
+				JSON.stringify(patch.wordColor) !== JSON.stringify(wordColor)
+			) {
+				wordColor = patch.wordColor ?? undefined;
+				redraw = true;
 			}
 			if (patch.label !== undefined) {
 				label = patch.label;

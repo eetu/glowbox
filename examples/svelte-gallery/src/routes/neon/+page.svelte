@@ -115,6 +115,14 @@
 		return NEON_SHOWS[show](s, { text: () => untrack(() => freeText) });
 	});
 
+	// The motel's NO circuit (word 1: HOTEL 0, NO 1, VACANCY 2) — the visitor
+	// fills and empties the motel. The VACANCY never goes out; the NO strikes in
+	// and cuts out beside it while its glass stays on the wall.
+	let vacancyFull = $state(true);
+	$effect(() => {
+		if (show === 'vacancy') sign?.setOptions({ wordOn: [true, vacancyFull, true] });
+	});
+
 	// The text show's live edits: content re-glasses, the tinker options apply on top.
 	$effect(() => {
 		if (show === 'text') sign?.setText(freeText);
@@ -212,6 +220,15 @@
 				<X size={18} />
 			</button>
 		</div>
+
+		{#if show === 'vacancy'}
+			<section>
+				<h2>show</h2>
+				<div class="row">
+					<ToggleChip bind:checked={vacancyFull} label="hotel full" />
+				</div>
+			</section>
+		{/if}
 
 		{#if show === 'text'}
 			<section>

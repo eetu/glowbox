@@ -170,40 +170,43 @@ to steady, snaps strikes, and disables flicker/tired.
 
 ## Options
 
-| option          | default       | notes                                                                          |
-| --------------- | ------------- | ------------------------------------------------------------------------------ |
-| `text`          | `''`          | `'\n'` splits lines                                                            |
-| `font`          | `'script'`    | `'script'` \| `'sans'` \| custom `NeonFont`                                    |
-| `art`           | —             | single-stroke pieces behind/beside the text (see Artwork)                      |
-| `gas`           | `'neon'`      | what's in the glass (colour, ink, hot core, dead-glass tint)                   |
-| `color`         | —             | override: one colour or one per line; the ink when absorbing                   |
-| `wall`          | per polarity  | behind the sign; `null` = transparent canvas                                   |
-| `polarity`      | `'emit'`      | `'absorb'` = the invented dark discharge; a named colour is the ink            |
-| `on`            | `true`        | off is not blank — the unlit glass stays visible                               |
-| `lineOn`        | all on        | per-line circuits (the motel sign's separately switched NO)                    |
-| `glow`          | `0.7`         | halation strength                                                              |
-| `face`          | —             | painted letter slabs under the tubes, lit by their own circuit; one per line   |
-| `outline`       | `false`       | bend the tube around the letterform (the HOTEL border); one flag or per line   |
-| `glass`         | vs the wall   | the unlit tube (the gas still tints it)                                        |
-| `electrode`     | vs the wall   | the metal end caps: near-black on a dark wall, mid-grey on a pale one          |
-| `crossover`     | `true`        | how much glass shares one circuit: word-wired; `false` = channel letters       |
-| `age`           | `0`           | wear 0..1: dimming → flickering tube → dead glass                              |
-| `flicker`       | `0`           | electrical instability: sparse scheduled dips                                  |
-| `tired`         | `false`       | failing transformer: whole-sign dropouts + re-strikes                          |
-| `program`       | `'steady'`    | the flasher cam (rate-capped)                                                  |
-| `speed`         | `1`           | cam rate multiplier (the cap always wins)                                      |
-| `tubes`         | `'auto'`      | sectioning: per word when wired, sans→glyph when cut; or `glyph`/`word`/`line` |
-| `align`         | `'center'`    | per-line alignment                                                             |
-| `lineSpacing`   | `1.1`         | baseline advance × the face's ascent+descent                                   |
-| `letterSpacing` | `0`           | extra tracking (fraction of cap height); breaks script joins                   |
-| `tilt`          | `0`           | text block tilt, degrees (negative rises left-to-right)                        |
-| `padding`       | `0.08`        | canvas margin fraction                                                         |
-| `strikeMs`      | `900`         | one tube's strike (0 = instant; forced by reduced motion)                      |
-| `sound`         | off           | `true` (= 0.5) or `0..1` — the hum that follows the glass                      |
-| `mains`         | `50`          | 50/60 Hz — the hum's fundamental is twice this                                 |
-| `theme`         | `'dark'`      | `'light'` / `'auto'` bundle the colour defaults (see Themes)                   |
-| `pixelRatio`    | `2`           | cap on devicePixelRatio                                                        |
-| `label`         | `'neon sign'` | `aria-label`; the shown text is appended; `''` hides                           |
+| option          | default       | notes                                                                               |
+| --------------- | ------------- | ----------------------------------------------------------------------------------- |
+| `text`          | `''`          | `'\n'` splits lines                                                                 |
+| `font`          | `'script'`    | `'script'` \| `'sans'` \| custom `NeonFont`                                         |
+| `art`           | —             | single-stroke pieces behind/beside the text (see Artwork)                           |
+| `gas`           | `'neon'`      | what's in the glass (colour, ink, hot core, dead-glass tint)                        |
+| `color`         | —             | override: one colour or one per line; the ink when absorbing                        |
+| `wall`          | per polarity  | behind the sign; `null` = transparent canvas                                        |
+| `polarity`      | `'emit'`      | `'absorb'` = the invented dark discharge; a named colour is the ink                 |
+| `on`            | `true`        | off is not blank — the unlit glass stays visible                                    |
+| `lineOn`        | all on        | per-line circuits                                                                   |
+| `wordOn`        | all on        | per-word circuits: HOTEL 0, NO 1, VACANCY 2 — the NO cuts out on its own            |
+| `wordColor`     | —             | per-word tube colour (`null` inherits the line/gas): the red NO on blue VACANCY     |
+| `glow`          | `0.7`         | halation strength                                                                   |
+| `face`          | —             | painted letter slabs under the tubes, lit by their own circuit; one per line        |
+| `outline`       | `false`       | bend the tube around the letterform (the HOTEL border); one flag or per line        |
+| `lineScale`     | all 1         | per-line glyph scale (the headline HOTEL at twice the NO VACANCY); tube width holds |
+| `glass`         | vs the wall   | the unlit tube (the gas still tints it)                                             |
+| `electrode`     | vs the wall   | the metal end caps: near-black on a dark wall, mid-grey on a pale one               |
+| `crossover`     | `true`        | how much glass shares one circuit: word-wired; `false` = channel letters            |
+| `age`           | `0`           | wear 0..1: dimming → flickering tube → dead glass                                   |
+| `flicker`       | `0`           | electrical instability: sparse scheduled dips                                       |
+| `tired`         | `false`       | failing transformer: whole-sign dropouts + re-strikes                               |
+| `program`       | `'steady'`    | the flasher cam (rate-capped)                                                       |
+| `speed`         | `1`           | cam rate multiplier (the cap always wins)                                           |
+| `tubes`         | `'auto'`      | sectioning: per word when wired, sans→glyph when cut; or `glyph`/`word`/`line`      |
+| `align`         | `'center'`    | per-line alignment                                                                  |
+| `lineSpacing`   | `1.1`         | baseline advance × the face's ascent+descent                                        |
+| `letterSpacing` | `0`           | extra tracking (fraction of cap height); breaks script joins                        |
+| `tilt`          | `0`           | text block tilt, degrees (negative rises left-to-right)                             |
+| `padding`       | `0.08`        | canvas margin fraction                                                              |
+| `strikeMs`      | `900`         | one tube's strike (0 = instant; forced by reduced motion)                           |
+| `sound`         | off           | `true` (= 0.5) or `0..1` — the hum that follows the glass                           |
+| `mains`         | `50`          | 50/60 Hz — the hum's fundamental is twice this                                      |
+| `theme`         | `'dark'`      | `'light'` / `'auto'` bundle the colour defaults (see Themes)                        |
+| `pixelRatio`    | `2`           | cap on devicePixelRatio                                                             |
+| `label`         | `'neon sign'` | `aria-label`; the shown text is appended; `''` hides                                |
 
 All options update live via `setOptions(patch)`. API: `setText(text)` (a
 change **re-glasses and strikes on**), `power(on)` (the wall switch),
@@ -230,6 +233,15 @@ well). `crossover: false` cuts back to channel-letter circuits — per-letter
 tubes with their own pairs, per-letter strikes and per-letter wear (the
 classic dying-letter MOT L needs this, since a wired word lights and dies as
 one tube).
+
+The switch panel matches: `lineOn` cuts whole lines, and `wordOn`/`wordColor`
+address WORDS, counted across the text in reading order — the motel sign
+proper, where the red NO (`wordColor: [null, '#ff3b30', null]`) strikes in and
+out on its own circuit (`wordOn: [true, full, true]`) while the blue VACANCY
+beside it never goes out. Cut glass stays on the wall; switching a circuit
+back on strikes it. `lineScale` sizes the typography per line — the headline
+HOTEL at twice the NO VACANCY under it — while the tube keeps its regular
+width whatever the letter size.
 
 ## Painted faces & outlined letters
 

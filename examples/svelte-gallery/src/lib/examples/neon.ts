@@ -219,34 +219,33 @@ const makeRick: NeonShowFn = (sign) => {
 	};
 };
 
-/** The movie motel: HOTEL up top in ice tubes riding painted white letter
- *  faces — the paint catches its own tube's light, so the sign's flicker and
- *  wear play across the letters, not just the glass — and NO VACANCY below in
- *  bare gold tube. Per-glyph circuits keep the dying-letter arc, and the NO
- *  VACANCY line rides its own switch (`lineOn`): the motel fills and empties,
- *  the line strikes in and cuts out while its glass stays on the wall. */
+/** The movie motel: HOTEL up top at twice the size — painted square-cut letter
+ *  faces with an ice tube bent around their borders, the paint catching its own
+ *  tube's light so the sign's flicker and wear play across the letters, not
+ *  just the glass — VACANCY below in bare ice-blue tube, and the red NO on its
+ *  own circuit (`wordOn`), owned by the page's toggle: the visitor fills the
+ *  motel and the NO strikes in beside the VACANCY that never goes out, its
+ *  glass staying on the wall either way. Per-glyph circuits keep the
+ *  dying-letter arc. */
 const makeVacancy: NeonShowFn = (sign) => {
 	sign.setOptions({
 		...BASE,
 		font: 'sans',
 		tubes: 'glyph',
-		color: ['#dceeff', '#ff3b30'],
+		color: ['#dceeff', '#7cd5ff'],
+		wordColor: [null, '#ff3b30', null],
 		face: ['#e8e4da', null],
 		outline: [true, false],
+		lineScale: [2, 1],
 		age: 0.82,
 		flicker: 0.2,
-		lineSpacing: 1.45,
+		lineSpacing: 1.1,
 		// Outlined letters are wider than their skeletons — space them like the
 		// panel cutter would.
 		letterSpacing: 0.32
 	});
 	sign.setText('HOTEL\nNO VACANCY');
-	let full = true;
-	const timer = setInterval(() => {
-		full = !full;
-		sign.setOptions({ lineOn: [true, full] });
-	}, 6000);
-	return () => clearInterval(timer);
+	return () => undefined;
 };
 
 /** The dice sign: two nib-authored dice flanking the word — each die its own
@@ -279,9 +278,18 @@ const makeOpen: NeonShowFn = (sign) => {
 	return () => sign.setOptions({ art: [] });
 };
 
-/** The chase marquee: gold block letters, a dark slot running the line. */
+/** The chase marquee: gold block letters, a dark slot running the line — which
+ *  needs a section per LETTER, so this sign is built as channel letters rather
+ *  than word circuits. */
 const makeMarquee: NeonShowFn = (sign) => {
-	sign.setOptions({ ...BASE, font: 'sans', gas: 'gold', program: 'chase', speed: 1.3 });
+	sign.setOptions({
+		...BASE,
+		font: 'sans',
+		gas: 'gold',
+		program: 'chase',
+		speed: 1.3,
+		tubes: 'glyph'
+	});
 	sign.setText('LIVE MUSIC');
 	return () => undefined;
 };

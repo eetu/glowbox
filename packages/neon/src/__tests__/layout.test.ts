@@ -309,7 +309,9 @@ test('outline: the tube borders the slab, the skeleton stays for the paint', () 
 				Infinity
 			);
 			expect(d).toBeGreaterThan(2.5);
-			expect(d).toBeLessThan(3.7);
+			// The sides run at the slab radius; a square-cut terminal's corners
+			// reach out to R·√2 before their fillet.
+			expect(d).toBeLessThan(3.1 * Math.SQRT2 + 0.1);
 		}
 	// An O's slab is an annulus — the outer ring and the counter, two tubes.
 	const o = layoutTubes('O', 'sans', { outline: true }).sections[0];
@@ -329,6 +331,36 @@ const segDist = (px: number, py: number, a: [number, number], b: [number, number
 	);
 	return Math.hypot(a[0] + t * dx - px, a[1] + t * dy - py);
 };
+
+test('words are circuits: counted across the text, whatever the grouping', () => {
+	// HOTEL 0, NO 1, VACANCY 2 — the motel switch panel's own indexing.
+	const wired = layoutTubes('HOTEL\nNO VACANCY', 'sans');
+	expect(wired.sections.map((s) => s.word)).toEqual([0, 1, 2]);
+	// Per-glyph sections carry their word too, so the NO's letters cut together.
+	const glyphs = layoutTubes('HOTEL\nNO VACANCY', 'sans', { tubes: 'glyph' });
+	expect(glyphs.sections.filter((s) => s.word === 1).length).toBe(2);
+	expect(glyphs.sections.filter((s) => s.word === 2).length).toBe(7);
+	// Art carries no word — it rides the main switch.
+	const art = layoutTubes('HI', 'sans', { art: [{ d: 'M0 0L10 0' }] });
+	expect(art.sections.find((s) => s.art != null)?.word).toBeUndefined();
+});
+
+test('lineScale: the headline line grows, the tube-width constant does not exist here', () => {
+	const plain = layoutTubes('HOTEL\nNO VACANCY', 'sans');
+	const scaled = layoutTubes('HOTEL\nNO VACANCY', 'sans', { lineScale: [2, 1] });
+	const lineW = (l: NeonLayout, li: number) => {
+		const xs = l.sections.filter((s) => s.line === li).flatMap((s) => s.strokes.flat());
+		return Math.max(...xs.map(([x]) => x)) - Math.min(...xs.map(([x]) => x));
+	};
+	// The scaled line doubles; the other holds; the block grows between them.
+	expect(lineW(scaled, 0) / lineW(plain, 0)).toBeCloseTo(2, 1);
+	expect(lineW(scaled, 1)).toBeCloseTo(lineW(plain, 1), 1);
+	expect(scaled.top).toBeCloseTo(plain.top * 2, 1);
+	expect(scaled.height).toBeGreaterThan(plain.height);
+	// The scale rides the section for the slab paint.
+	expect(scaled.sections[0].scale).toBe(2);
+	expect(scaled.sections[1].scale).toBeUndefined();
+});
 
 test('electrodes sit where the bender starts and finishes, not where the data does', () => {
 	// Three collinear runs handed middle-first: font/author order would put an

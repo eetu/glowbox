@@ -23,6 +23,9 @@ export interface TubeSection {
 	/** Under `outline`: the letterform's own centrelines — what the painted
 	 *  `face` slab is stroked from, kept because the tube no longer runs there. */
 	skeleton?: [number, number][][];
+	/** The line's glyph scale when it differs from 1 (`lineScale`) — the slab
+	 *  paint is typography and follows it; the tube's width never does. */
+	scale?: number;
 	/** The electrode pair: the CIRCUIT's two free ends — the routed bent tube's
 	 *  start and finish, each with an outward unit direction for the electrode
 	 *  stub. The strokes between them join through invisible painted-out returns
@@ -30,6 +33,10 @@ export interface TubeSection {
 	ends: { x: number; y: number; dx: number; dy: number }[];
 	/** 0-based text line the section sits on — per-line colours key off this. */
 	line: number;
+	/** 0-based WORD the section belongs to, counted across the whole text in
+	 *  reading order — the motel sign's own circuit unit: `wordOn` switches it,
+	 *  `wordColor` paints it. Absent on art sections. */
+	word?: number;
 	/** Index into the sign's `art` list when this section is artwork, not text. */
 	art?: number;
 }
@@ -106,6 +113,10 @@ export interface LayoutOptions {
 	 *  tube tracing its edge. One flag, or one per text line (art follows the
 	 *  single-flag form only). */
 	outline?: boolean | boolean[];
+	/** Per-line glyph scale (default all 1) — the headline pattern: HOTEL twice
+	 *  the size of the NO VACANCY under it. The tube keeps its regular width
+	 *  whatever the letter size; an outlined line's slab scales with it. */
+	lineScale?: number[];
 	/** Per-line alignment (default 'center' — signs centre). */
 	align?: 'left' | 'center' | 'right';
 	/** Baseline-to-baseline advance as a multiple of the face's ascent+descent
@@ -361,34 +372,40 @@ function contourOf(stroke: [number, number][], R: number): [number, number][][] 
 		right.push(right[0]);
 		return [left, right];
 	}
-	// Open: one stadium — down the left side, around the far cap, back up the
-	// right, around the near cap, home. Each cap is the semicircle that passes
-	// through the stroke's OUTWARD tangent — the other one runs through the body.
-	const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
-	const cap = (at: [number, number], from: [number, number], out: [number, number]) => {
-		const a0 = Math.atan2(from[1] - at[1], from[0] - at[0]);
-		const aOut = Math.atan2(out[1], out[0]);
-		const sweep = wrap(aOut - a0) >= 0 ? Math.PI : -Math.PI;
-		const pts: [number, number][] = [];
-		const steps = Math.max(3, Math.ceil((Math.PI * R) / 1.4));
-		for (let k = 1; k < steps; k++) {
-			const a = a0 + (sweep * k) / steps;
-			pts.push([at[0] + Math.cos(a) * R, at[1] + Math.sin(a) * R]);
-		}
-		return pts;
+	// Open: one stadium with SQUARE-CUT ends — down the left side, around the far
+	// cap's two corners, back up the right, around the near cap, home. Panel
+	// letters are cut square, so the border tube turns two crisp corners at each
+	// terminal instead of a semicircular bulge; the small fillet below is the
+	// glass bend a corner really gets.
+	const cap = (
+		at: [number, number],
+		out: [number, number],
+		a: [number, number],
+		b: [number, number]
+	) => {
+		const d = Math.hypot(out[0], out[1]) || 1;
+		const tx = (out[0] / d) * R;
+		const ty = (out[1] / d) * R;
+		return [
+			[a[0] + tx, a[1] + ty],
+			[b[0] + tx, b[1] + ty]
+		] as [number, number][];
 	};
 	const outFar: [number, number] = [
 		dense[m - 1][0] - dense[m - 2][0],
 		dense[m - 1][1] - dense[m - 2][1]
 	];
 	const outNear: [number, number] = [dense[0][0] - dense[1][0], dense[0][1] - dense[1][1]];
-	const ring: [number, number][] = [
-		...left,
-		...cap(dense[m - 1], left[m - 1], outFar),
-		...[...right].reverse(),
-		...cap(dense[0], right[0], outNear),
-		left[0]
-	];
+	const ring: [number, number][] = roundCorners(
+		[
+			...left,
+			...cap(dense[m - 1], outFar, left[m - 1], right[m - 1]),
+			...[...right].reverse(),
+			...cap(dense[0], outNear, right[0], left[0]),
+			left[0]
+		],
+		R * 0.45
+	);
 	return [ring];
 }
 
@@ -458,7 +475,7 @@ export function layoutTubes(
 	// to per-glyph tubes. Naming `tubes` yourself still wins.
 	const group = grouping === 'auto' ? (crossover ? 'word' : (f.grouping ?? 'glyph')) : grouping;
 	const align = opts.align ?? 'center';
-	const advance = (f.ascent + f.descent) * Math.max(0.5, opts.lineSpacing ?? 1.1);
+	const spacing = Math.max(0.5, opts.lineSpacing ?? 1.1);
 	const track = (opts.letterSpacing ?? 0) * f.capHeight;
 	// The bend radius: generous enough to read as glass at any size, small enough
 	// to keep counters open — scaled to the face so custom fonts bend in proportion.
@@ -466,19 +483,38 @@ export function layoutTubes(
 
 	const lines = text.split(/\r?\n/);
 	const sections: TubeSection[] = [];
+	// The headline pattern: per-line glyph scale — HOTEL twice the size of the NO
+	// VACANCY under it. The tube stays its regular width (glass is glass whatever
+	// the letter), so a scaled line simply carries more letter per tube.
+	const scaleOf = (li: number): number => {
+		const s = opts.lineScale?.[li % Math.max(1, opts.lineScale?.length ?? 1)] ?? 1;
+		return s > 0 ? s : 1;
+	};
+	// Baselines advance by what actually sits between them: the upper line's
+	// descent and the lower line's ascent, each at its own size.
+	const baseYs: number[] = [0];
+	for (let li = 1; li < lines.length; li++)
+		baseYs.push(baseYs[li - 1] + (f.descent * scaleOf(li - 1) + f.ascent * scaleOf(li)) * spacing);
 
 	// One section = one circuit = one bent tube, whatever `crossover` grouped into
 	// it — so its electrode pair ALWAYS sits on the routed run's two free ends
 	// (stroke data arrives in font/author order, which is no place to hang
 	// hardware), and every joint in between is glass the invisible painted-out
 	// return hides, not a place to put a stub.
-	const section = (groups: [number, number][][][], line: number, art?: number): TubeSection => {
+	const section = (
+		groups: [number, number][][][],
+		line: number,
+		word?: number,
+		art?: number
+	): TubeSection => {
 		// Outlined glass: the tube is bent around each glyph's slab, and the
 		// letterform's own centrelines move to the skeleton for the face paint.
+		// The slab is typography, so it scales with its line.
 		let skeleton: [number, number][][] | undefined;
+		const s = art != null ? 1 : scaleOf(line);
 		if (outlined(line, art != null)) {
 			skeleton = groups.flat();
-			groups = groups.map((g) => outlineGlyph(g, SLAB_R));
+			groups = groups.map((g) => outlineGlyph(g, SLAB_R * s));
 		}
 		const flat = groups.flat();
 		let ends: TubeSection['ends'];
@@ -490,12 +526,14 @@ export function layoutTubes(
 		}
 		const sec: TubeSection = { strokes: flat, ends, line };
 		if (skeleton) sec.skeleton = skeleton;
+		if (s !== 1) sec.scale = s;
+		if (word != null) sec.word = word;
 		if (art != null) sec.art = art;
 		return sec;
 	};
 
 	// Measure first (alignment needs the widest line), then place.
-	const measure = (line: string): number => {
+	const measure = (line: string, s: number): number => {
 		let wsum = 0;
 		let n = 0;
 		for (const ch of line) {
@@ -504,24 +542,37 @@ export function layoutTubes(
 			wsum += g.adv;
 			n++;
 		}
-		return wsum + Math.max(0, n - 1) * track;
+		return (wsum + Math.max(0, n - 1) * track) * s;
 	};
-	const widths = lines.map(measure);
+	const widths = lines.map((line, li) => measure(line, scaleOf(li)));
 	const width = Math.max(0, ...widths);
 
+	// Words count across the whole text in reading order — HOTEL 0, NO 1,
+	// VACANCY 2 — so `wordOn`/`wordColor` address the motel's own circuit unit.
+	// A 'line' section spans words and takes its first one's index.
+	let wordIdx = 0;
+	let inWord = false;
+	const endWord = () => {
+		if (inWord) {
+			wordIdx++;
+			inWord = false;
+		}
+	};
 	for (let li = 0; li < lines.length; li++) {
-		const baseY = li * advance;
+		const baseY = baseYs[li];
+		const s = scaleOf(li);
 		let x =
 			align === 'left' ? 0 : align === 'right' ? width - widths[li] : (width - widths[li]) / 2;
 		// A pending section accumulates glyphs — one group of strokes each, in
 		// reading order — until the grouping closes it.
 		let open: [number, number][][][] | null = null;
+		let openWord = 0;
 		const close = () => {
 			if (!open || !open.length) {
 				open = null;
 				return;
 			}
-			sections.push(section(open, li));
+			sections.push(section(open, li, openWord));
 			open = null;
 		};
 		for (const ch of lines[li]) {
@@ -536,28 +587,32 @@ export function layoutTubes(
 				continue;
 			}
 			if (g.strokes.length === 0) {
-				// A space: no glass — and the word gap, so 'word' grouping closes here.
+				// A space: no glass — the word gap, so 'word' grouping closes here.
 				if (group === 'word') close();
+				endWord();
 			} else {
-				const placed = g.strokes.map((s) =>
+				const placed = g.strokes.map((st) =>
 					roundCorners(
-						s.map(([gx, gy]) => [gx + x, gy + baseY] as [number, number]),
-						bendR
+						st.map(([gx, gy]) => [gx * s + x, gy * s + baseY] as [number, number]),
+						bendR * s
 					)
 				);
+				if (!inWord) inWord = true;
 				if (group === 'glyph') {
-					sections.push(section([placed], li));
+					sections.push(section([placed], li, wordIdx));
 				} else {
+					if (!open) openWord = wordIdx;
 					(open ??= []).push(placed);
 				}
 			}
-			x += g.adv + track;
+			x += (g.adv + track) * s;
 		}
 		close(); // 'word' flushes the last word; 'line' flushes the whole line
+		endWord();
 	}
 
-	const blockTop = -f.ascent;
-	const blockH = Math.max(0, lines.length - 1) * advance + f.ascent + f.descent;
+	const blockTop = -f.ascent * scaleOf(0);
+	const blockH = baseYs[baseYs.length - 1] + f.descent * scaleOf(lines.length - 1) - blockTop;
 	let left = 0;
 	let right = width;
 	let topAll = blockTop;
@@ -668,7 +723,7 @@ export function layoutTubes(
 				botAll = Math.max(botAll, y);
 			}
 		// A piece has no baseline to run a rail under, so its crossovers hop direct.
-		const mk = (strokes: [number, number][][]): TubeSection => section([strokes], 0, ai);
+		const mk = (strokes: [number, number][][]): TubeSection => section([strokes], 0, undefined, ai);
 		const secs = a.tubes === 'path' ? placed.map((s) => mk([s])) : [mk(placed)];
 		// Z-order = section order = 'reveal' strike order: backdrop pieces first
 		// (the border ring lights, then the word), side pieces after the text.

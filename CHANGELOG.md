@@ -27,6 +27,15 @@ the pigment itself, and the tubes stop fogging the wall between them.
   one value or one per text line, and art pieces carry their own `face`. The gallery's
   motel show now runs HOTEL as outlined ice tube on painted faces over a bare red NO
   VACANCY.
+- **neon: the word channel — `wordOn`, `wordColor`, `lineScale`.** Words are circuits
+  under the default wiring, so the switch panel now reaches them: words count across
+  the text in reading order (HOTEL 0, NO 1, VACANCY 2), `wordOn` cuts one to unlit
+  glass and strikes it back like `lineOn` does a line, and `wordColor` paints one
+  (`null` inherits the line or the gas) — the motel sign proper, a red NO striking in
+  beside a blue VACANCY that never goes out. `lineScale` sizes the typography per line
+  (the headline HOTEL at twice the NO VACANCY beneath it) while the tube keeps its
+  regular width, and an outlined line's slab scales with its letters. The gallery's
+  motel show wires all of it to a "hotel full" toggle.
 - **neon: circuit wiring — one tube per circuit, the way a sign is bent.** A section's
   strokes join through crossover runs bent back off the face plane and painted out: real
   but invisible, exactly the part of a sign you never see. What shows is the hardware —
