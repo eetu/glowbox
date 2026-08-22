@@ -90,7 +90,9 @@ black discs on a bone panel, or a bone strip printed in near-black.
 
 **neon** cannot — a bloom has nothing to read against on white — so it switches to
 `polarity: 'absorb'`: the tubes **ink** a pale wall instead of lighting a dark one,
-halation, hot core and all. It is the one invented element in the family.
+halation, hot core and all. It is the one invented element in the family. Each gas
+carries its own ink, and a colour you name is the pigment — so a pale tube inks
+faintly and a saturated one deeply, the same way round as it reads lit.
 
 ![The @glowbox/vfd demo in its light theme: a brushed-silver faceplate around two dark glass windows, green segments and a spectrum analyser inside, in a light room](media/vfd-light.png)
 

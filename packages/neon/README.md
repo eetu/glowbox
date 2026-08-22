@@ -116,7 +116,9 @@ medium is named for), `'argon'` (pale blue), `'helium'`, `'co2'`, and the
 phosphor-coated `'green'` / `'gold'` / `'rose'` (visibly painted even off).
 `color` overrides the lit colour — a single colour or **one per text line**
 (the NO / VACANCY pattern) — while the gas keeps shaping the core and the
-unlit glass. Patch `color: null` to go back to the gas.
+unlit glass. Patch `color: null` to go back to the gas. Under
+`polarity: 'absorb'` a gas discharges its own **ink** and a colour you name **is**
+the pigment — see below.
 
 ## The light-theme answer: an element that shines dark
 
@@ -130,9 +132,21 @@ surface — halation, hot core, arcing electrodes and all, just inverted.
 createNeonSign(canvas, { text: 'dice', polarity: 'absorb' }); // wall defaults pale
 ```
 
-Gas colours still apply, taken down toward black as ink — so a `co2` white
-tube inverts into a literal black light. An unnamed `wall` follows the
-polarity (near-black when emitting, near-white when absorbing). The
+Colours still come from `gas` and `color`, under two rules. Each **gas** carries
+its own ink — that is where the invention lives, and it is why a `co2` white tube
+inverts into a literal black light. A **colour you name** is the pigment itself,
+so its lightness means the same thing inking as it does lit: a pale tube lays down
+a faint mark, a saturated one a deep one, and two tubes of different lightness stay
+two tubes. That is what a gauge needs — a quiet track ring under a bright meter arc
+reads as one instrument in both themes, with one set of colours.
+
+The hot core is a **second coat** of the same pigment rather than a march to
+neutral black, so a green tube inks green at its very centre; and ink bleeds
+tighter than light blooms, because a pigment sits in the surface while light
+scatters on its way through the air. An unnamed `wall` follows the polarity
+(near-black when emitting, near-white when absorbing); `wall: null` under absorb
+assumes a **pale backdrop**, since a multiply with nothing behind it treats the
+missing surface as white. The
 non-luminous parts key off the **wall** rather than the polarity, because glass
 and metal are just objects on a surface and what they need is contrast with it:
 `glass` (the unlit tube) and `electrode` (the metal end caps) default light on a
@@ -161,10 +175,10 @@ to steady, snaps strikes, and disables flicker/tired.
 | `text`          | `''`          | `'\n'` splits lines                                                   |
 | `font`          | `'script'`    | `'script'` \| `'sans'` \| custom `NeonFont`                           |
 | `art`           | —             | single-stroke pieces behind/beside the text (see Artwork)             |
-| `gas`           | `'neon'`      | what's in the glass (colour, hot core, dead-glass tint)               |
-| `color`         | —             | override: one colour or one per line; `null` clears                   |
+| `gas`           | `'neon'`      | what's in the glass (colour, ink, hot core, dead-glass tint)          |
+| `color`         | —             | override: one colour or one per line; the ink when absorbing          |
 | `wall`          | per polarity  | behind the sign; `null` = transparent canvas                          |
-| `polarity`      | `'emit'`      | `'absorb'` = the invented dark discharge (light-theme signs)          |
+| `polarity`      | `'emit'`      | `'absorb'` = the invented dark discharge; a named colour is the ink   |
 | `on`            | `true`        | off is not blank — the unlit glass stays visible                      |
 | `lineOn`        | all on        | per-line circuits (the motel sign's separately switched NO)           |
 | `glow`          | `0.7`         | halation strength                                                     |

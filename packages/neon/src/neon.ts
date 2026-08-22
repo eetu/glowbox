@@ -12,6 +12,11 @@
 //   • `polarity: 'absorb'` is the one INVENTED part: an element whose discharge
 //     runs dark, inking a pale wall instead of lighting a dark one — the same
 //     ramp multiplied in rather than added, so neon can live in a light theme.
+//     Each `gas` carries its own ink (that's where a near-white fill inverts into
+//     a black light) while a colour you NAME is the pigment itself, so a pale tube
+//     inks faintly and a saturated one deeply — two tubes stay two tubes either
+//     way round. Ink bleeds tighter than light blooms, and the hot core is a
+//     second coat of the same pigment rather than a march to neutral black.
 //   • A strike is a SEQUENCE, not a fade-in: the electrodes arc while the tube
 //     stays dark, ignition takes with a few partial pops, overshoots white-hot and
 //     settles. Turn-off is near-instant — the discharge just stops.
@@ -29,7 +34,7 @@
 // under node/SSR (no browser globals at module scope; Path2D built lazily).
 import { type Color, parseColor, type RGB } from './color';
 import { type NeonFont } from './font';
-import { GASES, type GasName, type GasSpec } from './gas';
+import { GASES, type GasName, type GasSpec, pigment } from './gas';
 import {
 	layoutTubes,
 	type NeonArt,
@@ -61,11 +66,13 @@ export interface NeonSignOptions {
 	 *  first under 'reveal'. See `NeonArt`. */
 	art?: NeonArt[];
 	/** Tube colour, or one per text line. Overrides the `gas` preset's colour;
-	 *  the preset still shapes the hot core and dead glass. Patch `null` to clear
-	 *  back to the gas colour. */
+	 *  the preset still shapes the hot core and dead glass. Under
+	 *  `polarity: 'absorb'` the colour you name IS the ink, so its lightness reads
+	 *  the same way round as it does lit: pale inks faintly, saturated inks deep.
+	 *  Patch `null` to clear back to the gas colour. */
 	color?: Color | Color[] | null;
 	/** What's in the glass (default 'neon' — the red-orange): picks the lit
-	 *  colour, the hot-core whiteness and the unlit tint. */
+	 *  colour, the absorbed ink, the hot-core whiteness and the unlit tint. */
 	gas?: GasName;
 	/** Colour bundle: `'dark'` (default — lit tubes on a near-black wall),
 	 *  `'light'` (`polarity: 'absorb'` on a near-white wall: the tubes ink a pale
@@ -82,8 +89,9 @@ export interface NeonSignOptions {
 	 *  multiplied into the surface rather than added to it. No such gas exists;
 	 *  that's the joke, and it's the honest way to put a neon sign on a pale wall
 	 *  (a bloom cannot read against white — the light-theme answer). Colours still
-	 *  come from `gas`/`color`, darkened into ink: a white tube inverts into a
-	 *  literal black light. */
+	 *  come from `gas`/`color` under two rules: a `gas` discharges its own ink,
+	 *  which is where a near-white fill inverts into a literal black light, and a
+	 *  `color` you name is the pigment itself, so lightness keeps its meaning. */
 	polarity?: 'emit' | 'absorb';
 	/** Power (default true). Off is not blank: the unlit glass stays visible. */
 	on?: boolean;
@@ -405,8 +413,12 @@ export function createNeonSign(
 	// A section's tube spec: gas preset colours, or a `color` override riding the
 	// preset's core/coating character. Art carries its own gas/colour; without one
 	// it follows the sign's gas or single-colour override — never a per-line array.
+	// A named colour is also the ink it lays down when absorbing: the preset's own
+	// ink is an invented inversion, but a colour the caller picked means what it
+	// looks like, so the pale-vs-saturated ordering survives the polarity flip.
 	const overrideSpec = (c: RGB, base: GasSpec): GasSpec => ({
 		color: c,
+		ink: pigment(c),
 		core: base.core,
 		unlit: mix(c, [0.5, 0.5, 0.55], 0.55),
 		coated: base.coated
@@ -525,10 +537,13 @@ export function createNeonSign(
 			// that still shines gold.
 			const emit =
 				((sec.art != null ? art?.[sec.art]?.polarity : undefined) ?? polarity) === 'emit';
-			const core = emit ? WHITE : BLACK;
-			// The ink an absorbing tube discharges: the gas colour taken down toward
-			// black, so a white tube really does shine black.
-			const gasCol = emit ? spec.color : mix(spec.color, BLACK, 0.5);
+			// What the tube discharges: its light, or its ink — the gas's own pigment
+			// (a near-white fill inverts to black) or the colour the caller named.
+			const gasCol = emit ? spec.color : spec.ink;
+			// Emitted light overshoots toward white at the centre of the tube; ink
+			// just gets denser, and a second coat of a pigment multiplies through
+			// itself. Squaring keeps the hue that a march to neutral black would lose.
+			const core: RGB = emit ? WHITE : [gasCol[0] ** 2, gasCol[1] ** 2, gasCol[2] ** 2];
 
 			// The glass itself — always there, lit or not. Coated tubes show their
 			// paint; clear ones pale glass with a hint of the gas. On a pale wall the
@@ -536,14 +551,14 @@ export function createNeonSign(
 			if (!(micro && lvl > 0.5)) {
 				g.shadowBlur = 0;
 				g.strokeStyle = rgba(
-					glassCol ?? (paleWall ? [0.29, 0.3, 0.33] : [0.62, 0.64, 0.69]),
-					paleWall ? 0.13 : 0.1
+					glassCol ?? (paleWall ? [0.26, 0.27, 0.3] : [0.62, 0.64, 0.69]),
+					paleWall ? 0.24 : 0.1
 				);
 				g.lineWidth = T * 1.25;
 				g.stroke(p);
 				g.strokeStyle = rgba(
-					emit ? spec.unlit : mix(spec.unlit, BLACK, 0.35),
-					spec.coated ? 0.22 : 0.11
+					paleWall ? mix(spec.unlit, BLACK, 0.35) : spec.unlit,
+					spec.coated ? (paleWall ? 0.3 : 0.22) : paleWall ? 0.17 : 0.11
 				);
 				g.lineWidth = T * 0.95;
 				g.stroke(p);
@@ -608,14 +623,17 @@ export function createNeonSign(
 				// Emitted light goes straight on the wall; absorbed light accumulates
 				// on the ink layer and is multiplied in once, after the loop.
 				const t = emit || !ig ? g : ig;
-				// Accumulating on a layer and multiplying once is lighter than
-				// multiplying every pass in turn, so the ink gets a nudge back to the
-				// density the per-pass version had.
-				const density = emit ? 1 : 1.35;
 				t.shadowColor = rgba(gasCol, 1);
 				for (const [blurF, alpha, lwF, wm] of layers) {
+					// Light scatters on its way through the air, so the halation is the
+					// widest thing a lit tube does; ink sits IN the surface, where the
+					// bleed is tighter and thinner than the mark that made it. Density
+					// therefore falls with the pass's blur — the body and core keep the
+					// weight the single multiply needs, the outer haze gives it up, and
+					// a pale wall stops fogging between neighbouring tubes.
+					const density = emit ? 1 : Math.max(0.35, 1.35 - 1.4 * blurF);
 					const a = (wm >= 0.6 ? alpha * lvl * lvl : alpha * lvl) * density;
-					t.shadowBlur = blur(blurF) * Math.min(1, lvl);
+					t.shadowBlur = blur(blurF) * Math.min(1, lvl) * (emit ? 1 : 0.75);
 					t.strokeStyle = rgba(wm ? mix(gasCol, core, spec.core * wm) : gasCol, a);
 					t.lineWidth = T * lwF;
 					t.stroke(p);

@@ -4,6 +4,37 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [Unreleased]
+
+**The absorbing sign inks in colour** — `polarity: 'absorb'` gets the model it needed to
+carry a diagram, not just a word: each gas discharges its own ink, a colour you name is
+the pigment itself, and the tubes stop fogging the wall between them.
+
+### Added
+
+- **`GasSpec.ink`** — the pigment each gas discharges under `polarity: 'absorb'`, a table
+  value per preset rather than a formula over the lit colour. It is where the invention
+  lives: `co2`'s near-white fill inverts into a literal black light, while `gold` inks
+  warm and `green` inks green.
+
+### Fixed
+
+- **neon: an absorbing sign keeps the colour information a lit one has.** A colour you
+  name is the ink it lays down, so its lightness means the same thing inking as it does
+  lit — a pale tube leaves a faint mark, a saturated one a deep mark, and two tubes of
+  different lightness stay two tubes. A gauge (a quiet track ring under a bright meter
+  arc) now reads as one instrument in both themes with one set of colours.
+- **neon: the hot core of an inking tube is a second coat of its own pigment**, not a
+  march to neutral black, so a green tube inks green at its very centre instead of
+  arriving at the same near-black as every other fill.
+- **neon: absorbed ink bleeds tighter than emitted light blooms.** Ink density now falls
+  with each pass's blur — a pigment sits in the surface while light scatters through the
+  air — which clears the grey haze that used to fill the space between neighbouring
+  tubes on a pale wall.
+- **neon: unlit glass reads as an object on a pale wall**, at a contrast in the same
+  league as the glass on a dark one, so an absorbing sign's off state is hardware rather
+  than a suggestion.
+
 ## [1.11.0] — 2026-08-21
 
 **Light mode, per core** — a `theme` option on all eight displays, where "light" is each
