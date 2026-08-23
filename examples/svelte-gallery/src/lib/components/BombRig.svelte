@@ -40,25 +40,56 @@
 		blue: '#3a72c4',
 		yellow: '#d5ad38'
 	};
-	// Each wire leaves the left terminal block and climbs into the right one, and
-	// they cross on the way: nobody dressed this loom. The paths are hand-set so
-	// each wire keeps a clear span to aim at either side of a crossing.
-	// Both ends screw into a lug on the terminal blocks, so the run is clamped at
-	// each end rather than trailing off the drawing.
+	// Nobody dressed this loom: the wires cross on their way across the block, and
+	// the paths are hand-set so each keeps a clear span to aim at either side of a
+	// crossing. Every run is clamped at both ends rather than trailing off the
+	// drawing — blue and yellow between the two terminal blocks, and RED up onto
+	// the board's own screw terminal, which is what makes it the wire wired to the
+	// timer rather than three wires wired to each other.
 	const WIRE_PATH: Record<BombWire, string> = {
-		red: 'M46 162 C 150 240, 300 204, 470 162',
+		red: 'M46 162 C 150 244, 300 214, 440 130',
 		blue: 'M46 186 C 170 214, 320 254, 470 186',
 		yellow: 'M46 210 C 180 266, 340 234, 470 210'
 	};
 	// Where the cut ends spring apart, as two pieces of the same run — still held
-	// at the lugs.
+	// at their ends.
 	const WIRE_CUT: Record<BombWire, [string, string]> = {
-		red: ['M46 162 C 130 226, 200 222, 234 212', 'M290 200 C 350 192, 400 176, 470 162'],
+		red: ['M46 162 C 130 228, 200 224, 232 214', 'M288 206 C 340 200, 380 178, 440 130'],
 		blue: ['M46 186 C 140 206, 200 230, 232 240', 'M288 250 C 360 250, 410 208, 470 186'],
 		yellow: ['M46 210 C 150 254, 210 254, 242 250', 'M298 244 C 360 240, 410 220, 470 210']
 	};
-	/** The lug each wire is screwed into, both sides. */
+	/** The lug each wire leaves on the left-hand block. */
 	const WIRE_LUG: Record<BombWire, number> = { red: 162, blue: 186, yellow: 210 };
+	/** The wires that also land in a lug on the RIGHT-hand block; red does not. */
+	const RIGHT_LUG: BombWire[] = ['blue', 'yellow'];
+
+	// Insulation is a sleeve over copper, and a cut is where you see that: each
+	// severed end shows a short stub of stranded conductor pointing into the gap.
+	// [x, y, dx, dy] per end, in the same units as the paths above.
+	const WIRE_COPPER: Record<BombWire, [number, number, number, number][]> = {
+		red: [
+			[232, 214, 1, -0.25],
+			[288, 206, -1, 0.25]
+		],
+		blue: [
+			[232, 240, 1, 0.2],
+			[288, 250, -1, -0.05]
+		],
+		yellow: [
+			[242, 250, 1, 0],
+			[298, 244, -1, 0.1]
+		]
+	};
+	const LEAD_COPPER: Record<BombLead, [number, number, number, number][]> = {
+		detRed: [
+			[76, 146, -0.85, -0.5],
+			[66, 138, 0.85, 0.5]
+		],
+		detBlack: [
+			[95, 150, -0.5, -0.85],
+			[90, 142, 0.5, 0.85]
+		]
+	};
 
 	// The detonator's own pair, out of the cap and up into the board. Spread wide
 	// enough apart that each lead is separately aimable.
@@ -327,10 +358,10 @@
 		<circle cx="404" cy="116" r="13" fill="#5d4a22" stroke="#2a2110" />
 		<path d="M397 113 l14 6" stroke="#1d1709" stroke-width="2.5" fill="none" />
 		<!-- A two-pin header with nothing plugged into it. -->
-		<rect x="440" y="104" width="10" height="24" rx="1.5" fill="#1a1e24" stroke="#0a0d10" />
+		<rect x="248" y="104" width="10" height="24" rx="1.5" fill="#1a1e24" stroke="#0a0d10" />
 		<g fill="#8d8779" opacity="0.7">
-			<rect x="443" y="108" width="4" height="4" />
-			<rect x="443" y="118" width="4" height="4" />
+			<rect x="251" y="108" width="4" height="4" />
+			<rect x="251" y="118" width="4" height="4" />
 		</g>
 
 		<!-- Three screws and one empty hole. -->
@@ -347,7 +378,13 @@
 			<circle cx="44" cy="132" r="4" fill="#0a120d" stroke="#2c3a31" stroke-width="0.8" />
 		</g>
 
-		<!-- Terminal blocks: three screw lugs a side, and every wire lands in one. -->
+		<!-- The board's own screw terminal, where the timer's output leaves it. -->
+		<rect x="428" y="114" width="36" height="26" rx="2" fill="#20242c" stroke="#0d1015" />
+		<circle cx="440" cy="127" r="5" fill="#9b8b52" stroke="#5c5230" stroke-width="1" />
+		<path d="M436.6 127h6.8" stroke="#3f3a22" stroke-width="1.6" />
+		<circle cx="454" cy="127" r="4" fill="#3b424c" stroke="#0d1015" stroke-width="0.8" />
+
+		<!-- Terminal blocks: three screw lugs a side, and the loom lands in them. -->
 		{#each [46, 470] as tx (tx)}
 			<rect x={tx - 15} y="142" width="30" height="88" rx="3" fill="#20242c" stroke="#0d1015" />
 			<rect x={tx - 15} y="142" width="30" height="88" rx="3" filter="url(#grain)" opacity="0.06" />
@@ -380,6 +417,13 @@
 				{#if isCut}
 					<path d={WIRE_CUT[wire][0]} stroke={WIRE_COLORS[wire]} />
 					<path d={WIRE_CUT[wire][1]} stroke={WIRE_COLORS[wire]} />
+					{#each WIRE_COPPER[wire] as [cx, cy, dx, dy] (cx)}
+						<g class="copper">
+							<path d="M{cx} {cy} l{dx * 9} {dy * 9}" stroke-width="3" />
+							<path d="M{cx} {cy} l{dx * 7 - dy * 2} {dy * 7 + dx * 2}" />
+							<path d="M{cx} {cy} l{dx * 6 + dy * 2.5} {dy * 6 - dx * 2.5}" />
+						</g>
+					{/each}
 				{:else}
 					<path d={WIRE_PATH[wire]} stroke={WIRE_COLORS[wire]} />
 					<!-- A sheen along the top of the insulation. -->
@@ -412,6 +456,12 @@
 				{#if isCut}
 					<path d={LEAD_CUT[lead][0]} stroke={LEAD_COLORS[lead]} />
 					<path d={LEAD_CUT[lead][1]} stroke={LEAD_COLORS[lead]} />
+					{#each LEAD_COPPER[lead] as [cx, cy, dx, dy] (cx)}
+						<g class="copper thin">
+							<path d="M{cx} {cy} l{dx * 5} {dy * 5}" stroke-width="1.4" />
+							<path d="M{cx} {cy} l{dx * 4 - dy * 1.4} {dy * 4 + dx * 1.4}" />
+						</g>
+					{/each}
 				{:else}
 					<path d={LEAD_PATH[lead]} stroke={LEAD_COLORS[lead]} />
 				{/if}
@@ -435,12 +485,33 @@
 			</g>
 		{/each}
 
+		<!-- Stripped conductor going into each clamp, under the collars. -->
+		{#each BOMB_WIRES as wire (wire + '-strip')}
+			{@const y = WIRE_LUG[wire]}
+			<path class="copper" d="M36 {y} h18" stroke-width="2.6" />
+			{#if RIGHT_LUG.includes(wire)}
+				<path class="copper" d="M462 {y} h18" stroke-width="2.6" />
+			{/if}
+		{/each}
+		<path class="copper" d="M432 133 l12 -5" stroke-width="2.4" />
+
 		<!-- The crimped collars where each run is screwed down. -->
 		{#each BOMB_WIRES as wire (wire + '-lug')}
 			{@const y = WIRE_LUG[wire]}
-			{#each [46, 470] as tx (tx)}
+			<rect
+				x="38"
+				y={y - 5.5}
+				width="16"
+				height="11"
+				rx="2"
+				fill="#b3ad9e"
+				stroke="#5f5a4e"
+				stroke-width="0.8"
+				opacity="0.9"
+			/>
+			{#if RIGHT_LUG.includes(wire)}
 				<rect
-					x={tx - 8}
+					x="462"
 					y={y - 5.5}
 					width="16"
 					height="11"
@@ -450,10 +521,23 @@
 					stroke-width="0.8"
 					opacity="0.9"
 				/>
-			{/each}
+			{/if}
 		{/each}
-		<!-- A scrap of tape holding the yellow wire down to the block. -->
-		<g transform="rotate(-4 269 243)">
+		<!-- Red's other end, clamped under the board's terminal screw. -->
+		<rect
+			x="433"
+			y="124"
+			width="14"
+			height="10"
+			rx="2"
+			fill="#b3ad9e"
+			stroke="#5f5a4e"
+			stroke-width="0.8"
+			opacity="0.9"
+		/>
+		<!-- A scrap of tape holding the yellow wire down to the block. Cut that wire
+		     and it has nothing left to hold: it peels off and drops. -->
+		<g class="scrap" class:fallen={cut.includes('yellow')} transform="rotate(-4 269 243)">
 			<path
 				d="M252 231 L262 228 L273 231 L284 228 L284 256 L273 259 L262 256 L252 259 Z"
 				fill="url(#duct)"
@@ -589,6 +673,40 @@
 	}
 	.lead .grab.done:focus-visible {
 		stroke: transparent;
+	}
+	/* The tape scrap: stuck down until the wire under it parts, then it goes. The
+	   tilt lives here rather than in a transform attribute — setting a
+	   transform-box re-anchors the attribute too, which moves the element. */
+	.scrap {
+		transform-box: fill-box;
+		transform-origin: 50% 20%;
+		transform: rotate(-4deg);
+		transition:
+			transform 700ms cubic-bezier(0.3, 0.9, 0.4, 1),
+			opacity 700ms ease;
+	}
+	.scrap.fallen {
+		transform: translate(6px, 46px) rotate(28deg);
+		opacity: 0.8;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.scrap {
+			transition: none;
+		}
+	}
+
+	/* Bare conductor: warm copper, thinner than the sleeve it came out of. */
+	.copper path {
+		fill: none;
+		stroke: #c98a3c;
+		stroke-width: 1.6;
+		stroke-linecap: round;
+	}
+	.copper path:first-child {
+		stroke: #e0a75c;
+	}
+	.copper.thin path {
+		stroke: #bf823a;
 	}
 	.wire .sheen {
 		stroke: #ffffff;
