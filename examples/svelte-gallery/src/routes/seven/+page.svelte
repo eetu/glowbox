@@ -22,9 +22,9 @@
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import ToggleChip from '$lib/components/ToggleChip.svelte';
 	import {
+		type BombCut,
 		type BombRig as BombRigHandle,
 		type BombSnapshot,
-		type BombWire,
 		createBombRig
 	} from '$lib/examples/seven';
 	import { theme } from '$lib/theme.svelte';
@@ -69,7 +69,13 @@
 	// The rig: a countdown, a piezo and three wires. It runs itself; the page
 	// mirrors its snapshot and pushes the digits, the way every show here does.
 	let bombSound = $state(false);
-	let bomb = $state<BombSnapshot>({ state: 'armed', remaining: 30, display: '00:30', cut: [] });
+	let bomb = $state<BombSnapshot>({
+		state: 'armed',
+		rate: 1,
+		remaining: 30,
+		display: '00:30',
+		cut: []
+	});
 	let rig = $state.raw<BombRigHandle | null>(null);
 	$effect(() => {
 		if (show !== 'bomb') return;
@@ -86,10 +92,10 @@
 		};
 	});
 	$effect(() => rig?.setSound(bombSound));
-	const cutWire = (wire: BombWire) => rig?.cut(wire);
+	const cutWire = (wire: BombCut) => rig?.cut(wire);
 	const bombLabel = $derived(
 		bomb.state === 'armed'
-			? `countdown ${bomb.display}`
+			? `countdown ${bomb.display}${bomb.rate > 1 ? `, running ${bomb.rate} times fast` : ''}`
 			: bomb.state === 'defused'
 				? 'countdown defused'
 				: 'countdown expired'
@@ -101,6 +107,20 @@
 	$effect(() => {
 		digitW = show === 'bomb' ? 58 : 76;
 		digitH = show === 'bomb' ? 96 : 130;
+	});
+
+	// Sizing the modules. The clock's are the visitor's to set, but a row of eight
+	// fixed-px modules runs off the side of a phone, so the slider value is a
+	// CEILING and each slot also gets a share of the viewport — the smaller wins.
+	// The rig's modules are not sized here at all: they are mounted through a
+	// window that is a fraction of the prop, so the window sizes them (see the
+	// `.cutout` rules in BombRig) and they scale with it on any screen.
+	const digitCss = $derived((ch: string) => {
+		if (show === 'bomb') return '';
+		const w = ch === ':' ? Math.round(digitW * 0.38) : digitW;
+		const share = ch === ':' ? 9.5 * 0.38 : 9.5;
+		const hShare = ((share * digitH) / digitW).toFixed(2);
+		return `width: min(${w}px, ${share}vw); height: min(${digitH}px, ${hShare}vw)`;
 	});
 
 	// What the digits show: the wall clock, or the rig's own five slots.
@@ -209,7 +229,8 @@
 					{#each slots as ch, i (i)}
 						<canvas
 							bind:this={canvases[i]}
-							style="width: {ch === ':' ? Math.round(digitW * 0.38) : digitW}px; height: {digitH}px"
+							class:colon={ch === ':'}
+							style={digitCss(ch)}
 							aria-hidden="true"
 						></canvas>
 					{/each}
@@ -218,11 +239,7 @@
 		{:else}
 			<div class="clock" role="img" aria-label={time} bind:this={clockEl}>
 				{#each slots as ch, i (i)}
-					<canvas
-						bind:this={canvases[i]}
-						style="width: {ch === ':' ? Math.round(digitW * 0.38) : digitW}px; height: {digitH}px"
-						aria-hidden="true"
-					></canvas>
+					<canvas bind:this={canvases[i]} style={digitCss(ch)} aria-hidden="true"></canvas>
 				{/each}
 			</div>
 		{/if}
@@ -251,7 +268,7 @@
 					<span class="rlabel">state</span>
 					<span class="readout" class:blown={bomb.state === 'detonated'}>
 						{bomb.state === 'armed'
-							? `armed · ${bomb.display}`
+							? `armed · ${bomb.display}${bomb.rate > 1 ? ` · ${bomb.rate}×` : ''}`
 							: bomb.state === 'defused'
 								? 'defused'
 								: 'detonated'}
@@ -297,6 +314,8 @@
 				max={120}
 				step={2}
 				format={(v) => `${v}px`}
+				disabled={show === 'bomb'}
+				hint={show === 'bomb' ? 'the rig mounts its modules through a fixed window' : undefined}
 			/>
 			<Slider
 				bind:value={digitH}
@@ -305,6 +324,7 @@
 				max={220}
 				step={2}
 				format={(v) => `${v}px`}
+				disabled={show === 'bomb'}
 			/>
 		</section>
 

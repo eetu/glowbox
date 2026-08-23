@@ -10,18 +10,33 @@
 /** Where the rig is in its evening. */
 export type BombState = 'armed' | 'defused' | 'detonated';
 
-/** The wires hanging out of the taped-up bundle, in cutting order. */
+/** The loom across the block, in cutting order. None of it disarms anything —
+ *  that is the joke. Red is booby-trapped and fires the cap, so the warning is
+ *  the one true thing on the rig; blue is an anti-tamper line that doubles the
+ *  clock rate when it opens; yellow goes nowhere at all. The only cut that
+ *  actually saves you is on the detonator. */
 export const BOMB_WIRES = ['red', 'blue', 'yellow'] as const;
 export type BombWire = (typeof BOMB_WIRES)[number];
 
+/** The detonator's own pair, buried in the block. Cutting EITHER one opens the
+ *  firing circuit — the honest way to disarm this, and the reason a bomb tech
+ *  goes for the cap and not the pretty loom. */
+export const BOMB_LEADS = ['detRed', 'detBlack'] as const;
+export type BombLead = (typeof BOMB_LEADS)[number];
+
+/** Anything on the rig a pair of cutters can reach. */
+export type BombCut = BombWire | BombLead;
+
 export interface BombSnapshot {
 	state: BombState;
+	/** Clock rate: 1 normally, doubled for every anti-tamper line opened. */
+	rate: number;
 	/** Seconds left on the clock, floor'd — what the digits show. */
 	remaining: number;
 	/** 'MM:SS' — five slots, the middle one a colon module. */
 	display: string;
-	/** Wires already cut (a cut wire stays cut until the rig is re-armed). */
-	cut: BombWire[];
+	/** Wires and leads already cut (a cut stays cut until the rig is re-armed). */
+	cut: BombCut[];
 }
 
 export interface BombRigOptions {
@@ -44,13 +59,15 @@ const cadence = (remaining: number): number => (remaining <= 5 ? 4 : remaining <
 interface Piezo {
 	beep(remaining: number): void;
 	chirp(): void;
+	dud(): void;
+	spool(): void;
 	blast(): void;
 	dispose(): void;
 }
 
 // A scavenged piezo: a hard square tone through a narrow band-pass, struck with
-// a fast envelope. Cheap, tinny and loud — the sound of a $2 buzzer glued to a
-// board, not a synthesizer.
+// a fast envelope. Cheap, tinny and high — the 4 kHz chirp of a digital watch
+// alarm, which is exactly the part nobody in the room can ignore.
 function createPiezo(): Piezo | null {
 	if (typeof AudioContext === 'undefined') return null;
 	const ctx = new AudioContext();
@@ -58,8 +75,8 @@ function createPiezo(): Piezo | null {
 	master.gain.value = 0.22;
 	const band = ctx.createBiquadFilter();
 	band.type = 'bandpass';
-	band.frequency.value = 2700;
-	band.Q.value = 1.4;
+	band.frequency.value = 4200;
+	band.Q.value = 2.2;
 	band.connect(master).connect(ctx.destination);
 
 	// One struck tone: square wave, no attack, exponential tail.
@@ -78,12 +95,22 @@ function createPiezo(): Piezo | null {
 	};
 
 	return {
-		// The tick pitches up as the clock runs out — the same buzzer, driven harder.
-		beep: (remaining) => tone(remaining <= 5 ? 3200 : remaining <= 10 ? 2900 : 2600, 70, 0.9),
-		// Two rising notes: the wire was the right one.
+		// The tick pitches up as the clock runs out — the same cell, driven harder.
+		// Short: a watch beep is a chirp, not a note.
+		beep: (remaining) => tone(remaining <= 5 ? 4600 : remaining <= 10 ? 4300 : 4000, 42, 0.85),
+		// Two rising chirps: that lead was the right one.
 		chirp: () => {
-			tone(1800, 120, 0.7);
-			setTimeout(() => tone(2700, 220, 0.7), 130);
+			tone(3200, 70, 0.7);
+			setTimeout(() => tone(4400, 130, 0.7), 90);
+		},
+		// A dummy wire parts with nothing behind it: the clock does not even
+		// stumble, and the next tick lands on schedule.
+		dud: () => tone(900, 28, 0.25, 'triangle'),
+		// The anti-tamper line opening: the timer spins up, and says so.
+		spool: () => {
+			tone(2600, 90, 0.6);
+			setTimeout(() => tone(3400, 90, 0.6), 70);
+			setTimeout(() => tone(4600, 200, 0.75), 140);
 		},
 		// Not a bang — the buzzer jamming on, which is all a prop can really do.
 		blast: () => tone(140, 900, 1, 'sawtooth'),
@@ -93,8 +120,10 @@ function createPiezo(): Piezo | null {
 
 export interface BombRig {
 	snapshot(): BombSnapshot;
-	/** Cut a wire. Red is the one the hero is told not to cut. */
-	cut(wire: BombWire): void;
+	/** Cut a wire or a detonator lead. Red fires the cap, blue doubles the clock,
+	 *  yellow does nothing at all, and either detonator lead opens the firing
+	 *  circuit for good — the only cut that disarms the thing. */
+	cut(wire: BombCut): void;
 	/** New batteries, fresh tape: back to a full clock with every wire whole. */
 	rearm(): void;
 	setSound(on: boolean): void;
@@ -107,14 +136,26 @@ export function createBombRig({ seconds = 30, sound = false, onChange }: BombRig
 	let piezo: Piezo | null = null;
 	let soundOn = sound;
 	let state: BombState = 'armed';
-	let cut: BombWire[] = [];
-	let deadline = Date.now() + seconds * 1000;
+	let cut: BombCut[] = [];
+	// The clock is kept as remaining milliseconds, advanced by real elapsed time
+	// times the rate — a fixed deadline could not speed up without the display
+	// jumping, and the whole point of the anti-tamper line is that the ticker
+	// visibly runs away from you.
+	let leftMs = seconds * 1000;
+	let rate = 1;
+	let last = Date.now();
 	let remaining = seconds;
 	// The beep slot last sounded — a slot is one cadence step, so the tick rate
 	// changes without the clock drifting.
 	let lastSlot = -1;
 
-	const snap = (): BombSnapshot => ({ state, remaining, display: mmss(remaining), cut: [...cut] });
+	const snap = (): BombSnapshot => ({
+		state,
+		rate,
+		remaining,
+		display: mmss(remaining),
+		cut: [...cut]
+	});
 	const emit = () => onChange(snap());
 	const voice = (): Piezo | null => {
 		if (!soundOn) return null;
@@ -123,11 +164,14 @@ export function createBombRig({ seconds = 30, sound = false, onChange }: BombRig
 	};
 
 	const tick = () => {
+		const now = Date.now();
+		const dt = now - last;
+		last = now;
 		if (state !== 'armed') return;
-		const left = Math.max(0, deadline - Date.now());
-		const secs = Math.ceil(left / 1000);
-		const slot = Math.floor((left / 1000) * cadence(secs));
-		if (slot !== lastSlot && left > 0) {
+		leftMs = Math.max(0, leftMs - dt * rate);
+		const secs = Math.ceil(leftMs / 1000);
+		const slot = Math.floor((leftMs / 1000) * cadence(secs));
+		if (slot !== lastSlot && leftMs > 0) {
 			lastSlot = slot;
 			voice()?.beep(secs);
 		}
@@ -135,7 +179,7 @@ export function createBombRig({ seconds = 30, sound = false, onChange }: BombRig
 			remaining = secs;
 			emit();
 		}
-		if (left <= 0) {
+		if (leftMs <= 0) {
 			state = 'detonated';
 			remaining = 0;
 			voice()?.blast();
@@ -143,8 +187,8 @@ export function createBombRig({ seconds = 30, sound = false, onChange }: BombRig
 		}
 	};
 
-	// 60 ms is fine enough for a 4 Hz cadence and costs nothing; the clock itself
-	// is read from the deadline, so nothing drifts.
+	// 60 ms is fine enough for a 4 Hz cadence and costs nothing; the clock counts
+	// real elapsed time, so a slow frame never loses a second.
 	const timer = setInterval(tick, 60);
 
 	return {
@@ -153,10 +197,22 @@ export function createBombRig({ seconds = 30, sound = false, onChange }: BombRig
 			if (state !== 'armed' || cut.includes(wire)) return;
 			cut = [...cut, wire];
 			if (wire === 'red') {
+				// The booby trap: the warning was about this one.
 				state = 'detonated';
 				remaining = 0;
 				voice()?.blast();
+			} else if (wire === 'blue') {
+				// The anti-tamper line. Opening it does not stop the clock, it doubles
+				// the rate — cutting hopefully is now measurably worse than not cutting
+				// at all, and the ticker says so.
+				rate *= 2;
+				lastSlot = -1;
+				voice()?.spool();
+			} else if (wire === 'yellow') {
+				// A dummy, wired to nothing. The clock does not even stumble.
+				voice()?.dud();
 			} else {
+				// A detonator lead: the firing circuit is open and nothing can fire.
 				state = 'defused';
 				voice()?.chirp();
 			}
@@ -165,7 +221,9 @@ export function createBombRig({ seconds = 30, sound = false, onChange }: BombRig
 		rearm() {
 			state = 'armed';
 			cut = [];
-			deadline = Date.now() + seconds * 1000;
+			leftMs = seconds * 1000;
+			rate = 1;
+			last = Date.now();
 			remaining = seconds;
 			lastSlot = -1;
 			emit();

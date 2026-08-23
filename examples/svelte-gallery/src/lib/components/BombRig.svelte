@@ -1,9 +1,20 @@
 <script lang="ts">
-	// The prop around the countdown: a scavenged board taped to a bundle of
-	// sticks, wired up with whatever was in the drawer. Everything here is page
-	// decoration — the library ships displays, not props — and the digits are the
-	// caller's canvases, mounted through the window cut in the board.
-	import { BOMB_WIRES, type BombState, type BombWire } from '$lib/examples/seven';
+	// The prop around the countdown: a board somebody hacked together, taped to a
+	// bundle of sticks with whatever wire was in the drawer. Everything here is
+	// page decoration — the library ships displays, not props — and the digits are
+	// the caller's canvases, mounted through the window cut in the board.
+	//
+	// Nothing in the drawing is centred, matched or clean on purpose: the tape is
+	// torn, the chip sits crooked in its socket, a screw is missing and the wires
+	// cross each other. A tidy bomb is a product; this one was made in a hurry.
+	import {
+		BOMB_LEADS,
+		BOMB_WIRES,
+		type BombCut,
+		type BombLead,
+		type BombState,
+		type BombWire
+	} from '$lib/examples/seven';
 
 	let {
 		state,
@@ -12,112 +23,348 @@
 		children
 	}: {
 		state: BombState;
-		/** Wires already cut — they hang in two pieces from then on. */
-		cut: BombWire[];
-		oncut: (wire: BombWire) => void;
+		/** Wires and leads already cut — they hang in two pieces from then on. */
+		cut: BombCut[];
+		oncut: (wire: BombCut) => void;
 		children: import('svelte').Snippet;
 	} = $props();
 
 	// The armed lamp ticks with the clock; a defused rig goes dark, a detonated
 	// one latches red.
 	const lamp = $derived(
-		state === 'armed' ? 'var(--rig-armed)' : state === 'defused' ? '#2f4f3a' : 'var(--rig-blown)'
+		state === 'armed' ? 'var(--rig-armed)' : state === 'defused' ? '#33513c' : 'var(--rig-blown)'
 	);
 
 	const WIRE_COLORS: Record<BombWire, string> = {
-		red: '#c8392f',
+		red: '#c23a2c',
 		blue: '#3a72c4',
-		yellow: '#d8b13a'
+		yellow: '#d5ad38'
 	};
-	// Each wire leaves the board's left terminal block, sags across the bundle and
-	// climbs back into the right one. Cutting one splits it at the sag.
-	const WIRE_Y: Record<BombWire, number> = { red: 164, blue: 192, yellow: 220 };
+	// Each wire leaves the left terminal block and climbs into the right one, and
+	// they cross on the way: nobody dressed this loom. The paths are hand-set so
+	// each wire keeps a clear span to aim at either side of a crossing.
+	// Both ends screw into a lug on the terminal blocks, so the run is clamped at
+	// each end rather than trailing off the drawing.
+	const WIRE_PATH: Record<BombWire, string> = {
+		red: 'M46 162 C 150 240, 300 204, 470 162',
+		blue: 'M46 186 C 170 214, 320 254, 470 186',
+		yellow: 'M46 210 C 180 266, 340 234, 470 210'
+	};
+	// Where the cut ends spring apart, as two pieces of the same run — still held
+	// at the lugs.
+	const WIRE_CUT: Record<BombWire, [string, string]> = {
+		red: ['M46 162 C 130 226, 200 222, 234 212', 'M290 200 C 350 192, 400 176, 470 162'],
+		blue: ['M46 186 C 140 206, 200 230, 232 240', 'M288 250 C 360 250, 410 208, 470 186'],
+		yellow: ['M46 210 C 150 254, 210 254, 242 250', 'M298 244 C 360 240, 410 220, 470 210']
+	};
+	/** The lug each wire is screwed into, both sides. */
+	const WIRE_LUG: Record<BombWire, number> = { red: 162, blue: 186, yellow: 210 };
+
+	// The detonator's own pair, out of the cap and up into the board. Spread wide
+	// enough apart that each lead is separately aimable.
+	const LEAD_COLORS: Record<BombLead, string> = { detRed: '#b34a3c', detBlack: '#2b2f36' };
+	const LEAD_PATH: Record<BombLead, string> = {
+		detRed: 'M92 168 C 88 150, 72 138, 56 130',
+		detBlack: 'M99 168 C 101 150, 94 144, 86 138'
+	};
+	const LEAD_CUT: Record<BombLead, [string, string]> = {
+		detRed: ['M92 168 C 90 158, 84 150, 76 146', 'M66 138 C 62 135, 60 132, 56 130'],
+		detBlack: ['M99 168 C 100 160, 98 154, 95 150', 'M90 142 C 89 140, 88 139, 86 138']
+	};
+	const LEAD_LABEL: Record<BombLead, string> = {
+		detRed: "the detonator's red lead",
+		detBlack: "the detonator's black lead"
+	};
 </script>
 
 <div class="rig" class:blown={state === 'detonated'} class:safe={state === 'defused'}>
 	<svg class="board" viewBox="0 0 520 300" role="presentation" aria-hidden="true">
 		<defs>
-			<linearGradient id="pcb" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0" stop-color="#20402e" />
-				<stop offset="1" stop-color="#132419" />
+			<linearGradient id="pcb" x1="0" y1="0" x2="0.2" y2="1">
+				<stop offset="0" stop-color="#22432f" />
+				<stop offset="0.6" stop-color="#183020" />
+				<stop offset="1" stop-color="#112317" />
 			</linearGradient>
-			<linearGradient id="stick" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0" stop-color="#8a5a3c" />
-				<stop offset="0.45" stop-color="#6d442c" />
-				<stop offset="1" stop-color="#4a2c1c" />
+			<linearGradient id="putty" x1="0" y1="0" x2="0.1" y2="1">
+				<stop offset="0" stop-color="#9c927a" />
+				<stop offset="0.35" stop-color="#877e67" />
+				<stop offset="0.8" stop-color="#665f4c" />
+				<stop offset="1" stop-color="#4b463a" />
 			</linearGradient>
+			<linearGradient id="wrapper" x1="0" y1="0" x2="0" y2="1">
+				<stop offset="0" stop-color="#4d5334" />
+				<stop offset="1" stop-color="#333823" />
+			</linearGradient>
+			<linearGradient id="duct" x1="0" y1="0" x2="1" y2="0">
+				<stop offset="0" stop-color="#33352f" />
+				<stop offset="0.3" stop-color="#4a4d46" />
+				<stop offset="0.72" stop-color="#3f423b" />
+				<stop offset="1" stop-color="#2c2e29" />
+			</linearGradient>
+			<!-- Tape off a roll: the long edges are the roll's own, dead straight; only
+			     the ends are torn. -->
+			<clipPath id="tapeA">
+				<path
+					d="M146 141 L157 136 L168 141 L180 137 L191 141 L200 137 L200 289 L191 293
+					   L180 289 L168 294 L157 289 L146 293 Z"
+				/>
+			</clipPath>
+			<clipPath id="tapeB">
+				<path
+					d="M300 147 L311 142 L322 147 L334 143 L345 147 L354 143 L354 295 L345 299
+					   L334 295 L322 300 L311 295 L300 299 Z"
+				/>
+			</clipPath>
+			<!-- Everything printed on the block is clipped to the block itself, so the
+			     wrapper band follows its rounded corners instead of squaring them off. -->
+			<clipPath id="blockClip">
+				<rect x="58" y="150" width="404" height="128" rx="7" />
+			</clipPath>
+			<!-- The grain that keeps fibreglass from reading as a flat swatch. -->
+			<filter id="grain" x="0" y="0" width="100%" height="100%">
+				<feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" />
+				<feColorMatrix type="saturate" values="0" />
+			</filter>
 		</defs>
 
-		<!-- The bundle: three sticks, banded with tape. Nobody labels these. -->
+		<!-- One block of plastic explosive: kneaded putty, not a bundle of sticks. -->
 		<g>
-			{#each [156, 196, 236] as sy (sy)}
-				<rect x="58" y={sy} width="404" height="38" rx="19" fill="url(#stick)" />
-				<rect
-					x="58"
-					y={sy}
-					width="404"
-					height="38"
-					rx="19"
-					fill="none"
-					stroke="#331d12"
-					stroke-width="1.5"
+			<rect x="58" y="150" width="404" height="128" rx="7" fill="url(#putty)" />
+			<rect x="58" y="150" width="404" height="128" rx="7" filter="url(#grain)" opacity="0.09" />
+			<g clip-path="url(#blockClip)">
+				<!-- Thumbed-in creases and a dent where it was pressed onto the board. -->
+				<g stroke="#4f4a3b" stroke-width="1.6" fill="none" opacity="0.45">
+					<path d="M96 186 C 150 176, 210 198, 268 188" />
+					<path d="M120 240 C 190 232, 250 250, 320 238" />
+					<path d="M330 200 C 372 194, 410 208, 444 200" />
+				</g>
+				<ellipse cx="180" cy="212" rx="34" ry="16" fill="#c0b697" opacity="0.13" />
+				<ellipse cx="392" cy="248" rx="26" ry="12" fill="#c0b697" opacity="0.09" />
+				<!-- The mylar wrapper: a printed band round the block, torn along its top. -->
+				<path
+					d="M58 226 L98 223 L136 225 L180 221 L220 224 L262 220 L300 223 L344 219 L384 222
+				   L422 220 L462 222 L462 278 L58 278 Z"
+					fill="url(#wrapper)"
+					opacity="0.95"
 				/>
-				<ellipse cx="72" cy={sy + 19} rx="7" ry="15" fill="#3d2417" opacity="0.85" />
-				<ellipse cx="448" cy={sy + 19} rx="7" ry="15" fill="#3d2417" opacity="0.85" />
-			{/each}
-			<!-- Two wraps of tape holding the lot together. -->
-			{#each [148, 330] as tx (tx)}
-				<rect x={tx} y="148" width="46" height="134" rx="3" fill="#2c2a26" />
-				<rect x={tx} y="148" width="46" height="134" rx="3" fill="none" stroke="#1b1a17" />
-				<rect x={tx + 6} y="148" width="3" height="134" fill="#3a3733" opacity="0.7" />
-			{/each}
+				<path
+					d="M58 229 L98 226 L136 228 L180 224 L220 227 L262 223 L300 226 L344 222 L384 225
+				   L422 223 L462 225"
+					stroke="#6b7346"
+					stroke-width="1.2"
+					fill="none"
+					opacity="0.45"
+				/>
+				<!-- Stencilled on the band, the way a demo block is marked. -->
+				<text x="82" y="258" class="stencil">C-4</text>
+				<text x="210" y="258" class="stencil small">COMP · 1.25 LB</text>
+				<text x="392" y="258" class="stencil small">M112</text>
+			</g>
+			<!-- The detonator is BURIED in the putty — pushed in to the crimp, the way
+			     it has to be to do anything. All that shows from the front is the hole
+			     it went in through, the putty pushed up around it, and its two leads. -->
+			<g>
+				<ellipse cx="95" cy="171" rx="12" ry="7" fill="#5b543f" opacity="0.55" />
+				<ellipse cx="95" cy="169" rx="9" ry="5" fill="#2a2618" />
+				<!-- The lip of putty the cap shouldered aside going in. -->
+				<path
+					d="M83 169 C 85 160, 105 160, 107 169"
+					stroke="#b3a98b"
+					stroke-width="2"
+					fill="none"
+					opacity="0.5"
+				/>
+			</g>
+
+			<!-- Two strips of silver duct tape, torn off the roll and slapped on askew:
+			     the board is stuck to the block with what was in the bag. The scrim
+			     shows through the vinyl, which is what makes duct tape read as duct
+			     tape and not as grey paper. -->
+			<g transform="rotate(-1.5 173 215)">
+				<path
+					d="M146 141 L157 136 L168 141 L180 137 L191 141 L200 137 L200 289 L191 293
+					   L180 289 L168 294 L157 289 L146 293 Z"
+					fill="url(#duct)"
+					stroke="#22241f"
+					stroke-width="0.8"
+				/>
+				<!-- The scrim weave under the vinyl. -->
+				<g clip-path="url(#tapeA)" stroke="#4e514d" stroke-width="0.7" opacity="0.22" fill="none">
+					{#each [150, 162, 174, 186, 198, 210, 222, 234, 246, 258, 270, 282] as ty (ty)}
+						<path d="M146 {ty} h56" />
+					{/each}
+					{#each [152, 162, 172, 182, 192] as tx (tx)}
+						<path d="M{tx} 136 v158" />
+					{/each}
+				</g>
+				<!-- One highlight down the length, and the threads left at a torn end. -->
+				<path
+					d="M154 138 L156 291"
+					stroke="#7d807a"
+					stroke-width="1.6"
+					opacity="0.28"
+					fill="none"
+				/>
+				<g stroke="#8b8e89" stroke-width="0.7" opacity="0.4" fill="none">
+					<path d="M162 137 l2 -5" />
+					<path d="M176 138 l1 -6" />
+					<path d="M188 292 l2 5" />
+				</g>
+			</g>
+			<g transform="rotate(2.5 327 221)">
+				<path
+					d="M300 147 L311 142 L322 147 L334 143 L345 147 L354 143 L354 295 L345 299
+					   L334 295 L322 300 L311 295 L300 299 Z"
+					fill="url(#duct)"
+					stroke="#1f211c"
+					stroke-width="0.8"
+				/>
+				<g clip-path="url(#tapeB)" stroke="#4a4d49" stroke-width="0.7" opacity="0.2" fill="none">
+					{#each [152, 164, 176, 188, 200, 212, 224, 236, 248, 260, 272, 284] as ty (ty)}
+						<path d="M300 {ty} h56" />
+					{/each}
+					{#each [306, 316, 326, 336, 346] as tx (tx)}
+						<path d="M{tx} 142 v158" />
+					{/each}
+				</g>
+				<path
+					d="M308 144 L310 297"
+					stroke="#767973"
+					stroke-width="1.6"
+					opacity="0.24"
+					fill="none"
+				/>
+				<g stroke="#868984" stroke-width="0.7" opacity="0.35" fill="none">
+					<path d="M328 144 l2 -5" />
+					<path d="M340 298 l1 5" />
+				</g>
+			</g>
 		</g>
 
-		<!-- The circuit board, screwed on over the bundle. -->
-		<rect x="40" y="18" width="440" height="128" rx="6" fill="url(#pcb)" stroke="#0c1a12" />
-
-		<!-- Traces + pads in the strip beside and under the window. -->
-		<g stroke="#48916a" stroke-width="1.6" fill="none" opacity="0.5">
-			<path d="M372 34h30v18h44" />
-			<path d="M372 60h18v46h56" />
-			<path d="M468 92h-42v18h-30" />
-			<path d="M64 142h84v-8h46" />
-			<path d="M250 142h60v-8h44" />
+		<!-- The board, screwed on over the bundle. -->
+		<rect x="34" y="16" width="452" height="126" rx="5" fill="url(#pcb)" stroke="#0b1710" />
+		<rect x="34" y="16" width="452" height="126" rx="5" filter="url(#grain)" opacity="0.07" />
+		<g stroke="#7fb894" stroke-width="0.9" opacity="0.16" fill="none">
+			<path d="M60 128 l58 -9" />
+			<path d="M300 26 l40 6" />
+			<path d="M420 132 l34 -14" />
 		</g>
-		<g fill="#c3bcae" opacity="0.65">
-			{#each [70, 86, 102, 118] as px (px)}
-				<rect x={px} y="138" width="9" height="4" rx="1" />
+
+		<!-- Traces, pads and a few solder blobs. -->
+		<g stroke="#4a9a70" stroke-width="1.5" fill="none" opacity="0.45">
+			<path d="M252 26h30v14h44" />
+			<path d="M378 34h40v18h30" />
+			<path d="M476 92h-38v18h-24" />
+			<path d="M248 132h60v-10h40" />
+			<path d="M382 128h44v-12h30" />
+			<path d="M42 138h70v-8h44" />
+		</g>
+		<g fill="#c3bcae" opacity="0.6">
+			{#each [46, 60, 74, 88] as px (px)}
+				<rect x={px} y="130" width="8" height="4" rx="1" />
 			{/each}
 		</g>
+		<g fill="#9aa2a8" opacity="0.8">
+			<circle cx="252" cy="50" r="2.6" />
+			<circle cx="380" cy="104" r="2.4" />
+			<circle cx="466" cy="70" r="2.2" />
+			<circle cx="121" cy="130" r="2.2" />
+		</g>
 
-		<!-- The window the display modules are mounted through. -->
-		<rect x="60" y="26" width="304" height="112" rx="4" fill="#08120d" stroke="#0b1912" />
+		<!-- The window the display modules are mounted through — hacked out to the
+		     left, close around the glass, because whoever cut it measured once. -->
+		<rect x="44" y="26" width="196" height="110" rx="3" fill="#070f0b" stroke="#0a1610" />
+		<rect x="44" y="26" width="196" height="110" rx="3" filter="url(#grain)" opacity="0.05" />
+		<!-- A hacksaw wobble along the top edge of the cut. -->
+		<path
+			d="M44 26 l40 1.5 l38 -1 l44 1.5 l34 -1 l40 1"
+			stroke="#2b4636"
+			stroke-width="1.4"
+			fill="none"
+			opacity="0.7"
+		/>
 
-		<!-- The right-hand strip: lamp, the chip nobody can identify, two fat caps. -->
-		<circle cx="394" cy="44" r="10" fill={lamp} class="lamp" />
-		<circle cx="394" cy="44" r="10" fill="none" stroke="#0c1a12" />
-		<circle cx="424" cy="44" r="5" fill="#b8912f" opacity="0.85" />
-		<rect x="376" y="66" width="86" height="26" rx="3" fill="#171a20" stroke="#0a0c10" />
-		<g fill="#5c6470">
-			{#each [382, 396, 410, 424, 438, 452] as px (px)}
-				<rect x={px} y="92" width="5" height="6" />
+		<!-- The right-hand half: the lamp, two chips crooked in their sockets, the
+		     fat caps, a trimmer nobody should turn. -->
+		<circle cx="262" cy="34" r="9" fill={lamp} class="lamp" />
+		<circle cx="262" cy="34" r="9" fill="none" stroke="#0b1710" />
+		<circle cx="286" cy="34" r="4.5" fill="#a8862c" opacity="0.8" />
+		<!-- Scrawled on with a marker, by someone in a hurry. -->
+		<text x="298" y="39" class="scrawl">ARM</text>
+		<g transform="rotate(-5 306 74)">
+			<rect x="262" y="60" width="88" height="28" rx="2" fill="#15181d" stroke="#080a0d" />
+			<!-- Pin-1 notch and dot, the way the package is oriented. -->
+			<path d="M300 60 a 6 6 0 0 0 12 0" fill="#0c0f13" />
+			<circle cx="270" cy="66" r="2" fill="#333a42" />
+			<g fill="#5c6470">
+				{#each [268, 286, 304, 322, 340] as px (px)}
+					<rect x={px} y="88" width="6" height="7" rx="1" />
+					<rect x={px} y="53" width="6" height="7" rx="1" />
+				{/each}
+			</g>
+		</g>
+		<g transform="rotate(3 424 68)">
+			<rect x="398" y="56" width="56" height="24" rx="2" fill="#181c22" stroke="#090b0e" />
+			<path d="M420 56 a 5 5 0 0 0 10 0" fill="#0c0f13" />
+			<g fill="#5c6470">
+				{#each [404, 421, 438] as px (px)}
+					<rect x={px} y="80" width="6" height="6" rx="1" />
+					<rect x={px} y="50" width="6" height="6" rx="1" />
+				{/each}
+			</g>
+		</g>
+		<circle cx="270" cy="116" r="16" fill="#282d35" stroke="#151920" />
+		<circle cx="270" cy="116" r="5" fill="#3c434e" />
+		<path d="M262 104 a 16 16 0 0 1 8 -4" stroke="#4d5661" stroke-width="2" fill="none" />
+		<circle cx="312" cy="120" r="11" fill="#282d35" stroke="#151920" />
+		<!-- A resistor and the trimmer, its slot left off-centre. -->
+		<rect x="336" y="110" width="34" height="12" rx="2" fill="#3a3025" stroke="#241d15" />
+		<g fill="#8e5a2c">
+			{#each [341, 347, 353] as bx (bx)}
+				<rect x={bx} y="110" width="3" height="12" />
 			{/each}
 		</g>
-		<circle cx="398" cy="120" r="15" fill="#2a2f38" stroke="#171b21" />
-		<circle cx="398" cy="120" r="5" fill="#3d444f" />
-		<circle cx="442" cy="122" r="11" fill="#2a2f38" stroke="#171b21" />
+		<circle cx="404" cy="116" r="13" fill="#5d4a22" stroke="#2a2110" />
+		<path d="M397 113 l14 6" stroke="#1d1709" stroke-width="2.5" fill="none" />
+		<!-- A two-pin header with nothing plugged into it. -->
+		<rect x="440" y="104" width="10" height="24" rx="1.5" fill="#1a1e24" stroke="#0a0d10" />
+		<g fill="#8d8779" opacity="0.7">
+			<rect x="443" y="108" width="4" height="4" />
+			<rect x="443" y="118" width="4" height="4" />
+		</g>
 
-		<!-- Terminal blocks the wires screw into. -->
-		{#each [[52, 150], [468, 150]] as [tx, ty] (tx)}
-			<rect x={tx - 14} y={ty - 14} width="28" height="76" rx="4" fill="#20242b" stroke="#0e1116" />
+		<!-- Three screws and one empty hole. -->
+		<g>
+			{#each [[44, 26], [476, 26], [476, 132]] as [sx, sy] (sx + '-' + sy)}
+				<circle cx={sx} cy={sy} r="4" fill="#8d8779" opacity="0.75" />
+				<path
+					d="M{sx - 3} {sy}h6"
+					stroke="#4a463f"
+					stroke-width="1.4"
+					transform="rotate({sx % 7} {sx} {sy})"
+				/>
+			{/each}
+			<circle cx="44" cy="132" r="4" fill="#0a120d" stroke="#2c3a31" stroke-width="0.8" />
+		</g>
+
+		<!-- Terminal blocks: three screw lugs a side, and every wire lands in one. -->
+		{#each [46, 470] as tx (tx)}
+			<rect x={tx - 15} y="142" width="30" height="88" rx="3" fill="#20242c" stroke="#0d1015" />
+			<rect x={tx - 15} y="142" width="30" height="88" rx="3" filter="url(#grain)" opacity="0.06" />
+			{#each [162, 186, 210] as ty (ty)}
+				<rect
+					x={tx - 11}
+					y={ty - 9}
+					width="22"
+					height="18"
+					rx="2"
+					fill="#2b313a"
+					stroke="#0f1216"
+				/>
+				<circle cx={tx} cy={ty} r="5" fill="#9b8b52" stroke="#5c5230" stroke-width="1" />
+				<path d="M{tx - 3.4} {ty}h6.8" stroke="#3f3a22" stroke-width="1.6" />
+			{/each}
 		{/each}
-
-		<!-- The screws holding the whole idea together. -->
-		<g fill="#8d8779" opacity="0.75">
-			{#each [[52, 30], [468, 30], [52, 134], [468, 134]] as [sx, sy] (sx + '-' + sy)}
-				<circle cx={sx} cy={sy} r="4" />
-			{/each}
-		</g>
 	</svg>
 
 	<!-- The display module: the caller's digit canvases, dropped into the window. -->
@@ -125,27 +372,24 @@
 		{@render children()}
 	</div>
 
-	<!-- The wires. Three leave the terminal block; one of them is the wrong one. -->
+	<!-- The wires. Three leave the block; one of them is the wrong one. -->
 	<svg class="wires" viewBox="0 0 520 300" role="group" aria-label="wires">
 		{#each BOMB_WIRES as wire (wire)}
-			{@const y = WIRE_Y[wire]}
 			{@const isCut = cut.includes(wire)}
 			<g class="wire" class:cut={isCut}>
 				{#if isCut}
-					<!-- Cut: two dead ends, sprung apart. -->
-					<path d="M54 {y} C 120 {y + 40}, 180 {y + 48}, 232 {y + 40}" stroke={WIRE_COLORS[wire]} />
-					<path
-						d="M288 {y + 42} C 340 {y + 50}, 400 {y + 42}, 466 {y}"
-						stroke={WIRE_COLORS[wire]}
-					/>
+					<path d={WIRE_CUT[wire][0]} stroke={WIRE_COLORS[wire]} />
+					<path d={WIRE_CUT[wire][1]} stroke={WIRE_COLORS[wire]} />
 				{:else}
-					<path d="M54 {y} C 150 {y + 52}, 370 {y + 52}, 466 {y}" stroke={WIRE_COLORS[wire]} />
+					<path d={WIRE_PATH[wire]} stroke={WIRE_COLORS[wire]} />
+					<!-- A sheen along the top of the insulation. -->
+					<path class="sheen" d={WIRE_PATH[wire]} />
 				{/if}
 				<!-- The hit target is a fat invisible stroke over the wire's own path. -->
 				<path
 					class="grab"
 					class:done={isCut}
-					d="M54 {y} C 150 {y + 52}, 370 {y + 52}, 466 {y}"
+					d={WIRE_PATH[wire]}
 					role="button"
 					tabindex={isCut ? -1 : 0}
 					aria-label={isCut ? `${wire} wire, cut` : `cut the ${wire} wire`}
@@ -161,6 +405,63 @@
 				/>
 			</g>
 		{/each}
+		<!-- The detonator's pair: thin, and the honest way to disarm the thing. -->
+		{#each BOMB_LEADS as lead (lead)}
+			{@const isCut = cut.includes(lead)}
+			<g class="lead" class:cut={isCut}>
+				{#if isCut}
+					<path d={LEAD_CUT[lead][0]} stroke={LEAD_COLORS[lead]} />
+					<path d={LEAD_CUT[lead][1]} stroke={LEAD_COLORS[lead]} />
+				{:else}
+					<path d={LEAD_PATH[lead]} stroke={LEAD_COLORS[lead]} />
+				{/if}
+				<path
+					class="grab"
+					class:done={isCut}
+					d={LEAD_PATH[lead]}
+					role="button"
+					tabindex={isCut ? -1 : 0}
+					aria-label={isCut ? `${LEAD_LABEL[lead]}, cut` : `cut ${LEAD_LABEL[lead]}`}
+					aria-disabled={isCut}
+					onclick={() => !isCut && oncut(lead)}
+					onkeydown={(e: KeyboardEvent) => {
+						if (isCut) return;
+						if (e.key === 'Enter' || e.key === ' ') {
+							e.preventDefault();
+							oncut(lead);
+						}
+					}}
+				/>
+			</g>
+		{/each}
+
+		<!-- The crimped collars where each run is screwed down. -->
+		{#each BOMB_WIRES as wire (wire + '-lug')}
+			{@const y = WIRE_LUG[wire]}
+			{#each [46, 470] as tx (tx)}
+				<rect
+					x={tx - 8}
+					y={y - 5.5}
+					width="16"
+					height="11"
+					rx="2"
+					fill="#b3ad9e"
+					stroke="#5f5a4e"
+					stroke-width="0.8"
+					opacity="0.9"
+				/>
+			{/each}
+		{/each}
+		<!-- A scrap of tape holding the yellow wire down to the block. -->
+		<g transform="rotate(-4 269 243)">
+			<path
+				d="M252 231 L262 228 L273 231 L284 228 L284 256 L273 259 L262 256 L252 259 Z"
+				fill="url(#duct)"
+				stroke="#6c6f6b"
+				stroke-width="0.8"
+			/>
+			<path d="M256 229 L257 258" stroke="#9a9d98" stroke-width="1.2" opacity="0.28" fill="none" />
+		</g>
 	</svg>
 </div>
 
@@ -187,6 +488,26 @@
 		pointer-events: none;
 	}
 
+	.stencil {
+		font-family: 'DIN Condensed', 'Oswald', 'Arial Narrow', sans-serif;
+		font-size: 15px;
+		letter-spacing: 1.5px;
+		fill: #d8d2b8;
+		opacity: 0.5;
+	}
+	.stencil.small {
+		font-size: 9px;
+		letter-spacing: 1px;
+		opacity: 0.4;
+	}
+
+	.scrawl {
+		font-family: 'Bradley Hand', 'Segoe Print', 'Comic Sans MS', cursive;
+		font-size: 13px;
+		fill: #cbd8cd;
+		opacity: 0.45;
+	}
+
 	.lamp {
 		filter: drop-shadow(0 0 7px var(--rig-armed));
 	}
@@ -210,16 +531,33 @@
 
 	.cutout {
 		position: absolute;
-		/* The window cut in the board: x 60..364, y 26..138 of the 520×300 board. */
-		left: 11.5%;
+		/* The window cut in the board: x 44..240, y 26..136 of the 520×300 board. */
+		left: 8.5%;
 		top: 8.7%;
-		width: 58.5%;
-		height: 37.3%;
+		width: 37.7%;
+		height: 36.7%;
 		display: flex;
 		flex-wrap: nowrap;
 		align-items: center;
 		justify-content: center;
-		gap: 3px;
+		gap: 1.5%;
+	}
+	/* The modules are mounted through the window, so the window sizes them: each
+	   digit takes an equal share of it and the colon slot a narrow one. That way
+	   the row fits the prop at any screen width — the alternative, pixel sizes,
+	   spills a phone-width rig straight out of its own board. */
+	.cutout :global(.clock) {
+		width: 100%;
+		height: 100%;
+		gap: 1.5%;
+	}
+	.cutout :global(canvas) {
+		flex: 1 1 0;
+		min-width: 0;
+		height: 100%;
+	}
+	.cutout :global(canvas.colon) {
+		flex: 0.4 1 0;
 	}
 
 	.wire path {
@@ -227,11 +565,42 @@
 		stroke-width: 8;
 		stroke-linecap: round;
 	}
+	.lead path {
+		fill: none;
+		stroke-width: 2.6;
+		stroke-linecap: round;
+	}
+	/* The pair is thin, so its targets are thin too — still wide enough to hit,
+	   and narrow enough that the two leads stay separately aimable. */
+	.lead .grab {
+		stroke: transparent;
+		stroke-width: 11;
+		pointer-events: stroke;
+		cursor: crosshair;
+	}
+	.lead .grab.done {
+		cursor: default;
+		pointer-events: none;
+	}
+	.lead .grab:focus-visible {
+		stroke: color-mix(in srgb, var(--halo-accent) 70%, transparent);
+		stroke-width: 7;
+		outline: none;
+	}
+	.lead .grab.done:focus-visible {
+		stroke: transparent;
+	}
+	.wire .sheen {
+		stroke: #ffffff;
+		stroke-width: 2;
+		opacity: 0.16;
+		transform: translateY(-1.5px);
+	}
 	.wire .grab {
 		stroke: transparent;
-		stroke-width: 24;
-		/* Never wider than the 28-unit gap between wires: a hit target that
-		   overlapped its neighbour would cut the wrong wire. */
+		/* Narrow enough that neighbouring wires stay separately aimable — an
+		   overlapping hit target cuts the wrong wire. */
+		stroke-width: 18;
 		pointer-events: stroke;
 		cursor: crosshair;
 	}
