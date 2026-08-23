@@ -28,6 +28,13 @@ packages/
   extras/    @glowbox/extras   — GIF/image players + text helper over the draw API (bundles gifuct-js).
 examples/
   svelte-gallery/              — SvelteKit SPA demo (LED programs + /nixie + /seven + /flipdot + /splitflap + /neon + /vfd + /lcd) → GitHub Pages.
+                                 /seven is two shows: the HH:MM:SS clock and the COUNTDOWN rig — a taped-up
+                                 prop (BombRig.svelte, page decoration: PCB, bundle, three cuttable wires) around
+                                 MM:SS digits, its countdown + piezo in lib/examples/seven.ts. The beeper is the
+                                 PROP's, not the core's (a display has no voice — vfd/lcd precedent): 1 Hz, 2 Hz
+                                 inside ten, 4 Hz inside five. Cut blue/yellow to defuse, red to detonate (dark
+                                 digits, latched lamp); re-arm restores. Wire hit strokes must stay narrower than
+                                 the gap between wires or a click cuts the neighbour.
                                  /vfd is two panels sharing one envelope option set + one scene clock: faceplate (segment field + annunciators + dial + tape/disc transport + dot ticker) and the analyser strip, which is ONE window with three jobs picked by source (20-band spectrum, EQ curve laid over it, and a 4:3 GIF `dots` area on the `gif` source = the DISPLAY button). Both panels read the same clock or they'd disagree about the scene.
 shared/                        — the ONE copy of each file more than one package needs
                                  (color.ts, sound.ts, font5x7.ts, path-parse.ts), SYMLINKED

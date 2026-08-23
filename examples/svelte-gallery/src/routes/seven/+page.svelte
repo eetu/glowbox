@@ -14,13 +14,23 @@
 	import X from '@lucide/svelte/icons/x';
 	import { untrack } from 'svelte';
 
+	import BombRig from '$lib/components/BombRig.svelte';
 	import CoreNav from '$lib/components/CoreNav.svelte';
 	import Segmented from '$lib/components/Segmented.svelte';
+	import Select from '$lib/components/Select.svelte';
 	import Slider from '$lib/components/Slider.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import ToggleChip from '$lib/components/ToggleChip.svelte';
+	import {
+		type BombRig as BombRigHandle,
+		type BombSnapshot,
+		type BombWire,
+		createBombRig
+	} from '$lib/examples/seven';
 	import { theme } from '$lib/theme.svelte';
 
+	type Show = 'clock' | 'bomb';
+	let show = $state<Show>('clock');
 	let style = $state<SevenSegmentStyle>('led');
 	let glow = $state(0.7);
 	let age = $state(0);
@@ -50,23 +60,69 @@
 		return `${pad(t.getHours())}:${pad(t.getMinutes())}:${pad(t.getSeconds())}`;
 	};
 	let time = $state(clockStr());
-	const slots = $derived(time.split(''));
 	$effect(() => {
+		if (show !== 'clock') return;
 		const id = setInterval(() => (time = clockStr()), 250);
 		return () => clearInterval(id);
 	});
+
+	// The rig: a countdown, a piezo and three wires. It runs itself; the page
+	// mirrors its snapshot and pushes the digits, the way every show here does.
+	let bombSound = $state(false);
+	let bomb = $state<BombSnapshot>({ state: 'armed', remaining: 30, display: '00:30', cut: [] });
+	let rig = $state.raw<BombRigHandle | null>(null);
+	$effect(() => {
+		if (show !== 'bomb') return;
+		const r = createBombRig({
+			seconds: 30,
+			sound: untrack(() => bombSound),
+			onChange: (snap) => (bomb = snap)
+		});
+		rig = r;
+		bomb = r.snapshot();
+		return () => {
+			r.stop();
+			rig = null;
+		};
+	});
+	$effect(() => rig?.setSound(bombSound));
+	const cutWire = (wire: BombWire) => rig?.cut(wire);
+	const bombLabel = $derived(
+		bomb.state === 'armed'
+			? `countdown ${bomb.display}`
+			: bomb.state === 'defused'
+				? 'countdown defused'
+				: 'countdown expired'
+	);
+
+	// Each show opens at its own module size — the rig runs scavenged little
+	// displays, the clock a full-size face. Dragging the size sliders holds until
+	// the next show change.
+	$effect(() => {
+		digitW = show === 'bomb' ? 58 : 76;
+		digitH = show === 'bomb' ? 96 : 130;
+	});
+
+	// What the digits show: the wall clock, or the rig's own five slots.
+	const shown = $derived(show === 'bomb' ? bomb.display : time);
+	const slots = $derived(shown.split(''));
+	// A detonated rig shows nothing at all — dead display, live buzzer.
+	const values = $derived(
+		show === 'bomb' && bomb.state === 'detonated' ? slots.map(() => null) : slots
+	);
 
 	// One display per canvas.
 	let canvases = $state<(HTMLCanvasElement | undefined)[]>([]);
 	let displays: (SevenSegmentDisplay | null)[] = [];
 	$effect(() => {
-		const els = canvases.filter(Boolean) as HTMLCanvasElement[];
-		if (els.length < 8) return;
+		const want = slots.length;
+		const els = (canvases.filter(Boolean) as HTMLCanvasElement[]).slice(0, want);
+		if (els.length < want) return;
 		displays = els.map((el, i) =>
 			createSevenSegment(
 				el,
 				untrack(() => ({
-					value: time[i],
+					value: values[i],
 					style,
 					glow,
 					age,
@@ -96,7 +152,7 @@
 		return () => crt?.dispose();
 	});
 	$effect(() => {
-		for (let i = 0; i < displays.length; i++) displays[i]?.setValue(time[i]);
+		for (let i = 0; i < displays.length; i++) displays[i]?.setValue(values[i]);
 	});
 </script>
 
@@ -109,6 +165,17 @@
 <div class="app">
 	<header>
 		<CoreNav core="seven" />
+		<label class="hdr-field example-field">
+			<span class="lbl">show</span>
+			<Select
+				bind:value={show}
+				ariaLabel="show"
+				options={[
+					{ value: 'clock', label: 'Clock' },
+					{ value: 'bomb', label: 'Countdown' }
+				]}
+			/>
+		</label>
 		<label class="hdr-field style-field"
 			>style
 			<Segmented
@@ -120,7 +187,9 @@
 				]}
 			/>
 		</label>
-		<span class="hint">per-segment fades · drag AGE to wear it out</span>
+		<span class="hint">
+			{show === 'bomb' ? 'don’t cut the red wire' : 'per-segment fades · drag AGE to wear it out'}
+		</span>
 		<ThemeToggle />
 		<button
 			class="panel-toggle"
@@ -134,15 +203,29 @@
 	</header>
 
 	<div class="stage" style="background: {backdrop}">
-		<div class="clock" role="img" aria-label={time} bind:this={clockEl}>
-			{#each slots as ch, i (i)}
-				<canvas
-					bind:this={canvases[i]}
-					style="width: {ch === ':' ? Math.round(digitW * 0.38) : digitW}px; height: {digitH}px"
-					aria-hidden="true"
-				></canvas>
-			{/each}
-		</div>
+		{#if show === 'bomb'}
+			<BombRig state={bomb.state} cut={bomb.cut} oncut={cutWire}>
+				<div class="clock" role="img" aria-label={bombLabel} bind:this={clockEl}>
+					{#each slots as ch, i (i)}
+						<canvas
+							bind:this={canvases[i]}
+							style="width: {ch === ':' ? Math.round(digitW * 0.38) : digitW}px; height: {digitH}px"
+							aria-hidden="true"
+						></canvas>
+					{/each}
+				</div>
+			</BombRig>
+		{:else}
+			<div class="clock" role="img" aria-label={time} bind:this={clockEl}>
+				{#each slots as ch, i (i)}
+					<canvas
+						bind:this={canvases[i]}
+						style="width: {ch === ':' ? Math.round(digitW * 0.38) : digitW}px; height: {digitH}px"
+						aria-hidden="true"
+					></canvas>
+				{/each}
+			</div>
+		{/if}
 	</div>
 
 	<button
@@ -160,6 +243,28 @@
 				<X size={18} />
 			</button>
 		</div>
+
+		{#if show === 'bomb'}
+			<section>
+				<h2>rig</h2>
+				<div class="row">
+					<span class="rlabel">state</span>
+					<span class="readout" class:blown={bomb.state === 'detonated'}>
+						{bomb.state === 'armed'
+							? `armed · ${bomb.display}`
+							: bomb.state === 'defused'
+								? 'defused'
+								: 'detonated'}
+					</span>
+				</div>
+				<div class="row">
+					<ToggleChip bind:checked={bombSound} label="piezo" />
+				</div>
+				<div class="row">
+					<button class="rearm" onclick={() => rig?.rearm()}>re-arm</button>
+				</div>
+			</section>
+		{/if}
 
 		<section>
 			<h2>display</h2>
@@ -251,6 +356,29 @@
 		margin-left: auto;
 		font-size: 12px;
 		color: var(--halo-text-muted);
+	}
+	.readout {
+		margin-left: auto;
+		font-variant-numeric: tabular-nums;
+		font-size: 13px;
+		color: var(--halo-text);
+	}
+	.readout.blown {
+		color: #d8452f;
+	}
+	.rearm {
+		width: 100%;
+		padding: 8px 10px;
+		border: 1px solid var(--halo-border);
+		border-radius: var(--halo-radius);
+		background: var(--halo-bg);
+		color: var(--halo-text);
+		font: inherit;
+		font-size: 13px;
+		cursor: pointer;
+	}
+	.rearm:hover {
+		border-color: var(--halo-accent);
 	}
 	.panel-toggle {
 		display: none;
@@ -368,6 +496,23 @@
 		}
 		.hint {
 			display: none;
+		}
+		.example-field {
+			flex: 1 1 auto;
+			min-width: 0;
+			gap: 0;
+		}
+		.example-field .lbl {
+			display: none;
+		}
+		.example-field :global(.field) {
+			display: flex;
+			flex: 1;
+			min-width: 0;
+		}
+		.example-field :global(select) {
+			width: 100%;
+			min-width: 0;
 		}
 		.panel-toggle {
 			display: inline-flex;
