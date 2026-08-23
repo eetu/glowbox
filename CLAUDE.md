@@ -28,6 +28,19 @@ packages/
   extras/    @glowbox/extras   — GIF/image players + text helper over the draw API (bundles gifuct-js).
 examples/
   svelte-gallery/              — SvelteKit SPA demo (LED programs + /nixie + /seven + /flipdot + /splitflap + /neon + /vfd + /lcd) → GitHub Pages.
+                                 /seven is two shows: the HH:MM:SS clock and the COUNTDOWN rig — a taped-up
+                                 prop (BombRig.svelte, page decoration: PCB, C4 block, duct tape, cuttable wires)
+                                 around MM:SS digits, its countdown + piezo in lib/examples/seven.ts. The beeper is
+                                 the PROP's, not the core's (a display has no voice — vfd/lcd precedent): a 4 kHz
+                                 digital-watch chirp at 1 Hz, 2 Hz inside ten, 4 Hz inside five. The wiring is
+                                 honest: the LOOM disarms nothing (red is booby-trapped and fires, blue is
+                                 anti-tamper and DOUBLES the clock rate, yellow is a dummy) and only the buried
+                                 detonator's own pair opens the firing circuit; re-arm restores everything. The
+                                 clock is remaining-ms x rate, not a deadline, so it can speed up without the
+                                 display jumping. Two geometry rules learned the hard way: a hit stroke must stay
+                                 narrower than the gap to its neighbour or a click cuts the wrong wire, and the
+                                 rig's digits are sized by the WINDOW they mount through (flex shares of the
+                                 cutout) — pixel sizes spill a phone-width board.
                                  /vfd is two panels sharing one envelope option set + one scene clock: faceplate (segment field + annunciators + dial + tape/disc transport + dot ticker) and the analyser strip, which is ONE window with three jobs picked by source (20-band spectrum, EQ curve laid over it, and a 4:3 GIF `dots` area on the `gif` source = the DISPLAY button). Both panels read the same clock or they'd disagree about the scene.
 shared/                        — the ONE copy of each file more than one package needs
                                  (color.ts, sound.ts, font5x7.ts, path-parse.ts), SYMLINKED
