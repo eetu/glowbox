@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/vue",
-	"version": "1.11.0",
+	"version": "1.12.0",
 	"description": "glowbox components for Vue 3 — <LedGrid> (3D WebGL LED grid), <NixieTube>, <SevenSegment>, <FlipDots>, <SplitFlap>, <NeonSign>, <VfdPanel> and <LcdModule>, over the sibling display cores.",
 	"keywords": [
 		"glowbox",
