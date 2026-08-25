@@ -111,6 +111,12 @@ is real hardware — this is an inversion, not a filter.
 
 Any colour you set yourself stays yours through every later theme change.
 
+The theme also sets how hard `shaded` bites — a shadow's strength belongs to the room,
+not to the module. The light board keeps the same geometry (socket wells, waffle facets,
+disc rim fall-off, axle dimples) at a fraction of the density in a warm grey; the lit
+facets get more white to read on pale plastic, and the edge-on flap sliver is lit metal
+against a dark board, its own shade against a pale one.
+
 ---
 
 Framework wrappers ship `<FlipDots>` alongside the other cores:

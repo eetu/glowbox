@@ -150,6 +150,34 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [
 const WHITE: RGB = [1, 1, 1];
 const BLACK: RGB = [0, 0, 0];
 
+// How hard the shading bites, per theme. Shadow strength belongs to the ROOM, not to
+// the module: every shadow is the same geometry in both themes, but a pale board hangs
+// in a bright room where bounce light fills the recesses a dark board leaves black.
+// Black at dark-theme density over cream reads as ink-lined tiles and a metallic wash
+// down each flap — so the light board runs every one of them at `soften` of the depth
+// the code asks for, in a warm grey (a shadow on warm card stays warm). The three
+// values that can't just be scaled: the fallen ribs' lit edge (mixed toward white —
+// a pale card needs MORE of it to read at all, not less), the hinge clips' metal, and
+// the edge-on card thickness, lit against a dark board and shaded against a pale one.
+const SHADE = {
+	dark: {
+		ink: BLACK,
+		soften: 1,
+		rib: 0.22,
+		clip: '#565b62',
+		clipLit: 0.22,
+		edge: [1, 0.988, 0.94] as RGB
+	},
+	light: {
+		ink: [0.28, 0.25, 0.2] as RGB,
+		soften: 0.47,
+		rib: 0.55,
+		clip: '#9ba0a6',
+		clipLit: 0.35,
+		edge: [0.34, 0.31, 0.26] as RGB
+	}
+} as const;
+
 /** Print registration against the seam: the y offset, in device px, that moves the
  *  card's mid-height cut into a gap in the printed ink and as far from either edge
  *  of that gap as it can get. A letter spans the seam and has no gap, so it gets 0
@@ -224,8 +252,14 @@ export function createSplitFlap(
 	if (opts.card !== undefined) card = parseColor(opts.card);
 	if (opts.ink !== undefined) ink = parseColor(opts.ink);
 	if (opts.board !== undefined) board = opts.board === null ? null : parseColor(opts.board);
+	// The shading strengths in force. They follow the THEME and not the named colours:
+	// the theme is the room the board hangs in (see SHADE).
+	let sh: (typeof SHADE)['dark' | 'light'] = SHADE[scheme];
+	/** A shadow at the depth the drawing asks for, at this room's density. */
+	const shade = (a: number) => rgba(sh.ink, a * sh.soften);
 	/** Move every colour the theme still owns to the resolved scheme. */
 	function applyTheme() {
+		sh = SHADE[scheme];
 		const p = PALETTE[scheme];
 		if (themed.owns('card')) card = parseColor(p.card);
 		if (themed.owns('ink')) ink = parseColor(p.ink);
@@ -378,8 +412,8 @@ export function createSplitFlap(
 			g.scale(dpr, dpr);
 			g.fillStyle = rgba(board, 1);
 			g.fillRect(0, 0, w, h);
-			g.fillStyle = 'rgba(0,0,0,0.5)';
-			g.shadowColor = 'rgba(0,0,0,0.6)';
+			g.fillStyle = shade(0.5);
+			g.shadowColor = shade(0.6);
 			g.shadowBlur = cellH * 0.06;
 			const m = Math.min(cellW, cellH) * 0.03;
 			for (let y = 0; y < rows; y++)
@@ -394,22 +428,54 @@ export function createSplitFlap(
 						true
 					);
 			// The fallen stack — drawn as board geometry so it never rides a moving
-			// flap: a ribbed band of card edges below the bottom flap, each catching
-			// the light over its shadow gap (the real modules show three or four). NOTHING shows at the top: the upcoming reserve hides behind the
-			// housing, so the top card reads clean to its edge.
+			// flap: the cards that already dropped, peeking out below the bottom flap
+			// (the real modules show three or four). Every one of them is a whole
+			// CARD: its own rounded-rect silhouette a touch off-register (a pile of
+			// dropped cards, not a moulded comb), its face climbing out of the
+			// crevice under the card in front into a lit bottom edge — and because
+			// that edge hugs the silhouette, it rounds off at the corners the way a
+			// card does instead of ruling a line edge to edge. Deepest card first, so
+			// each closer card overpaints the slack above its neighbour's sliver; the
+			// well shows through the corner notches. NOTHING shows at the top: the
+			// upcoming reserve hides behind the housing, so the top card reads clean
+			// to its edge — nothing paints above the flap's bottom edge, and the flap
+			// keeps its own corners against the well.
 			g.shadowBlur = 0;
 			const e = Math.max(0.75, stackH * 0.14);
+			const slats = 3;
+			const pileH = Math.max(1, stackH - 2); // the last 2px is well, not card
+			const band = pileH / slats;
+			const pileR = Math.min(cardW, cardH) * 0.07;
+			// Deterministic scatter — stable across bakes, so a resize never
+			// reshuffles the pile.
+			const scatter = (a: number, b: number) => {
+				const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
+				return s - Math.floor(s) - 0.5;
+			};
+			const faceTone = rgba(mix(card, BLACK, 0.12 * sh.soften), 1);
+			const litTone = rgba(mix(card, WHITE, sh.rib), 0.9);
 			for (let y = 0; y < rows; y++)
 				for (let x = 0; x < cols; x++) {
-					const cx = x * cellW + (cellW - cardW) / 2;
-					const hy = y * cellH + hinge;
-					const slats = 3;
-					for (let i = 0; i < slats; i++) {
-						const sy = hy + split / 2 + halfH + 1 + i * ((stackH - 2) / slats);
-						g.fillStyle = rgba(mix(card, WHITE, 0.22), 0.9);
-						g.fillRect(cx + cardW * 0.03, sy, cardW * 0.94, e);
-						g.fillStyle = 'rgba(0,0,0,0.42)';
-						g.fillRect(cx + cardW * 0.03, sy + e, cardW * 0.94, (stackH - 2) / slats - e);
+					const top = y * cellH + hinge + split / 2 + halfH;
+					for (let i = slats - 1; i >= 0; i--) {
+						const jx = scatter(x * 3 + i, y * 7) * cardW * 0.02;
+						const jy = scatter(y * 3 + i, x * 5 + 13) * band * 0.3;
+						const cx = x * cellW + (cellW - cardW) / 2 + jx;
+						const bot = top + (i + 1) * band + jy; // this card's bottom edge
+						const lid = Math.max(top, bot - band * 1.35); // the card in front
+						g.save();
+						rr(g, cx, bot - cardH, cardW, cardH, pileR);
+						g.clip();
+						g.fillStyle = faceTone;
+						g.fillRect(cx, lid, cardW, bot - lid);
+						const crev = g.createLinearGradient(0, lid, 0, bot - e);
+						crev.addColorStop(0, shade(0.5));
+						crev.addColorStop(1, shade(0.05));
+						g.fillStyle = crev;
+						g.fillRect(cx, lid, cardW, bot - e - lid);
+						g.fillStyle = litTone;
+						g.fillRect(cx, bot - e, cardW, e);
+						g.restore();
 					}
 				}
 			boardLayer = b;
@@ -431,11 +497,11 @@ export function createSplitFlap(
 					const hy = y * cellH + hinge;
 					for (const side of [-1, 1]) {
 						const cxs = cx + (side * cardW) / 2 - clipW / 2 + side * clipW * 0.15;
-						hg.fillStyle = 'rgba(0,0,0,0.45)'; // its drop shadow
+						hg.fillStyle = shade(0.45); // its drop shadow
 						rr(hg, cxs + 0.5, hy - clipH / 2 + 1, clipW, clipH, clipW * 0.35, true);
-						hg.fillStyle = '#565b62';
+						hg.fillStyle = sh.clip;
 						rr(hg, cxs, hy - clipH / 2, clipW, clipH, clipW * 0.35, true);
-						hg.fillStyle = 'rgba(255,255,255,0.22)'; // catching the light
+						hg.fillStyle = `rgba(255,255,255,${sh.clipLit})`; // catching the light
 						rr(hg, cxs, hy - clipH / 2, clipW, clipH * 0.3, clipW * 0.35, true);
 					}
 				}
@@ -490,12 +556,16 @@ export function createSplitFlap(
 		if (!shaded) {
 			g.fillStyle = rgba(base, 1);
 		} else {
-			// Plastic card lit from above: a lift toward the top edge, the base
-			// colour through the middle, darker toward the bottom.
+			// Plastic card lit from above — but the two flaps are NOT one plane: the
+			// top flap leans back at its top (tilted toward the light), the bottom
+			// flap leans back at its bottom (falling away from it), so the split
+			// carries a hard brightness step, the tell that says two cards at two
+			// angles rather than one printed strip with a line across it.
 			const grad = g.createLinearGradient(0, 0, 0, H);
-			grad.addColorStop(0, rgba(mix(base, WHITE, 0.12), 1));
-			grad.addColorStop(0.45, rgba(base, 1));
-			grad.addColorStop(1, rgba(mix(base, BLACK, 0.22), 1));
+			grad.addColorStop(0, rgba(mix(base, WHITE, 0.12 * sh.soften), 1));
+			grad.addColorStop(0.5, rgba(base, 1));
+			grad.addColorStop(0.5, rgba(mix(base, BLACK, 0.07 * sh.soften), 1));
+			grad.addColorStop(1, rgba(mix(base, BLACK, 0.22 * sh.soften), 1));
 			g.fillStyle = grad;
 		}
 		rr(g, 0, 0, W, H, Math.min(W, H) * 0.07, true);
@@ -538,20 +608,20 @@ export function createSplitFlap(
 		g.globalCompositeOperation = 'source-over';
 
 		const Hh = Math.round(H / 2);
-		const slice = (sy: number, sh: number, shadowTop: boolean): HTMLCanvasElement => {
+		const slice = (sy: number, sliceH: number, shadowTop: boolean): HTMLCanvasElement => {
 			const c = document.createElement('canvas');
 			c.width = W;
-			c.height = sh;
+			c.height = sliceH;
 			const cg = c.getContext('2d')!;
-			cg.drawImage(full, 0, sy, W, sh, 0, 0, W, sh);
+			cg.drawImage(full, 0, sy, W, sliceH, 0, 0, W, sliceH);
 			if (shaded && shadowTop) {
 				// The resting top flap overhangs the stack — a soft shadow just
 				// below the split, the depth cue every real module carries.
-				const sg = cg.createLinearGradient(0, 0, 0, sh * 0.22);
-				sg.addColorStop(0, 'rgba(0,0,0,0.4)');
-				sg.addColorStop(1, 'rgba(0,0,0,0)');
+				const sg = cg.createLinearGradient(0, 0, 0, sliceH * 0.22);
+				sg.addColorStop(0, shade(0.4));
+				sg.addColorStop(1, shade(0));
 				cg.fillStyle = sg;
-				cg.fillRect(0, 0, W, sh * 0.22);
+				cg.fillRect(0, 0, W, sliceH * 0.22);
 			}
 			return c;
 		};
@@ -583,6 +653,17 @@ export function createSplitFlap(
 		const SH = sprite.height;
 		const mag = (v: number) => PERSPECTIVE_D / (PERSPECTIVE_D - v * s);
 		const proj = (v: number) => v * halfH * c * mag(v);
+		// The rotation reads in the LIGHT as much as in the shape: the front face
+		// swings up toward the overhead light and brightens as it approaches
+		// horizontal; the back face arrives facing the floor — darkest exactly when
+		// it appears — and recovers as it lands. Both peak at sin θ. The lift is the
+		// strip added to itself ('lighter' at low alpha): it masks to the card's own
+		// silhouette and scales with its albedo — a dark card catches little light in
+		// absolute terms, which is the physics. The dark side is a cast-shadow fill,
+		// priced by the room (shade); its spill past the rounded corners lands on the
+		// well the card is shading anyway.
+		const lift = shaded && up && s > 0.02 ? 0.16 * s : 0;
+		const dim = shaded && !up && s > 0.02 ? shade(0.38 * s) : '';
 		for (let i = 0; i < strips; i++) {
 			const v0 = i / strips;
 			const v1 = (i + 1) / strips;
@@ -595,12 +676,22 @@ export function createSplitFlap(
 			const sy = up ? SH * (1 - v1) : SH * v0;
 			const dy = up ? hy - split / 2 - y1 : hy + split / 2 + y0;
 			g.drawImage(sprite, 0, sy, sprite.width, SH / strips, cx - dw / 2, dy, dw, dh);
+			if (lift) {
+				g.globalCompositeOperation = 'lighter';
+				g.globalAlpha = lift;
+				g.drawImage(sprite, 0, sy, sprite.width, SH / strips, cx - dw / 2, dy, dw, dh);
+				g.globalAlpha = 1;
+				g.globalCompositeOperation = 'source-over';
+			} else if (dim) {
+				g.fillStyle = dim;
+				g.fillRect(cx - dw / 2, dy, dw, dh);
+			}
 		}
 		// Near edge-on the card is all thickness: a sliver at the projected free
 		// edge, magnified past the window width — the card pointing at you.
 		if (c < 0.18) {
 			const a = 1 - c / 0.18;
-			g.fillStyle = shaded ? `rgba(255,252,240,${0.35 * a})` : rgba(mix(card, WHITE, 0.25), a);
+			g.fillStyle = shaded ? rgba(sh.edge, 0.35 * a) : rgba(mix(card, WHITE, 0.25), a);
 			const ew = cardW * mag(1);
 			const ey = up ? hy - split / 2 - proj(1) : hy + split / 2 + proj(1);
 			g.fillRect(cx - ew / 2, ey - 0.75, ew, 1.5);
@@ -677,9 +768,11 @@ export function createSplitFlap(
 				const cosT = Math.cos(th);
 				const sinT = Math.sin(th);
 				if (shaded && sinT > 0.05) {
-					// The card overhangs the stack — its shadow sweeps the bottom half.
-					g.fillStyle = `rgba(0,0,0,${0.3 * sinT})`;
-					g.fillRect(cx - cardW / 2, hy + split / 2, cardW, halfH);
+					// The card overhangs the stack — its shadow sweeps the bottom half
+					// AND the fallen pile below it (everything under the card is under
+					// the card).
+					g.fillStyle = shade(0.3 * sinT);
+					g.fillRect(cx - cardW / 2, hy + split / 2, cardW, halfH + stackH);
 				}
 				if (cosT >= 0) flyFace(g, face(fl[idx[i]]).top, cx, hy, cosT, sinT, true);
 				else flyFace(g, face(fl[(idx[i] + 1) % fl.length]).bottom, cx, hy, -cosT, sinT, false);
