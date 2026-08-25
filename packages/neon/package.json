@@ -1,6 +1,6 @@
 {
 	"name": "@glowbox/neon",
-	"version": "1.11.0",
+	"version": "1.12.0",
 	"description": "Glass-tube neon sign component — text bent into single-stroke tubes (vendored Hershey faces), visible unlit glass, electrode strike sequences, ageing tubes, flasher programs and an optional transformer hum, in the glowbox family.",
 	"keywords": [
 		"glowbox",
