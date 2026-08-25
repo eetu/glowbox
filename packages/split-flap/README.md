@@ -185,6 +185,12 @@ or `'auto'` to follow the page's `prefers-color-scheme` and repaint when it flip
 A colour you set is yours for good — `{ theme: 'light', ink: '#c0392b' }` is a pale board
 with red print, and stays one when the page flips to dark.
 
+The theme also sets how hard `shaded` bites, because a shadow's strength belongs to the
+room and not to the module: the light board keeps the same geometry — wells, seam
+shadow, fallen pile, clips, card gradient — at a fraction of the density and in a warm
+grey rather than black. Dark-theme shadows over cream would read as ink-lined tiles and
+a metallic wash down every flap; a bright room fills those recesses with bounce light.
+
 ---
 
 Framework wrappers ship `<SplitFlap>` alongside the other cores:

@@ -113,6 +113,32 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [
 const WHITE: RGB = [1, 1, 1];
 const BLACK: RGB = [0, 0, 0];
 
+// How hard the shading bites, per theme (split-flap's convention). Shadow strength
+// belongs to the ROOM, not to the module: the geometry is identical in both themes,
+// but the bone-white board hangs in a bright room where bounce light fills the
+// sockets and waffle facets a dark board leaves black — dark-theme black over pale
+// plastic reads as an inked grid, not moulding. Every shadow keeps its depth at the
+// call site; `shade` prices it. What can't be scaled sits here per theme: the lit
+// facets, which need MORE white to read on pale plastic; the stop-post metal, dark
+// in any room (albedo) but lifted by bounce light; and the edge-on flap sliver —
+// lit metal against a dark board, its own shade against a pale one.
+const SHADE = {
+	dark: {
+		ink: BLACK,
+		soften: 1,
+		facetLit: 1,
+		post: '#37393d',
+		edge: [1, 0.988, 0.922] as RGB
+	},
+	light: {
+		ink: [0.28, 0.25, 0.2] as RGB,
+		soften: 0.45,
+		facetLit: 2.5,
+		post: '#5f615c',
+		edge: [0.36, 0.33, 0.28] as RGB
+	}
+} as const;
+
 /** Create a flip-dot board on a 2D canvas. Returns null if 2D is unavailable. */
 export function createFlipDots(
 	canvas: HTMLCanvasElement,
@@ -139,8 +165,14 @@ export function createFlipDots(
 	if (opts.onColor !== undefined) onColor = parseColor(opts.onColor);
 	if (opts.offColor !== undefined) offColor = parseColor(opts.offColor);
 	if (opts.board !== undefined) board = opts.board === null ? null : parseColor(opts.board);
+	// The shading strengths in force — they follow the THEME, the room the board
+	// hangs in (see SHADE).
+	let sh: (typeof SHADE)['dark' | 'light'] = SHADE[scheme];
+	/** A shadow at the depth the drawing asks for, at this room's density. */
+	const shade = (a: number) => rgba(sh.ink, a * sh.soften);
 	/** Move every colour the theme still owns to the resolved scheme. */
 	function applyTheme() {
+		sh = SHADE[scheme];
 		const p = PALETTE[scheme];
 		if (themed.owns('onColor')) onColor = parseColor(p.onColor);
 		if (themed.owns('offColor')) offColor = parseColor(p.offColor);
@@ -281,7 +313,7 @@ export function createFlipDots(
 				const grad = g.createRadialGradient(r, r * 0.75, r * 0.15, r, r, r);
 				grad.addColorStop(0, rgba(mix(fill, WHITE, sheen), 1));
 				grad.addColorStop(0.55, rgba(fill, 1));
-				grad.addColorStop(1, rgba(mix(fill, BLACK, 0.32), 1));
+				grad.addColorStop(1, rgba(mix(fill, BLACK, 0.32 * sh.soften), 1));
 				g.fillStyle = grad;
 			}
 			if (shape === 'square') octagon(g, r, r, r);
@@ -319,7 +351,7 @@ export function createFlipDots(
 				g.save();
 				octagon(g, r, r, r);
 				g.clip();
-				g.fillStyle = 'rgba(0,0,0,0.4)';
+				g.fillStyle = shade(0.4);
 				for (const dir of [1, -1]) {
 					g.beginPath();
 					g.arc(
@@ -353,7 +385,7 @@ export function createFlipDots(
 				if (shaded) {
 					// The post the hole wraps, poking through the bite — matte dark
 					// metal, barely catching light (the heads don't shine).
-					g.fillStyle = '#3c3e43';
+					g.fillStyle = sh.post;
 					g.beginPath();
 					g.arc(nx, ny, r * 0.13, 0, Math.PI * 2);
 					g.fill();
@@ -461,10 +493,11 @@ export function createFlipDots(
 						g.closePath();
 						g.fill();
 					};
-					facet(x0, y0, x0 + cell, y0, 'rgba(0,0,0,0.36)'); // top wall in its own shadow
-					facet(x0 + cell, y0, x0 + cell, y0 + cell, 'rgba(255,255,255,0.04)');
-					facet(x0 + cell, y0 + cell, x0, y0 + cell, 'rgba(255,255,255,0.07)'); // catches the light
-					facet(x0, y0 + cell, x0, y0, 'rgba(0,0,0,0.2)');
+					facet(x0, y0, x0 + cell, y0, shade(0.36)); // top wall in its own shadow
+					facet(x0 + cell, y0, x0 + cell, y0 + cell, `rgba(255,255,255,${0.04 * sh.facetLit})`);
+					// prettier-ignore
+					facet(x0 + cell, y0 + cell, x0, y0 + cell, `rgba(255,255,255,${0.07 * sh.facetLit})`); // catches the light
+					facet(x0, y0 + cell, x0, y0, shade(0.2));
 				}
 			const rr = (dot / 2) * 1.08;
 			const prad = (axis * Math.PI) / 180 + Math.PI / 2; // the stop-post line
@@ -473,9 +506,9 @@ export function createFlipDots(
 					const cx = ox + (x + 0.5) * cell;
 					const cy = oy + (y + 0.5) * cell;
 					const well = g.createRadialGradient(cx, cy, rr * 0.55, cx, cy, rr);
-					well.addColorStop(0, 'rgba(0,0,0,0.5)');
-					well.addColorStop(0.85, 'rgba(0,0,0,0.62)');
-					well.addColorStop(1, 'rgba(0,0,0,0.15)');
+					well.addColorStop(0, shade(0.5));
+					well.addColorStop(0.85, shade(0.62));
+					well.addColorStop(1, shade(0.15));
 					g.fillStyle = well;
 					if (shape === 'square') octagon(g, cx, cy, rr);
 					else {
@@ -487,7 +520,7 @@ export function createFlipDots(
 						// The stop posts, at ±90° to the pivot axis — the disc rests
 						// against one; the one the hole isn't wrapping peeks past the
 						// rim. Dark heads — they don't shine.
-						g.fillStyle = '#37393d';
+						g.fillStyle = sh.post;
 						for (const dir of [1, -1]) {
 							g.beginPath();
 							g.arc(
@@ -609,8 +642,8 @@ export function createFlipDots(
 		}
 	}
 
-	// Edge-on: the flap is a sliver along the hinge — the bare metal edge catching
-	// the light.
+	// Edge-on: the flap is a sliver along the hinge — the bare metal edge, catching
+	// the light against a dark board, its own shade against a pale one (sh.edge).
 	function glint(
 		g: CanvasRenderingContext2D,
 		cx: number,
@@ -622,7 +655,7 @@ export function createFlipDots(
 		j: number
 	) {
 		const a = (1 - ak / 0.35) * (0.35 + 0.3 * j);
-		g.strokeStyle = `rgba(255,252,235,${a})`;
+		g.strokeStyle = rgba(sh.edge, a);
 		g.lineWidth = Math.max(0.75, dot * 0.07);
 		g.beginPath();
 		g.moveTo(cx - ca * gr, cy - sa * gr);

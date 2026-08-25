@@ -48,7 +48,7 @@
 		{
 			"name": "esm",
 			"path": "dist/index.js",
-			"limit": "5.8 kB"
+			"limit": "6 kB"
 		}
 	],
 	"devDependencies": {

@@ -66,6 +66,41 @@ the pigment itself, and the tubes stop fogging the wall between them.
 - **neon: unlit glass reads as an object on a pale wall**, at a contrast in the same
   league as the glass on a dark one, so an absorbing sign's off state is hardware rather
   than a suggestion.
+- **split-flap: a shadow belongs to the room, so the light board's `shaded` details stop
+  biting.** A pale board hangs in a bright room, where bounce light fills the recesses a
+  dark board leaves black — dark-theme shadow density over cream read as ink-lined tiles
+  and a metallic wash down every flap. The light theme now runs the same geometry (module
+  wells, the top flap's overhang on the stack, the fallen pile's ribs, the hinge-clip
+  shadows, the card gradient) at a fraction of the depth and in a warm grey rather than
+  black. Three details don't scale and are set per theme instead: the fallen ribs' lit
+  edge, which needs more white to read on a pale card, the hinge-clip metal, and the
+  edge-on card thickness — lit against a dark board, its own shade against a pale one.
+  The dark board is unchanged.
+- **split-flap: the fallen pile is cards, in both themes.** Each fallen card is its own
+  rounded-rect silhouette — same width and corner radius as the flap above it — sitting a
+  touch off-register (a pile of dropped cards, not a moulded comb), its face climbing out
+  of the crevice under the card in front into a lit bottom edge that hugs the silhouette,
+  so it rounds off at the corners the way a card does instead of ruling a line edge to
+  edge. They used to be square-cut bands inset from the card. The pile stays below the
+  flap's bottom edge, so the resting flap keeps its own rounded corners against the well,
+  and the scatter is deterministic — a resize never reshuffles the pile.
+- **split-flap: a falling card rotates in the light, not just in shape.** The front face
+  brightens as it swings up toward the overhead light (added as the card's own strip at
+  low alpha, so the lift scales with its albedo — a dark card catches little in absolute
+  terms), and the back face arrives facing the floor — darkest exactly when it appears —
+  then recovers as it lands. The card's cast shadow now also sweeps the fallen pile
+  beneath it, not just the bottom flap.
+- **split-flap: the split carries a brightness step.** The two resting flaps sit at two
+  angles — the top leans back at its top toward the light, the bottom falls away — so the
+  card gradient now breaks at the seam instead of running continuously across it, the
+  tell that says two cards rather than one printed strip with a line across it.
+- **flip-dot: the light board's `shaded` details stop biting** — split-flap's fix, same
+  convention. Socket wells, waffle facets, the disc rim fall-off and the axle dimples run
+  at a fraction of their dark-theme depth in a warm grey (bounce light fills a bright
+  room's recesses; black over bone-white read as an inked grid). The lit facets get MORE
+  white to read on pale plastic, the stop posts keep dark-metal albedo with a bounce-light
+  lift, and the edge-on flap sliver is lit metal against a dark board, its own shade
+  against a pale one. The dark board is unchanged.
 
 ## [1.11.0] — 2026-08-21
 
