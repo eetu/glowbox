@@ -6,68 +6,51 @@ version and are released together.
 
 ## [1.12.0] — 2026-08-25
 
-**The absorbing sign inks in colour, and the mechanical boards learn what room they hang
-in** — neon's `polarity: 'absorb'` gets a real pigment model plus the motel-sign kit
-(painted faces, outlined letters, switchable words, honest circuit wiring), and the
-split-flap and flip-dot `shaded` looks are re-priced per theme with a card-for-card
-fallen pile and falling cards that rotate in the light.
+**Neon inks in colour, and the mechanical boards learn what room they hang in.**
 
 ### Added
 
-- **neon: `GasSpec.ink`** — the pigment each gas discharges under `polarity: 'absorb'`,
-  a table value per preset rather than a formula over the lit colour: `co2`'s near-white
-  inverts into a literal black light, `gold` inks warm, `green` inks green.
-- **neon: `face` + `outline` — the movie-motel letters.** `face` paints each letterform
-  on the panel as a slab washed by its own circuit's light — visible unlit, brightest
-  beside the glass, never as bright as the tube, so strikes, flicker and wear play across
-  the letter (an absorbing tube gives no light to catch). `outline` bends the tube
-  **around** the letterform's border instead of along its skeleton, counters included (an
-  O is two tubes), with electrodes, strikes and taps on the contour. One value or one per
-  text line; art pieces carry their own `face`.
-- **neon: the word channel — `wordOn`, `wordColor`, `lineScale`.** Words count across the
-  text in reading order; `wordOn` cuts one to unlit glass and strikes it back,
-  `wordColor` paints one (`null` inherits), and `lineScale` sizes a line's typography
-  while the tube width holds — the motel sign proper: a red NO striking in beside a blue
-  VACANCY, HOTEL at twice the size. The gallery's motel show wires it to a "hotel full"
-  toggle.
-- **neon: circuit wiring — one tube per circuit, the way a sign is bent.** Strokes join
-  through crossover runs bent off the face plane and painted out; what shows is ONE
-  electrode pair per section on the routed run's two true free ends (never wherever the
-  font data started), interior stroke ends reading as bare glass diving behind.
-  `tubes: 'auto'` now wires per word — VACANCY carries two electrodes, not fourteen, and
-  lights and dies as one tube — while `'glyph'` keeps channel-letter circuits and
-  per-letter strikes (the dying MOT L look). Neon budget 14 → 16 kB.
-- **svelte-gallery `/seven`: the countdown rig** — a taped-up prop (PCB, C4 block,
-  cuttable wires) around MM:SS digits with honest wiring: only the buried detonator's own
-  pair opens the firing circuit, red fires, blue doubles the clock rate, yellow is a
-  dummy; a digital-watch piezo quickens inside ten and five seconds.
+- **`@glowbox/neon`: `GasSpec.ink`** — the pigment a gas discharges under
+  `polarity: 'absorb'`, a per-preset table value: `co2` inverts to a black light,
+  `gold` inks warm, `green` inks green.
+- **`@glowbox/neon`: `face` + `outline`** — painted letterform slabs washed by their
+  own circuit's light (visible unlit, never as bright as the tube), and tubes bent
+  around the letter's border — counters included, electrodes/strikes/taps on the
+  contour. One value or one per line; art pieces take their own `face`.
+- **`@glowbox/neon`: the word channel** — words are circuits: `wordOn` switches one
+  (with a strike), `wordColor` paints one (`null` inherits), `lineScale` sizes a
+  line's type at constant tube width — the red-NO / blue-VACANCY motel sign, wired in
+  the demo to a "hotel full" toggle.
+- **`@glowbox/neon`: circuit wiring** — crossover runs bent off the face plane and
+  painted out; ONE electrode pair per section, on the routed run's true free ends,
+  interior ends bare glass diving behind. `tubes: 'auto'` wires per word (VACANCY:
+  two electrodes, not fourteen); `'glyph'` keeps channel-letter strikes. Budget
+  14 → 16 kB.
+- **Demo gallery `/seven`: the countdown rig** — a taped-up prop around MM:SS digits
+  with honest wiring (only the buried detonator's own pair opens the firing circuit;
+  red fires, blue doubles the clock rate, yellow is a dummy) and a piezo that
+  quickens inside ten and five seconds.
 
 ### Fixed
 
-- **neon: an absorbing sign keeps the colour information a lit one has.** A colour you
-  name is the ink it lays down (lightness means the same inking as lit, so a pale track
-  under a bright meter stays two tubes), the hot core is a second coat of the tube's own
-  pigment rather than neutral black, ink density falls with each pass's blur (no more
-  grey haze between tubes on a pale wall), and unlit glass reads as hardware on a pale
-  wall, not a suggestion.
-- **split-flap + flip-dot: shadows are priced by the room.** The light boards run the
-  same shadow geometry — module wells, seam overhang, socket wells, waffle facets, rim
-  fall-offs — at a fraction of dark-theme depth in a warm grey; black at full strength
-  over pale material read as ink-lined tiles and an inked grid. Per-theme where scaling
-  can't work: lit ribs and facets need MORE white to read on pale material, the
-  hinge-clip and stop-post metal, and the edge-on sliver — lit against a dark board, its
-  own shade against a pale one. Dark boards unchanged. Budgets: split-flap 7 → 7.4 kB,
-  flip-dot 5.8 → 6 kB.
-- **split-flap: the fallen pile is cards, in both themes.** Each fallen card is its own
-  rounded-rect silhouette at the flap's corner radius, a touch off-register
-  (deterministic scatter — a resize never reshuffles the pile), its face climbing out of
-  the crevice under the card in front into a lit bottom edge that rounds off at the
-  corners — not square-cut bands ruling lines edge to edge.
-- **split-flap: a falling card rotates in the light, not just in shape.** The front face
-  brightens swinging up toward the overhead light (added as the card's own strip at low
-  alpha, so the lift scales with its albedo), the back face arrives floor-facing dark and
-  recovers as it lands, the cast shadow sweeps the pile as well as the bottom flap, and
-  the card gradient breaks at the seam — two flaps at two tilts, not one printed strip.
+- **`@glowbox/neon`: absorb keeps colour.** A named colour is the ink it lays down
+  (a pale track under a bright meter stays two tubes), the hot core is a second coat
+  of the tube's own pigment, ink density falls with each pass's blur (no grey haze
+  between tubes), and unlit glass reads as hardware on a pale wall.
+- **`@glowbox/split-flap` + `@glowbox/flip-dot`: shadows priced by the room.** Light
+  boards run the same shadow geometry at ~half depth in warm grey (full-strength
+  black over pale plastic read as an inked grid). Per-theme where scaling fails: lit
+  ribs/facets need MORE white on pale material, clip/post metal, the edge-on sliver
+  (lit on dark, its own shade on pale). Dark boards unchanged. Budgets: split-flap
+  7 → 7.4 kB, flip-dot 5.8 → 6 kB.
+- **`@glowbox/split-flap`: the fallen pile is cards** — each its own rounded
+  silhouette, slightly off-register (deterministic scatter; a resize never
+  reshuffles), face rising out of the crevice into a lit bottom edge that rounds at
+  the corners.
+- **`@glowbox/split-flap`: a falling card rotates in the light** — the front face
+  brightens toward horizontal (scaled by its albedo), the back face arrives
+  floor-facing dark and recovers landing, the cast shadow sweeps flap + pile, and
+  the card gradient steps at the seam (two flaps, two tilts).
 
 ## [1.11.0] — 2026-08-21
 
