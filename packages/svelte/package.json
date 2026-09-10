@@ -84,7 +84,7 @@
 		"eslint": "^10",
 		"playwright": "^1.62",
 		"size-limit": "^13",
-		"svelte": "^5.56",
+		"svelte": "^5.57",
 		"svelte-check": "^4.7",
 		"typescript": "^6",
 		"vite": "^8.2",

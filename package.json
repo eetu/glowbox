@@ -25,7 +25,7 @@
 		"prettier": "^3.9.6",
 		"prettier-plugin-svelte": "^4.0.1",
 		"size-limit": "^13",
-		"svelte": "^5.56",
+		"svelte": "^5.57",
 		"typescript": "^6.0.2"
 	}
 }
