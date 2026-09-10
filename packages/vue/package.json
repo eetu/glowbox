@@ -88,7 +88,7 @@
 		"@vitest/browser": "^4.1",
 		"@vitest/browser-playwright": "^4.1",
 		"@vue/compiler-dom": "^3.5",
-		"@vue/test-utils": "^2.4",
+		"@vue/test-utils": "^2.5",
 		"eslint": "^10",
 		"playwright": "^1.62",
 		"typescript": "^6",
