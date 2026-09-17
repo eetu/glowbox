@@ -18,12 +18,12 @@
 		"@glowbox/led-grid": "workspace:^",
 		"@glowbox/nixie": "workspace:^",
 		"@glowbox/svelte": "workspace:^",
-		"@lucide/svelte": "^1.39",
-		"three": "^0.185.1"
+		"@lucide/svelte": "^1.43",
+		"three": "^0.186.0"
 	},
 	"devDependencies": {
 		"@anarkisti/eslint-config": "^1",
-		"@playwright/test": "^1.62",
+		"@playwright/test": "^1.63",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.70",
 		"@sveltejs/vite-plugin-svelte": "^7",
