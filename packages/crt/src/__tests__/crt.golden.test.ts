@@ -5,8 +5,8 @@
 // what the baseline locks. SwiftShader-pinned (see vite.config.ts). Regenerate after
 // an intentional visual change:
 //   yarn workspace @glowbox/crt test --project golden -u
-import { page } from '@vitest/browser/context';
 import { afterEach, expect, test } from 'vitest';
+import { page } from 'vitest/browser';
 
 import { createCrtScreen } from '../crt';
 

@@ -23,7 +23,7 @@
 	},
 	"devDependencies": {
 		"@anarkisti/eslint-config": "^1",
-		"@playwright/test": "^1.62",
+		"@playwright/test": "^1.63",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.70",
 		"@sveltejs/vite-plugin-svelte": "^7",
