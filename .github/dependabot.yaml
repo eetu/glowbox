@@ -48,7 +48,12 @@ updates:
         patterns:
           - 'size-limit'
           - '@size-limit/*'
+      # Dependabot picks the most SPECIFIC matching group, not the first listed. A group
+      # with no `patterns` scores 500 and outranks every wildcard pattern above (~100),
+      # swallowing @playwright/test, @sveltejs/*, @size-limit/*. '*' scores 1 — lowest.
       minor-and-patch:
+        patterns:
+          - '*'
         update-types:
           - 'minor'
           - 'patch'

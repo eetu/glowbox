@@ -29,6 +29,10 @@ jobs:
           # the core's browser project also runs webkit (HDR-extension variance).
           # (bare `yarn <bin>` isn't a thing in Yarn 4; call the hoisted bin directly.)
           ./node_modules/.bin/playwright install --with-deps chromium webkit
+          # The gallery e2e runs its workspace's own `@playwright/test`, a separate dep from
+          # the hoisted `playwright` above. Browser builds are pinned per playwright version,
+          # so when the two resolve differently the e2e launches into a missing binary.
+          yarn workspace @glowbox/svelte-gallery exec playwright install --with-deps chromium
           # The shared/ symlinks are real symlinks, not the text files git-on-Windows
           # would leave behind. Cheap, and first so it fails before anything confusing.
           node scripts/check-shared.mjs

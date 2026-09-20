@@ -54,6 +54,9 @@ jobs:
           # unvalidated code, and npm publishes are effectively irreversible. Browser (vitest)
           # and e2e (Playwright) tests need chromium.
           ./node_modules/.bin/playwright install --with-deps chromium webkit
+          # The gallery e2e runs its workspace's own `@playwright/test`; browser builds are
+          # pinned per playwright version, so install for that resolution too.
+          yarn workspace @glowbox/svelte-gallery exec playwright install --with-deps chromium
           # The shared/ symlinks are real symlinks, not the text files git-on-Windows
           # would leave behind. Cheap, and first so it fails before anything confusing.
           node scripts/check-shared.mjs
