@@ -18,8 +18,8 @@
 		"@glowbox/led-grid": "workspace:^",
 		"@glowbox/nixie": "workspace:^",
 		"@glowbox/svelte": "workspace:^",
-		"@lucide/svelte": "^1.39",
-		"three": "^0.185.1"
+		"@lucide/svelte": "^1.45",
+		"three": "^0.186.0"
 	},
 	"devDependencies": {
 		"@anarkisti/eslint-config": "^1",
@@ -28,7 +28,7 @@
 		"@sveltejs/kit": "^2.70",
 		"@sveltejs/vite-plugin-svelte": "^7",
 		"@types/node": "^26",
-		"@types/three": "^0.185.4",
+		"@types/three": "^0.186.0",
 		"eslint": "^10",
 		"svelte": "^5.57",
 		"svelte-check": "^4.7",
