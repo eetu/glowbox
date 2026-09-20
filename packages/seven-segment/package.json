@@ -53,13 +53,13 @@
 	],
 	"devDependencies": {
 		"@anarkisti/eslint-config": "^1",
-		"@vitest/browser": "^4.1",
-		"@vitest/browser-playwright": "^4.1",
+		"@vitest/browser": "^5",
+		"@vitest/browser-playwright": "^5",
 		"eslint": "^10",
-		"playwright": "^1.62",
+		"playwright": "^1.63",
 		"typescript": "^6",
 		"vite": "^8.3",
 		"vite-plugin-dts": "^5",
-		"vitest": "^4.1"
+		"vitest": "^5"
 	}
 }

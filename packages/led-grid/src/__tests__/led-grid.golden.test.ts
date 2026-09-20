@@ -4,8 +4,8 @@
 // baseline is valid on every platform; the generous mismatch ratio absorbs residual
 // raster drift. Regenerate after an intentional visual change:
 //   yarn workspace @glowbox/led-grid test --project golden -u
-import { page } from '@vitest/browser/context';
 import { afterEach, expect, test } from 'vitest';
+import { page } from 'vitest/browser';
 
 import { createLedDisplay, type LedDisplayOptions } from '../led-display';
 
