@@ -661,7 +661,7 @@ __metadata:
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/nixie": "workspace:^"
     "@glowbox/svelte": "workspace:^"
-    "@lucide/svelte": "npm:^1.45"
+    "@lucide/svelte": "npm:^1.46"
     "@playwright/test": "npm:^1.63"
     "@sveltejs/adapter-static": "npm:^3.0.10"
     "@sveltejs/kit": "npm:^2.70"
@@ -874,12 +874,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lucide/svelte@npm:^1.45":
-  version: 1.45.0
-  resolution: "@lucide/svelte@npm:1.45.0"
+"@lucide/svelte@npm:^1.46":
+  version: 1.46.0
+  resolution: "@lucide/svelte@npm:1.46.0"
   peerDependencies:
     svelte: ^5
-  checksum: 10/83a0a38572717fbefadab7a882188ce4908c4b1c10b8d877a17b5e2c76a4c6138e79a24d7116e038e03e436120be9da26b4fcc7cc8942457a1d9ee73e20373ec
+  checksum: 10/c373e1ab8502e2740240e69faa3e7a8a4a57a2bfad2a666746eb2002f1a8dac42fce1e74a7a330966fe7e217032d12c4102e3871f45ba24fbc47d81e539bc3c8
   languageName: node
   linkType: hard
 
@@ -1245,11 +1245,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:^26":
-  version: 26.5.1
-  resolution: "@types/node@npm:26.5.1"
+  version: 26.6.1
+  resolution: "@types/node@npm:26.6.1"
   dependencies:
     undici-types: "npm:~8.9.0"
-  checksum: 10/5b509d30dc9344c91cba3291acecf6f424320cb763c8192befd50cc8b1a8207dd7dcff8c4f313eea6468e9f2121cc78ffb6affbd7ecd951b4b32e2629ea9856d
+  checksum: 10/86e4bbb49b696e1183d42e1e8653b13b969146969e6e30635aa5de7d4340f06fcdd748284bcc68ea6a3f8300d9dc54569ec377f312cdeb1c1ae0a5996ec075d7
   languageName: node
   linkType: hard
 
@@ -2654,7 +2654,7 @@ __metadata:
   resolution: "glowbox@workspace:."
   dependencies:
     "@size-limit/preset-small-lib": "npm:^13"
-    prettier: "npm:^3.9.6"
+    prettier: "npm:^3.9.8"
     prettier-plugin-svelte: "npm:^4.0.1"
     size-limit: "npm:^13"
     svelte: "npm:^5.57"
@@ -3426,12 +3426,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.9.6":
-  version: 3.9.6
-  resolution: "prettier@npm:3.9.6"
+"prettier@npm:^3.9.8":
+  version: 3.9.8
+  resolution: "prettier@npm:3.9.8"
   bin:
     prettier: bin/prettier.cjs
-  checksum: 10/1dd1a1e0e40ec3b91cda9d294c4a95022aef61880ca3f441aad99b1252279f58a766c4cece81132c01550dcff1fd445efbd8812ea4a2374313e7fc6c8136f11f
+  checksum: 10/4ac262aaf9a5e221b02cc17447ebe7aa9689be59b85ab9de8152cd7422fb363ed3e09da6df585fa19ab1fc6cffebdc3ea34db1a75c978536aeba3f87bfd06ab3
   languageName: node
   linkType: hard
 
