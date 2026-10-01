@@ -479,7 +479,7 @@ __metadata:
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/nixie": "workspace:^"
     "@glowbox/svelte": "workspace:^"
-    "@lucide/svelte": "npm:^1.46"
+    "@lucide/svelte": "npm:^1.47"
     "@playwright/test": "npm:^1.63"
     "@sveltejs/adapter-static": "npm:^3.0.10"
     "@sveltejs/kit": "npm:^2.70"
@@ -489,7 +489,7 @@ __metadata:
     eslint: "npm:^10"
     svelte: "npm:^5.57"
     svelte-check: "npm:^4.7"
-    three: "npm:^0.186.0"
+    three: "npm:^0.186.1"
     typescript: "npm:^6"
     vite: "npm:^8.3"
   languageName: unknown
@@ -692,12 +692,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lucide/svelte@npm:^1.46":
-  version: 1.46.0
-  resolution: "@lucide/svelte@npm:1.46.0"
+"@lucide/svelte@npm:^1.47":
+  version: 1.47.0
+  resolution: "@lucide/svelte@npm:1.47.0"
   peerDependencies:
     svelte: ^5
-  checksum: 10/c373e1ab8502e2740240e69faa3e7a8a4a57a2bfad2a666746eb2002f1a8dac42fce1e74a7a330966fe7e217032d12c4102e3871f45ba24fbc47d81e539bc3c8
+  checksum: 10/f9d4b07b01254c5afa1e6ef849f10ff65411d35d4f96c9403a47613960daaee9aca19b34f4f29957346e46d5194a7c4fc5895867d33a03f832cb3cf72b02cdae
   languageName: node
   linkType: hard
 
@@ -1174,11 +1174,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:^26":
-  version: 26.6.1
-  resolution: "@types/node@npm:26.6.1"
+  version: 26.6.3
+  resolution: "@types/node@npm:26.6.3"
   dependencies:
     undici-types: "npm:~8.9.0"
-  checksum: 10/86e4bbb49b696e1183d42e1e8653b13b969146969e6e30635aa5de7d4340f06fcdd748284bcc68ea6a3f8300d9dc54569ec377f312cdeb1c1ae0a5996ec075d7
+  checksum: 10/278d5241522520fbadd46b41065d7587bbb214adb3c6f8a2a9a28754d374c578d090f7387866d09c79be1e9bbf5adc7eeea453032a52f77e70b06077f85c5c14
   languageName: node
   linkType: hard
 
@@ -2180,8 +2180,8 @@ __metadata:
   linkType: hard
 
 "eslint@npm:^10":
-  version: 10.10.0
-  resolution: "eslint@npm:10.10.0"
+  version: 10.11.0
+  resolution: "eslint@npm:10.11.0"
   dependencies:
     "@eslint-community/eslint-utils": "npm:^4.8.0"
     "@eslint-community/regexpp": "npm:^4.12.2"
@@ -2220,7 +2220,7 @@ __metadata:
       optional: true
   bin:
     eslint: bin/eslint.js
-  checksum: 10/02fe7e79bf9f81d939ef3ad0c3151c0588f3441eef00bdc468797f2a9f8b047bea97c57a793fc97cf1e4886400b50f049b8e66ec1371820e9df33b54a8bc90d8
+  checksum: 10/b4de8711cae009d6978e3760d400d5b2cba4117625764d9b1b77969c61f4db7dfa7bfb2754c0a22b3d9f35960a3e4f03bd579104d2c25894490bf3cf7b448cac
   languageName: node
   linkType: hard
 
@@ -2487,7 +2487,7 @@ __metadata:
   resolution: "glowbox@workspace:."
   dependencies:
     "@size-limit/preset-small-lib": "npm:^14"
-    prettier: "npm:^3.9.8"
+    prettier: "npm:^3.9.9"
     prettier-plugin-svelte: "npm:^4.0.1"
     size-limit: "npm:^14"
     svelte: "npm:^5.57"
@@ -3250,12 +3250,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.9.8":
-  version: 3.9.8
-  resolution: "prettier@npm:3.9.8"
+"prettier@npm:^3.9.9":
+  version: 3.9.9
+  resolution: "prettier@npm:3.9.9"
   bin:
     prettier: bin/prettier.cjs
-  checksum: 10/4ac262aaf9a5e221b02cc17447ebe7aa9689be59b85ab9de8152cd7422fb363ed3e09da6df585fa19ab1fc6cffebdc3ea34db1a75c978536aeba3f87bfd06ab3
+  checksum: 10/3d11a8095a7db50f0fbc8086ad96be676401154b63a2e9023e1274893457dccab19a9c211f4fb2cae7244e800bea2d5185d9bb6fc510f48a53017815e47d4e6d
   languageName: node
   linkType: hard
 
@@ -3631,10 +3631,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"three@npm:^0.186.0":
-  version: 0.186.0
-  resolution: "three@npm:0.186.0"
-  checksum: 10/9a2e21487ad7e424a1eed48284bdc285ad91f1a4ba16791e5567da144e76b03939aee82b8a2c00ab1e634d62aba47e13985a22a64a99f8fb7ffda968b9c85053
+"three@npm:^0.186.1":
+  version: 0.186.1
+  resolution: "three@npm:0.186.1"
+  checksum: 10/8ae3da0f64cb9244a6790378a5dc99a6c809d4fd832d99dfe749977671f8ac612784c0ee9b62fb9d9131f62e81dcc897772d6acfacf02438ce23c97ea5171d16
   languageName: node
   linkType: hard
 
