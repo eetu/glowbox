@@ -308,10 +308,11 @@ export function createNixieTube(
 		// smaller margin).
 		// `bare` (3D / compositing): no glass module — full transparent canvas, glow drawn
 		// source-over (straight alpha), with mesh/ghost still honoured.
-		// Pads floor at 4px, so clamp the glass box to ≥1px — a sub-9px canvas must
-		// degrade to a sliver, not feed roundRect a negative radius (IndexSizeError).
-		const padX = bare ? 0 : Math.max(4, w * 0.08);
-		const padY = bare ? 0 : Math.max(4, h * 0.05);
+		// Proportional at every size, with no pixel floor: the shadow, its offset and the
+		// corner radius all derive from these, so a tube is the same picture at 18px as at
+		// 180px. (A 4px floor once ate most of a phone-sized tube.)
+		const padX = bare ? 0 : w * 0.08;
+		const padY = bare ? 0 : h * 0.05;
 		const bw = Math.max(1, w - 2 * padX);
 		const bh = Math.max(1, h - 2 * padY);
 		const rad = Math.min(bw, bh) * 0.1;
