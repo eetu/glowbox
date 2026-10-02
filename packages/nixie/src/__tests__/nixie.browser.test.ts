@@ -50,6 +50,37 @@ test('a tiny tube still lights a legible numeral (small-size render path)', () =
 	tube.dispose();
 });
 
+// Share of the canvas width that holds any lit pixel: how wide the lit numeral reads.
+const litWidth = (canvas: HTMLCanvasElement): number => {
+	const ctx = canvas.getContext('2d')!;
+	const { width, height } = canvas;
+	const px = ctx.getImageData(0, 0, width, height).data;
+	let cols = 0;
+	for (let x = 0; x < width; x++) {
+		for (let y = 0; y < height; y++) {
+			const i = (y * width + x) * 4;
+			if (px[i] + px[i + 1] + px[i + 2] > 120) {
+				cols++;
+				break;
+			}
+		}
+	}
+	return cols / width;
+};
+
+test('a phone-sized tube keeps its numeral (the glass margin scales down)', () => {
+	// A 10x18 tube used to keep a fixed 4px pad each side, leaving a 2px slit of glass for
+	// the numeral: 0.4 of the width lit, rim and glow included. With the pads shrinking, 0.8.
+	const canvas = document.createElement('canvas');
+	canvas.style.width = '10px';
+	canvas.style.height = '18px';
+	document.body.appendChild(canvas);
+	const tube = createNixieTube(canvas, { value: 8, mesh: false, ghost: false });
+	if (!tube) return;
+	expect(litWidth(canvas)).toBeGreaterThan(0.6);
+	tube.dispose();
+});
+
 test('setValue and setOptions redraw live', () => {
 	const canvas = makeCanvas();
 	const tube = createNixieTube(canvas, { value: 1, mesh: false, ghost: false });

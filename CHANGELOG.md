@@ -4,6 +4,14 @@ All notable changes to the glowbox packages are documented here. The format is b
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the packages share a
 version and are released together.
 
+## [Unreleased]
+
+### Fixed
+
+- **`@glowbox/nixie`: small tubes keep their numeral.** The glass margin's 4 px floor now
+  shrinks with the tube below ~34 px wide / ~50 px tall, where it used to eat most of a
+  phone-sized tube (a 10×18 tube's numeral was ~2 px tall). Larger tubes are unchanged.
+
 ## [1.12.0] — 2026-08-25
 
 **Neon inks in colour, and the mechanical boards learn what room they hang in.**
