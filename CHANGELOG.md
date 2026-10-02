@@ -6,11 +6,13 @@ version and are released together.
 
 ## [Unreleased]
 
-### Fixed
+### Changed
 
-- **`@glowbox/nixie`: small tubes keep their numeral.** The glass margin's 4 px floor now
-  shrinks with the tube below ~34 px wide / ~50 px tall, where it used to eat most of a
-  phone-sized tube (a 10×18 tube's numeral was ~2 px tall). Larger tubes are unchanged.
+- **`@glowbox/nixie`: the glass margin is proportional at every size** — 8% of the width,
+  5% of the height, no pixel floor — so a tube is the same picture at 18 px as at 180 px.
+  The old 4 px floor ate most of a phone-sized tube (a 10×18 tube's numeral was ~2 px
+  tall); tubes under ~50 px wide or ~80 px tall now show more glass and numeral than
+  before, larger ones are unchanged.
 
 ## [1.12.0] — 2026-08-25
 

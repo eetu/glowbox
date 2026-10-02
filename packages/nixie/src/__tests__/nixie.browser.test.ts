@@ -70,7 +70,7 @@ const litWidth = (canvas: HTMLCanvasElement): number => {
 
 test('a phone-sized tube keeps its numeral (the glass margin scales down)', () => {
 	// A 10x18 tube used to keep a fixed 4px pad each side, leaving a 2px slit of glass for
-	// the numeral: 0.4 of the width lit, rim and glow included. With the pads shrinking, 0.8.
+	// the numeral: 0.4 of the width lit, rim and glow included. Proportional pads: 1.0.
 	const canvas = document.createElement('canvas');
 	canvas.style.width = '10px';
 	canvas.style.height = '18px';
