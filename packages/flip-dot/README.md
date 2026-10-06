@@ -102,6 +102,47 @@ pre-squashed atlas so a mid-flip dot is a single `drawImage`. The demo board
 (56×28) animates its worst case at **~134 fps at dpr 2 on an Apple M1**
 (`scripts/bench-flip-dot.mjs` in the repo); idle is zero by construction.
 
+## Pixel dots
+
+For a game painting into its own low-resolution raster, the board comes as **whole-pixel
+data with its physics**. **`flipDotPixels({ cols, rows, dot, gap, shape })`** lays the dots
+out once, row-major, as parts `{ col, row, x, y, rects }`: `rects` is the face at rest (round
+from 3 px, a square at 1–2, the vane an octagon). **`flipFrames(dot, { shape, axis })`** is one
+dot through its flip in `4 · dot` steps, each `{ a, b, edge }` rects: face A, face B and the
+disc edge-on, so the faces take whatever colours the game's theme paints. The disc
+foreshortens across its axis; the vane folds its flap over the hinge, both faces showing
+mid-fold. **`flipPhases(changes, t, { cols, rows, seed, stagger, scanMs, flipMs })`** gives
+each dot's phase at `t` seconds, 0 face A … 1 face B, from the frames the board was given
+(`{ t, frame }[]`): the scan wave, each solenoid's jitter and a disc finishing its last flip
+before the next, in closed form, so the same changes, moment and seed give the same board at
+any frame rate. **`flipLandings(changes, from, to, timing)`** lists the discs that hit their
+stops in a window, which is when to tick `createMechSound`.
+
+The flip reads as a turn from 4 px. At 3 a disc twinkles through a point, and at 1–2 px a
+dot is a pixel blinking through its edge, as the canvas board goes flat below 4 device pixels
+a cell; the scan wave and the clicks are there at any size.
+
+```ts
+import { flipDotPixels, flipFrames, flipLandings, flipPhases } from '@glowbox/flip-dot';
+
+const timing = { cols: 28, rows: 7, seed: 1 };
+const board = flipDotPixels({ ...timing, dot: 4 });
+const frames = flipFrames(4);
+const changes = [{ t: -1, frame: gate }]; // at rest; push { t, frame } to change it
+
+// Each frame:
+const phases = flipPhases(changes, t, timing);
+fill(plastic, x0 - 1, y0 - 1, board.width + 2, board.height + 2);
+board.parts.forEach(({ x, y }, i) => {
+	const { a, b, edge } = frames[Math.round(phases[i] * (frames.length - 1))];
+	for (const r of a) fill(faceA, x0 + x + r.x, y0 + y + r.y, r.w, r.h);
+	for (const r of b) fill(faceB, x0 + x + r.x, y0 + y + r.y, r.w, r.h);
+	for (const r of edge) fill(rim, x0 + x + r.x, y0 + y + r.y, r.w, r.h);
+});
+for (const { col } of flipLandings(changes, lastT, t, timing).slice(0, 3))
+	sound.tick({ freq: 8000, decay: 0.008, pan: (col / 27) * 1.4 - 0.7 });
+```
+
 ## Themes
 
 `theme` bundles the colour **defaults**: `'dark'` (the default — fluorescent discs on a

@@ -60,5 +60,18 @@ export {
 	PHOSPHORS,
 	type PhosphorSpec
 } from './phosphor';
+export { type PixelLayout, type PixelPart, type PixelRect } from './pixel';
+export {
+	compilePixelPanel,
+	type PhosphorStep,
+	stepPhosphor,
+	vfdLevels,
+	type VfdLight,
+	type VfdPixelPanel,
+	type VfdPixelPart,
+	type VfdPixelValue,
+	vfdTargets
+} from './pixel-panel';
 export { type Theme } from './theme';
 export { createVfdPanel, type VfdPanel, type VfdPanelOptions } from './vfd';
+export { type Wear } from './wear';

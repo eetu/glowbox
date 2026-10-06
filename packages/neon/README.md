@@ -311,6 +311,38 @@ in sign units (y-down, baseline 0) — extrude them into real tube geometry on
 your side, the way nixie's `nixieCathodes` tells the same story. Runs in bare
 node.
 
+## Pixel signs
+
+For a game drawing into its own low-resolution raster, the sign comes as **whole-pixel
+tubes**. **`neonPixels(text, { capHeight, font, stroke, tubes, art, … })`** rasterises the
+`layoutTubes` sections, a capital `capHeight` rows tall, the tube 1 px wide (or `stroke`)
+and one pixel all the way round its curves: as parts `{ rects, line, word, art, ends,
+steady }`, `ends` being the electrode stubs, metal and never lit. **`neonLevels(layout, t,
+{ seed, age, program, speed, strikeMs, on, lineOn, wordOn })`** gives each part's light at
+`t` seconds: 0 unlit glass, the ghost to paint dim, 1 lit, up to 1.15 mid-strike. A switch
+is `true`, `false` or the time it came on, and the strike runs from then; the flasher keeps
+the canvas sign's floors, and wear is the seeded `wearLevels`. Both are pure, so a world
+that rewinds sees the same strike and the same flicker. The shape is the `PixelLayout`
+every glowbox core shares for pixel data.
+
+```ts
+import { neonLevels, neonPixels } from '@glowbox/neon';
+
+const sign = neonPixels('OPEN', { capHeight: 9, font: 'sans', letterSpacing: 1 / 8 });
+const levels = neonLevels(sign, t, { seed: 7, age: 0.8, on: dusk });
+sign.parts.forEach(({ rects }, i) => {
+	for (const r of rects) fill(levels[i] ? lit(levels[i]) : ghost, x0 + r.x, y0 + r.y, r.w, r.h);
+});
+```
+
+Sans capitals read from a **7 px** cap height given a pixel of tracking (`letterSpacing:
+1 / (capHeight - 1)`; without it T and E weld into one bar), sans lowercase from about
+**9 px**, script from about **16 px** (its lowercase is 9/21 of the cap: 7 rows). At 1 px a tube
+reads as a thin font until something glows: the export leaves out the blur passes (paint
+the lit rects as light sources and let the scene's light spill), the hot core, `absorb`
+compositing and `outline` contours. The canvas sign drops its electrodes under a 28 px cap
+height; at pixel scale paint the stubs dim, or not at all.
+
 ## Performance
 
 Path2D per section, built lazily and cached until the text/font changes;

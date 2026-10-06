@@ -209,6 +209,50 @@ integer address), which is what lets the physics be a handful of uniform passes 
 single `Float32Array` instead of six per-element special cases. It is also the seam for a
 3D consumer: extrude the anode polygons into plates and drive them with `driveElement`.
 
+## Pixel panel
+
+For a game drawing into its own low-resolution raster, the panel comes as **whole-pixel
+rects**. **`compilePixelPanel([w, h], layout)`** takes the same layout with its boxes in
+pixels and gives one part per anode, `{ rects, el, cell, sub, col, printed }`, in the canvas
+panel's order and with its addresses (the `PixelLayout` of `PixelPart`s every glowbox core
+shares). Digits are upright and fill their box's height; matrix cells, legends and scale
+labels are the 5×7 face at the largest whole scale that fits. It draws `digits` as `'7seg'`
+or `'matrix'`, `legend`, `bars`, `dots` and `rule`; 14/16-segment digits (the default
+`glyphs`), `icon` and `scale` throw, and so does a box too small for its element. Dots touch
+at one pixel a dot, so a matrix cell's ghost is a solid 5×7 block there: matrix dots get a
+pixel of gutter from a 3 px pitch, and a `dots` area's `gap` opens one at any pitch from 2.
+
+The light is per frame and pure, so a world run on time and a seed replays the same panel:
+**`vfdTargets(panel, values, { selfTest })`** drives the parts by element name (a string for
+digits, a boolean for a legend, levels for bars, a bitmap or `(x, y)` function for dots, or an
+`ElementState`, which is how a `bars` element's held caps ride in, stepped with `fallPeaks`);
+**`stepPhosphor(levels, targets, dt, { persistence, phosphor })`** runs persistence in place;
+**`vfdLevels(panel, levels, { brightness, age, seed, t })`** applies the dimmer, the wear arc
+and the weak grid's band. A level of 0 is an undriven anode, to paint as the ghost; lit parts
+are self-lit, ghosts and silkscreen are paint. The filter is yours to multiply in
+(`FILTERS[name].tint`).
+
+```ts
+import { compilePixelPanel, PHOSPHORS, stepPhosphor, vfdLevels, vfdTargets } from '@glowbox/vfd';
+
+const panel = compilePixelPanel(
+	[60, 18],
+	[
+		{ kind: 'digits', name: 'clock', chars: 4, glyphs: '7seg', x: 2, y: 2, w: 40, h: 14 },
+		{ kind: 'legend', name: 'st', text: 'ST', x: 46, y: 2, w: 11, h: 7 }
+	]
+);
+const levels = new Float32Array(panel.parts.length);
+
+// Each frame:
+stepPhosphor(levels, vfdTargets(panel, { clock: '12:34', st: true }), dt);
+const shown = vfdLevels(panel, levels, { brightness, age, seed, t });
+panel.parts.forEach(({ rects, printed }, i) => {
+	const colour = printed ? ink : mix(ghost, PHOSPHORS['zn-o'].color, shown[i]);
+	for (const r of rects) fill(colour, x0 + r.x, y0 + r.y, r.w, r.h);
+});
+```
+
 ## Accessibility
 
 The canvas gets `role="img"` and an `aria-label` built from `label` plus what the panel is

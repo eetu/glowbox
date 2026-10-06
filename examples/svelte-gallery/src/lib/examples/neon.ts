@@ -158,8 +158,11 @@ export interface NeonKnobs {
 	text(): string;
 }
 
+/** What a show drives: the canvas sign, or the page's stand-in for the pixel render. */
+export type NeonShowTarget = Pick<NeonSign, 'setOptions' | 'setText' | 'power'>;
+
 /** A show: start it on a sign, get back its stop(). */
-export type NeonShowFn = (sign: NeonSign, knobs: NeonKnobs) => () => void;
+export type NeonShowFn = (sign: NeonShowTarget, knobs: NeonKnobs) => () => void;
 
 // Every show states its full look over this baseline — no inherited leftovers.
 const BASE: Partial<NeonSignOptions> = {

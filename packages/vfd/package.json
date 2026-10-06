@@ -47,9 +47,9 @@
 	},
 	"size-limit": [
 		{
-			"name": "esm (core + 7/14/16-segment geometry + vendored 5×7 face + SVG path parser)",
+			"name": "esm (core + 7/14/16-segment geometry + vendored 5×7 face + SVG path parser + pixel panel)",
 			"path": "dist/index.js",
-			"limit": "12 kB"
+			"limit": "15 kB"
 		}
 	],
 	"devDependencies": {

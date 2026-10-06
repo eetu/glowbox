@@ -47,6 +47,12 @@
 		{
 			"name": "esm",
 			"path": "dist/index.js",
+			"limit": "8.5 kB"
+		},
+		{
+			"name": "canvas tube and row (the pixel export tree-shaken away)",
+			"path": "dist/index.js",
+			"import": "{ createNixieTube, createNixieRow }",
 			"limit": "5 kB"
 		}
 	],

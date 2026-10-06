@@ -46,8 +46,14 @@
 	},
 	"size-limit": [
 		{
-			"name": "esm",
+			"name": "esm (core + pixel export + vendored 5×7 face + latin table)",
 			"path": "dist/index.js",
+			"limit": "9.8 kB"
+		},
+		{
+			"name": "canvas board alone (the pixel export and its face tree-shake away)",
+			"path": "dist/index.js",
+			"import": "{ createSplitFlap }",
 			"limit": "7.4 kB"
 		}
 	],

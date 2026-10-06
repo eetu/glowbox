@@ -114,6 +114,34 @@ for (const { symbol, path, depth } of nixieCathodes()) {
 The Svelte gallery's `/nixie` route has a 2D/3D toggle whose 3D scene is built entirely
 from these (three.js owns only the glass cylinder + bloom).
 
+## Pixel tubes
+
+For a game drawing into its own low-resolution raster, the tubes come as **whole-pixel
+rects**: the canvas tube's own wires, a pixel wide (two from 48 px tall), each glyph's
+extremes snapped to whole pixels, unbroken at every height. It reads as a nixie from
+16 px, where the ghost stack shows as wire behind the lit one. 11 px is a hand-drawn
+fallback: legible digits, the stack a smudge. **`nixiePixelText(text, { height, gap,
+colon, wire })`** lays out a row, one tube per character: a digit tube is its ten cathodes
+front to back as parts `{ index, symbol, depth, rects, on }`, the lit one `on` and the
+others the ghosts to paint dim (farther by `depth`, as the canvas does); `:` `.` `-` are
+separator tubes, one part as wide as its ink. Each pixel belongs to one part, so they paint
+in any order. **`nixiePixels(symbol, height)`** is one tube. **`nixieLevels(layout, { age,
+seed, t })`** gives each part's light at `t`, 0 a ghost … 1 lit: the cathodes age, the
+most-worn one flickers past 0.7 and dies at 0.95, seeded so a world that rewinds sees the
+same flicker. The shape (`PixelLayout` of `PixelPart`s) is the one every glowbox core
+shares for pixel data.
+
+```ts
+import { nixieLevels, nixiePixelText } from '@glowbox/nixie';
+
+const row = nixiePixelText('12:34', { height: 16, colon: blinkOn }); // once per change
+const levels = nixieLevels(row, { age: 0.3, seed: 7, t }); // every frame
+row.parts.forEach(({ rects, depth }, i) => {
+	const ink = levels[i] > 0 ? glow(levels[i]) : ghost(depth);
+	for (const r of rects) fill(ink, x0 + r.x, y0 + r.y, r.w, r.h);
+});
+```
+
 ## Methods
 
 `setValue(v)`, `setOptions(patch)`, `resize()` (after the canvas box changes),

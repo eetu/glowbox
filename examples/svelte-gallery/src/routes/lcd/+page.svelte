@@ -11,15 +11,22 @@
 		createLcdModule,
 		LATIN_5X7,
 		type LcdCursor,
+		lcdInk,
 		type LcdModule,
+		lcdPixels,
+		lcdTargets,
 		type PanelName,
-		repertoire5x7
+		PANELS,
+		repertoire5x7,
+		type RGB,
+		stepCrystals
 	} from '@glowbox/lcd';
 	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
 	import X from '@lucide/svelte/icons/x';
 	import { tick, untrack } from 'svelte';
 
 	import CoreNav from '$lib/components/CoreNav.svelte';
+	import PixelStage, { mixHex, type PixelPaint } from '$lib/components/PixelStage.svelte';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Slider from '$lib/components/Slider.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
@@ -27,6 +34,10 @@
 	import { theme } from '$lib/theme.svelte';
 
 	let mode = $state<'attract' | 'type'>('attract');
+	// Canvas is the component; pixel is the same module as data (`lcdPixels` and the three
+	// steps after it), painted the way a game would into its own raster, scaled up whole.
+	let render = $state<'canvas' | 'pixel'>('canvas');
+	let pixelDot = $state(1);
 	let panel = $state<PanelName>('green');
 	let backlight = $state(1);
 	let contrast = $state(0.8);
@@ -80,14 +91,55 @@
 	let lcd = $state.raw<LcdModule | null>(null);
 
 	// CGRAM: eight bar glyphs, slot n = n+1 rows of ink from the floor — programmed
-	// once at creation, so the attract meter and typed code points 0–7 read the same
-	// slots.
+	// once at creation (handed to every `lcdTargets` in pixel mode), so the attract meter
+	// and typed code points 0–7 read the same slots.
+	const BARS = Array.from({ length: 8 }, (_, slot) =>
+		Array.from({ length: 8 }, (_, r) => (r >= 7 - slot ? 0b11111 : 0))
+	);
 	function programGlyphs(m: LcdModule) {
-		for (let slot = 0; slot < 8; slot++) {
-			const rows = Array.from({ length: 8 }, (_, r) => (r >= 7 - slot ? 0b11111 : 0));
-			m.setGlyph(slot, rows);
-		}
+		BARS.forEach((rows, slot) => m.setGlyph(slot, rows));
 	}
+
+	// What the attract programme, the bench and the tap drive: the canvas module, or in
+	// pixel mode a controller that keeps the same calls as values for the pixel paint.
+	type LcdDrive = Pick<
+		LcdModule,
+		'cols' | 'rows' | 'setText' | 'setCursor' | 'setOptions' | 'power' | 'cellAt'
+	>;
+	// `bootAt` is the paint clock's second of the last power-on; -1 has the next frame stamp it.
+	const pix = $state({
+		lines: [] as readonly string[],
+		cursor: 'none' as LcdCursor,
+		col: 0,
+		row: 0,
+		on: true,
+		bootAt: -1
+	});
+	const pixelDrive: LcdDrive = {
+		get cols() {
+			return modCols;
+		},
+		get rows() {
+			return modRows;
+		},
+		setText: (text) => {
+			pix.lines = typeof text === 'string' ? text.split('\n') : text;
+		},
+		setCursor: (col, row) => {
+			pix.col = col;
+			pix.row = row;
+		},
+		setOptions: ({ cursor }) => {
+			if (cursor) pix.cursor = cursor;
+		},
+		power: (v) => {
+			if (v === pix.on) return;
+			pix.on = v;
+			if (v) pix.bootAt = -1;
+		},
+		cellAt: (clientX, clientY) => pixelCellAt(clientX, clientY)
+	};
+	const drive = $derived<LcdDrive | null>(render === 'pixel' ? pixelDrive : lcd);
 
 	// --- the attract loop: one scene clock, five scenes -------------------------
 	const TYPED = ['GLOWBOX LCD 16X2', 'READY>'];
@@ -96,7 +148,7 @@
 	// repertoire plus the injected Latin/Nordic extension table.
 	const CHARSET = [...repertoire5x7().filter((c) => c !== ' '), ...Object.keys(LATIN_5X7)].join('');
 	let timer: ReturnType<typeof setInterval> | undefined;
-	function startProgram(m: LcdModule) {
+	function startProgram(m: LcdDrive) {
 		let tick = 0;
 		let scene = 0; // 0 type · 1 meter · 2 charset · 3 scroll · 4 power cycle
 		let sceneT = 0;
@@ -217,7 +269,7 @@
 	// The power switch on its own effect: the attract loop's power-cycle scene flips
 	// the module internally, and folding `on` into the envelope patch would fight it.
 	$effect(() => {
-		lcd?.power(on);
+		drive?.power(on);
 	});
 	$effect(() => {
 		void moduleW;
@@ -228,7 +280,7 @@
 	// The attract programme runs only while it owns the glass — type mode and
 	// STANDBY both take the wheel.
 	$effect(() => {
-		const m = lcd;
+		const m = drive;
 		if (!m || mode !== 'attract' || !on) return;
 		untrack(() => startProgram(m));
 		return () => clearInterval(timer);
@@ -252,7 +304,7 @@
 		}).join('');
 
 	$effect(() => {
-		const m = lcd;
+		const m = drive;
 		if (!m || mode !== 'type') return;
 		m.setOptions({ cursor: cursorStyle });
 		m.setText(typedLines.slice(0, modRows).map(toModule));
@@ -262,7 +314,7 @@
 	function syncCaret(r: number) {
 		const el = lineEls[r];
 		if (!el) return;
-		lcd?.setCursor(Math.min(el.selectionStart ?? 0, modCols - 1), r);
+		drive?.setCursor(Math.min(el.selectionStart ?? 0, modCols - 1), r);
 	}
 
 	// The preset ramp: bars up and back down, in the printable form.
@@ -290,7 +342,7 @@
 	// row is padded out to the tapped column — DDRAM addressing doesn't care that
 	// nothing was written on the way there.
 	async function onTap(e: MouseEvent) {
-		const m = lcd;
+		const m = drive;
 		const cell = m?.cellAt(e.clientX, e.clientY);
 		if (!m || !cell) return;
 		if (mode === 'type') {
@@ -310,6 +362,127 @@
 			m.setCursor(cell.x, cell.y);
 		}
 	}
+
+	// --- the pixel render ------------------------------------------------------------
+	// The glass round the dot field, in dot pitches (the canvas core's margin), then the
+	// plastic in the bezel's pitches, then the stage's own pad, in pixels.
+	const GLASS_PAD = 2;
+	const PAD = 3;
+	const pixelBox = $derived.by(() => {
+		const layout = lcdPixels({ cols: modCols, rows: modRows, dot: pixelDot });
+		const pitch = layout.parts[1].rects[0].x - layout.parts[0].rects[0].x;
+		const plastic = bezelOn ? bezelWidth * pitch : 0;
+		const glass = PAD + plastic;
+		const field = glass + GLASS_PAD * pitch;
+		return {
+			layout,
+			plastic,
+			glass,
+			field,
+			width: layout.width + 2 * field,
+			height: layout.height + 2 * field
+		};
+	});
+
+	const toHex = (c: RGB) =>
+		`#${c
+			.map((v) =>
+				Math.round(Math.max(0, Math.min(1, v)) * 255)
+					.toString(16)
+					.padStart(2, '0')
+			)
+			.join('')}`;
+	// The canvas render's viewing-angle shading, `u` down the glass: darkest at the top
+	// edge, clear by a quarter of the way, a little again at the foot.
+	const viewShade = (u: number) => (u < 0.25 ? 0.1 * (1 - u / 0.25) : (0.06 * (u - 0.25)) / 0.75);
+
+	// The crystals live outside Svelte: stepped in place every frame by the paint.
+	let crystals = new Float32Array(0);
+	let lastT = 0;
+	const pixelPaint: PixelPaint = (fill, t) => {
+		// A fresh stage restarts its clock: power the glass up from blank, as a new module does.
+		if (t < lastT) {
+			crystals.fill(0);
+			pix.bootAt = -1;
+			lastT = t;
+		}
+		const dt = t - lastT;
+		lastT = t;
+		if (pix.bootAt < 0) pix.bootAt = t;
+		const { layout, plastic, glass, field, width, height } = pixelBox;
+		if (crystals.length !== layout.parts.length) crystals = new Float32Array(layout.parts.length);
+		const cursor = pix.cursor === 'none' ? null : { col: pix.col, row: pix.row, style: pix.cursor };
+		const target = lcdTargets(pix.lines, {
+			cols: modCols,
+			rows: modRows,
+			cgram: BARS,
+			glyphs: LATIN_5X7,
+			cursor,
+			boot: true,
+			on: pix.on,
+			t: t - pix.bootAt
+		});
+		stepCrystals(crystals, target, dt, response);
+		// Power off unlights the pane whatever the backlight is set to, as on the canvas.
+		const lit = pix.on ? backlight : 0;
+		const ink = lcdInk(crystals, {
+			cols: modCols,
+			contrast,
+			ghost,
+			panel,
+			backlight: lit,
+			age,
+			seed: 7,
+			t
+		});
+		// Ink darkens the pane (on the negative blue glass it is the backlight let through),
+		// so nothing here is lit: the stage gets no glow.
+		const spec = PANELS[panel];
+		const pane = mixHex(toHex(spec.paneOff), toHex(spec.pane), lit);
+		const inkHex = toHex(spec.ink);
+		if (plastic) fill(bezelColor, PAD, PAD, width - 2 * PAD, height - 2 * PAD);
+		const gw = width - 2 * glass;
+		const gh = height - 2 * glass;
+		const rowPane: string[] = [];
+		for (let y = 0; y < gh; y++) {
+			rowPane.push(mixHex(pane, '#000000', viewShade((y + 0.5) / gh)));
+			fill(rowPane[y], glass, glass + y, gw, 1);
+		}
+		const inset = field - glass;
+		layout.parts.forEach(({ rects: [r] }, i) => {
+			if (ink[i] <= 0.004) return;
+			fill(mixHex(rowPane[inset + r.y], inkHex, ink[i]), field + r.x, field + r.y, r.w, r.h);
+		});
+	};
+
+	// The cell under a viewport point in pixel mode: back through the stage's canvas to
+	// buffer pixels, then the cell of the nearest dot, if the point is on the dot field.
+	let pixelEl = $state<HTMLDivElement>();
+	function pixelCellAt(clientX: number, clientY: number) {
+		const r = pixelEl?.querySelector('canvas')?.getBoundingClientRect();
+		if (!r?.width || !r.height) return null;
+		const { layout, field, width, height } = pixelBox;
+		const x = ((clientX - r.left) / r.width) * width - field;
+		const y = ((clientY - r.top) / r.height) * height - field;
+		if (x < 0 || y < 0 || x >= layout.width || y >= layout.height) return null;
+		let near = layout.parts[0];
+		let best = Infinity;
+		for (const part of layout.parts) {
+			const [d] = part.rects;
+			const e = (d.x + d.w / 2 - x) ** 2 + (d.y + d.h / 2 - y) ** 2;
+			if (e < best) [near, best] = [part, e];
+		}
+		return near.cell;
+	}
+	const pixelLabel = $derived.by(() => {
+		const shown = pix.on
+			? pix.lines
+					.map((l) => l.trim())
+					.filter(Boolean)
+					.join(' / ')
+			: '';
+		return shown ? `lcd display: ${shown}` : 'lcd display';
+	});
 </script>
 
 <svelte:head>
@@ -321,8 +494,8 @@
 <div class="app">
 	<header>
 		<CoreNav core="lcd" />
-		<label class="hdr-field"
-			>mode
+		<div class="hdr-field">
+			mode
 			<Segmented
 				bind:value={mode}
 				ariaLabel="mode"
@@ -331,9 +504,9 @@
 					{ value: 'type', label: 'Type' }
 				]}
 			/>
-		</label>
-		<label class="hdr-field"
-			>glass
+		</div>
+		<div class="hdr-field">
+			glass
 			<Segmented
 				bind:value={panel}
 				ariaLabel="panel glass"
@@ -343,7 +516,18 @@
 					{ value: 'white', label: 'FSTN' }
 				]}
 			/>
-		</label>
+		</div>
+		<div class="hdr-field">
+			render
+			<Segmented
+				bind:value={render}
+				ariaLabel="render"
+				options={[
+					{ value: 'canvas', label: 'Canvas' },
+					{ value: 'pixel', label: 'Pixel' }
+				]}
+			/>
+		</div>
 		<span class="hint">slow crystals · twist CONTRAST past 0.85 · tap to park the cursor</span>
 		<ThemeToggle />
 		<button
@@ -358,11 +542,26 @@
 	</header>
 
 	<div class="stage" style="background: {backdrop}">
-		<div class="module">
-			<canvas bind:this={canvas} style="width: {moduleW}px; height: {moduleH}px" onclick={onTap}
-			></canvas>
+		<div class="module" class:pixel={render === 'pixel'}>
+			{#if render === 'pixel'}
+				<!-- The tap is the pointer's shortcut; the bench inputs are the keyboard's. -->
+				<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+				<div class="pixel-glass" bind:this={pixelEl} onclick={onTap}>
+					<PixelStage
+						width={pixelBox.width}
+						height={pixelBox.height}
+						paint={pixelPaint}
+						background={backdrop}
+						maxScale={16}
+						label={pixelLabel}
+					/>
+				</div>
+			{:else}
+				<canvas bind:this={canvas} style="width: {moduleW}px; height: {moduleH}px" onclick={onTap}
+				></canvas>
+			{/if}
 			{#if mode === 'type'}
-				<div class="bench" style="width: {moduleW}px">
+				<div class="bench" style="width: {render === 'pixel' ? 480 : moduleW}px">
 					{#each typedLines.slice(0, modRows) as _, r (r)}
 						<!-- svelte-ignore a11y_autofocus -->
 						<input
@@ -469,6 +668,17 @@
 					]}
 				/>
 			</label>
+			{#if render === 'pixel'}
+				<Slider
+					bind:value={pixelDot}
+					label="dot"
+					min={1}
+					max={3}
+					step={1}
+					format={(v) => `${v} px`}
+					hint="in the display's own pixels; the stage scales them up whole"
+				/>
+			{/if}
 			<Slider
 				bind:value={moduleW}
 				label="width"
@@ -476,6 +686,8 @@
 				max={720}
 				step={10}
 				format={(v) => `${v}px`}
+				disabled={render === 'pixel'}
+				hint={render === 'pixel' ? 'canvas only' : undefined}
 			/>
 			<Slider
 				bind:value={moduleH}
@@ -484,6 +696,7 @@
 				max={260}
 				step={5}
 				format={(v) => `${v}px`}
+				disabled={render === 'pixel'}
 			/>
 		</section>
 
@@ -530,15 +743,17 @@
 	header {
 		grid-area: header;
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: 16px;
+		gap: 8px 16px;
 		padding: 8px 16px;
 		background: var(--halo-bg-light);
 	}
 	.hdr-field {
 		display: inline-flex;
 		/* Never squeezed: a segmented control broken across two rows reads as a
-		   mistake. The hint takes the hit instead — prose is allowed to wrap. */
+		   mistake. The hint takes the hit instead: it wraps, or drops to a row of
+		   its own. */
 		flex: none;
 		align-items: center;
 		gap: 8px;
@@ -546,8 +761,8 @@
 		color: var(--halo-text-muted);
 	}
 	.hint {
-		min-width: 0;
-		margin-left: auto;
+		flex: 1 0 12em;
+		text-align: right;
 		font-size: 12px;
 		color: var(--halo-text-muted);
 	}
@@ -585,6 +800,16 @@
 		gap: 10px;
 		min-width: 0;
 		max-width: 100%;
+	}
+	.module.pixel {
+		width: 100%;
+		height: 100%;
+	}
+	.pixel-glass {
+		flex: 1;
+		min-height: 0;
+		width: 100%;
+		cursor: pointer;
 	}
 
 	/* The bench row — the inputs sit under the glass like a keypad ribbon cable. */

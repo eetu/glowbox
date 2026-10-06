@@ -7,6 +7,8 @@
 	import { createCrtScreen } from '@glowbox/crt';
 	import {
 		createSevenSegment,
+		pixelLevels,
+		pixelText,
 		type SevenSegmentDisplay,
 		type SevenSegmentStyle
 	} from '@glowbox/seven-segment';
@@ -16,6 +18,7 @@
 
 	import BombRig from '$lib/components/BombRig.svelte';
 	import CoreNav from '$lib/components/CoreNav.svelte';
+	import PixelStage, { mixHex, type PixelPaint } from '$lib/components/PixelStage.svelte';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Select from '$lib/components/Select.svelte';
 	import Slider from '$lib/components/Slider.svelte';
@@ -32,6 +35,10 @@
 	type Show = 'clock' | 'bomb';
 	let show = $state<Show>('clock');
 	let style = $state<SevenSegmentStyle>('led');
+	// Canvas is the component; pixel is the same display as data (`pixelText`), painted the
+	// way a game would into its own raster and scaled up by a whole number.
+	let render = $state<'canvas' | 'pixel'>('canvas');
+	let pixelH = $state(14);
 	let glow = $state(0.7);
 	let age = $state(0);
 	let ghost = $state(true);
@@ -174,6 +181,26 @@
 	$effect(() => {
 		for (let i = 0; i < displays.length; i++) displays[i]?.setValue(values[i]);
 	});
+
+	// The pixel render: one row laid out on whole pixels, lit by the seeded wear arc, so AGE
+	// dims and kills segments here as it does on the canvas.
+	const PIXEL_INK = {
+		led: { lit: '#ff3b2a', ghost: '#2c0f0b', face: '#120706' },
+		vfd: { lit: '#62f5cb', ghost: '#0d2721', face: '#040c0a' }
+	} as const;
+	const PAD = 2;
+	const pixelRow = $derived(pixelText(shown, { height: pixelH }));
+	const pixelPaint: PixelPaint = (fill, t) => {
+		const ink = PIXEL_INK[style];
+		const dead = show === 'bomb' && bomb.state === 'detonated';
+		const levels = pixelLevels(pixelRow, { age, seed: 7, t });
+		pixelRow.parts.forEach((p, i) => {
+			const on = !dead && levels[i] > 0;
+			if (!on && !ghost) return;
+			const colour = on ? mixHex(ink.ghost, ink.lit, levels[i]) : ink.ghost;
+			for (const r of p.rects) fill(colour, r.x + PAD, r.y + PAD, r.w, r.h, on);
+		});
+	};
 </script>
 
 <svelte:head>
@@ -185,7 +212,7 @@
 <div class="app">
 	<header>
 		<CoreNav core="seven" />
-		<label class="hdr-field example-field">
+		<div class="hdr-field example-field">
 			<span class="lbl">show</span>
 			<Select
 				bind:value={show}
@@ -195,9 +222,9 @@
 					{ value: 'bomb', label: 'Countdown' }
 				]}
 			/>
-		</label>
-		<label class="hdr-field style-field"
-			>style
+		</div>
+		<div class="hdr-field style-field">
+			style
 			<Segmented
 				bind:value={style}
 				ariaLabel="display style"
@@ -206,7 +233,18 @@
 					{ value: 'vfd', label: 'VFD' }
 				]}
 			/>
-		</label>
+		</div>
+		<div class="hdr-field">
+			render
+			<Segmented
+				bind:value={render}
+				ariaLabel="render"
+				options={[
+					{ value: 'canvas', label: 'Canvas' },
+					{ value: 'pixel', label: 'Pixel' }
+				]}
+			/>
+		</div>
 		<span class="hint">
 			{show === 'bomb' ? 'don’t cut the red wire' : 'per-segment fades · drag AGE to wear it out'}
 		</span>
@@ -223,19 +261,38 @@
 	</header>
 
 	<div class="stage" style="background: {backdrop}">
+		{#snippet pixels(label: string)}
+			<div class="clock pixel" bind:this={clockEl}>
+				<PixelStage
+					width={pixelRow.width + 2 * PAD}
+					height={pixelRow.height + 2 * PAD}
+					paint={pixelPaint}
+					glow={glow * 0.9}
+					background={windowOn ? PIXEL_INK[style].face : backdrop}
+					maxScale={16}
+					{label}
+				/>
+			</div>
+		{/snippet}
 		{#if show === 'bomb'}
 			<BombRig state={bomb.state} cut={bomb.cut} oncut={cutWire}>
-				<div class="clock" role="img" aria-label={bombLabel} bind:this={clockEl}>
-					{#each slots as ch, i (i)}
-						<canvas
-							bind:this={canvases[i]}
-							class:colon={ch === ':'}
-							style={digitCss(ch)}
-							aria-hidden="true"
-						></canvas>
-					{/each}
-				</div>
+				{#if render === 'pixel'}
+					{@render pixels(bombLabel)}
+				{:else}
+					<div class="clock" role="img" aria-label={bombLabel} bind:this={clockEl}>
+						{#each slots as ch, i (i)}
+							<canvas
+								bind:this={canvases[i]}
+								class:colon={ch === ':'}
+								style={digitCss(ch)}
+								aria-hidden="true"
+							></canvas>
+						{/each}
+					</div>
+				{/if}
 			</BombRig>
+		{:else if render === 'pixel'}
+			{@render pixels(time)}
 		{:else}
 			<div class="clock" role="img" aria-label={time} bind:this={clockEl}>
 				{#each slots as ch, i (i)}
@@ -307,6 +364,17 @@
 
 		<section>
 			<h2>size</h2>
+			{#if render === 'pixel'}
+				<Slider
+					bind:value={pixelH}
+					label="digit height"
+					min={7}
+					max={32}
+					step={1}
+					format={(v) => `${v} px`}
+					hint="in the display's own pixels; the stage scales them up whole"
+				/>
+			{/if}
 			<Slider
 				bind:value={digitW}
 				label="width"
@@ -314,8 +382,12 @@
 				max={120}
 				step={2}
 				format={(v) => `${v}px`}
-				disabled={show === 'bomb'}
-				hint={show === 'bomb' ? 'the rig mounts its modules through a fixed window' : undefined}
+				disabled={show === 'bomb' || render === 'pixel'}
+				hint={show === 'bomb'
+					? 'the rig mounts its modules through a fixed window'
+					: render === 'pixel'
+						? 'canvas only'
+						: undefined}
 			/>
 			<Slider
 				bind:value={digitH}
@@ -324,7 +396,7 @@
 				max={220}
 				step={2}
 				format={(v) => `${v}px`}
-				disabled={show === 'bomb'}
+				disabled={show === 'bomb' || render === 'pixel'}
 			/>
 		</section>
 
@@ -360,20 +432,26 @@
 	header {
 		grid-area: header;
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: 16px;
+		gap: 6px 16px;
 		padding: 8px 16px;
 		background: var(--halo-bg-light);
 	}
 	.hdr-field {
 		display: inline-flex;
+		/* Never squeezed: a segmented control broken across two rows reads as a
+		   mistake. The hint takes the hit instead: it wraps, or drops to a row of
+		   its own. */
+		flex: none;
 		align-items: center;
 		gap: 8px;
 		font-size: 13px;
 		color: var(--halo-text-muted);
 	}
 	.hint {
-		margin-left: auto;
+		flex: 1 0 12em;
+		text-align: right;
 		font-size: 12px;
 		color: var(--halo-text-muted);
 	}
@@ -430,6 +508,10 @@
 		gap: 6px;
 		flex-wrap: wrap;
 		justify-content: center;
+	}
+	.clock.pixel {
+		width: 100%;
+		height: 100%;
 	}
 
 	.panel {

@@ -6,6 +6,52 @@ version and are released together.
 
 ## [Unreleased]
 
+### Added
+
+- **Pixel data for games** — every display but led-grid and crt exports itself as data at
+  whole-pixel scale, for a game painting into its own low-resolution raster: a `PixelLayout`
+  of `PixelPart`s (`rects: PixelRect[]` plus the core's own address) built once, and each
+  part's light or phase per frame as a pure function of its inputs and `(t, seed)`, with
+  seeded wear (`wearLevels`) in place of the canvas cores' timers. The canvas renders are
+  unchanged, and a canvas-only import pays nothing for it.
+- **`@glowbox/seven-segment`: pixel digits** — `pixelText(text, { height, stroke, gap, colon })`
+  lays a row out as upright whole-pixel rects, each segment lit or a ghost; `pixelSegments`
+  is one digit; `pixelLevels(layout, wear)` lights them, worn and seeded.
+- **`@glowbox/nixie`: pixel tubes** — `nixiePixelText(text, { height, gap, colon })` and
+  `nixiePixels(symbol, height)` lay tubes out as whole-pixel rects, each cathode a part (the
+  lit one `on`, the ghost stack behind it by `depth`); `nixieLevels(layout, wear)` lights
+  them. Reads as a nixie from 16 px, unbroken at every height; 11 px is hand-drawn. Budget
+  5 → 8.5 kB; the canvas tube alone stays under 5.
+- **`@glowbox/flip-dot`: pixel dots** — `flipDotPixels({ cols, rows, dot, gap, shape })` lays
+  the board out on whole pixels; `flipFrames(dot, { shape, axis })` draws one dot through its
+  flip as face A, face B and edge rects; `flipPhases(changes, t, timing)` gives every dot's
+  phase from the frames shown, in closed form (scan wave, seeded jitter, a disc finishes its
+  last flip first); `flipLandings` says when discs hit their stops. The flip reads from 4 px
+  dots. Budget 6 → 7 kB.
+- **`@glowbox/split-flap`: pixel flaps** — `flapPixels({ cols, rows, card, gap })` lays out
+  each card's flaps and hinge and `flapGlyph(char, card)` prints the 5×7 face across them,
+  cut at the hinge, Nordic letters included (lcd's Latin table, now `shared/latin5x7.ts`);
+  `flapState(from, to, ms, { seed })` runs the drums in closed form, `flapRows(fall, card)`
+  maps a falling card's rows to their source (flagging the card in flight for shading) and
+  `flapLandings` times the slaps. Budget 7.4 → 9.8 kB; the canvas board alone stays under 7.4.
+- **`@glowbox/lcd`: pixel data** — `lcdPixels({ cols, rows, dot, pitch })` lays the module's
+  dots out on whole pixels (a 16×2 at 1 px a dot is 95 × 18); `lcdTargets`, `stepCrystals`
+  (closed form `crystalAt`) and `lcdInk` are the controller, the crystals and the contrast
+  pot: smear, ghost lattice, overdrive crosstalk, seeded column wear. Ink darkens; only a
+  backlit pane glows. The canvas core runs the same maths. Budget 5 → 6.5 kB; the canvas core
+  alone stays under 5.
+- **`@glowbox/neon`: pixel signs** — `neonPixels(text, { capHeight, font, stroke, tubes, art })`
+  gives the tube sections as whole-pixel rects, the tube one pixel wide round its curves,
+  electrode stubs apart from the glass; `neonLevels(layout, t, { seed, age, program, on,
+lineOn, wordOn })` gives each section's light: 0 unlit glass, 1 lit, 1.15 mid-strike,
+  struck from a switch time, the flasher on its floors. Sans capitals from a 7 px cap height,
+  script from 16 px. Budget 16 → 16.5 kB.
+- **`@glowbox/vfd`: pixel panel** — `compilePixelPanel([w, h], layout)` compiles a layout to
+  whole-pixel rects, one part per anode with the canvas panel's address (`7seg` and `matrix`
+  digits, `legend`, `bars`, `dots`, `rule`; the rest throw); `vfdTargets`, `stepPhosphor` and
+  `vfdLevels` give each part's light per frame: drive, persistence, then the dimmer, seeded
+  wear and the weak grid's band. Budget 12 → 15 kB.
+
 ### Changed
 
 - **`@glowbox/nixie`: the glass margin is proportional at every size** — 8% of the width,
@@ -13,6 +59,12 @@ version and are released together.
   The old 4 px floor ate most of a phone-sized tube (a 10×18 tube's numeral was ~2 px
   tall); tubes under ~50 px wide or ~80 px tall now show more glass and numeral than
   before, larger ones are unchanged.
+
+### Fixed
+
+- **`@glowbox/nixie`: the 6 and 9 draw each stretch of wire once** — the bowl ends where it
+  meets the tail instead of running back along it, so the pixel tube's tail no longer
+  splits off the bowl. The canvas glyphs look the same.
 
 ## [1.12.0] — 2026-08-25
 

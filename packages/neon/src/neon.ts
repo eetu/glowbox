@@ -248,13 +248,13 @@ const T = 1.9;
 const DIE_AT = 0.95;
 // Cam floors, ms: no program state may flip faster than ~2.5 events/s full-field
 // (flash half-cycle) — the photosensitivity cap `speed` cannot defeat.
-const FLASH_MIN = 200;
-const CHASE_MIN = 120;
+export const FLASH_MIN = 200;
+export const CHASE_MIN = 120;
 
 // Brightness over one strike: dark while the electrodes arc (t<0.15), partial-
 // ignition pops (to 0.55), full ignition overshooting to ~1.15, then settling.
 // Deterministic per tube (`j` = its jit) — a looping demo strikes the same twice.
-function strikeBri(t: number, j: number): number {
+export function strikeBri(t: number, j: number): number {
 	if (t < 0.15) return 0;
 	if (t < 0.55) {
 		const windows = 4 + Math.round(j * 3);

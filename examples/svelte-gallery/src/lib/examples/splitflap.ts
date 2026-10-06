@@ -47,6 +47,9 @@ export interface FlapKnobs {
 	chroma(): ChromaKind;
 	/** The element to take pointer input from (the board's stage), if any. */
 	stage(): HTMLElement | undefined;
+	/** A module's width over its height, on a board that doesn't stretch its modules to fill
+	 *  a 2:1 canvas (the pixel render). Read once, when a show starts. */
+	aspect?(): number;
 }
 
 /** A show: start it on a board, get back its stop(). */
@@ -446,13 +449,17 @@ const drumFor = (kind: ChromaKind) => {
  *  snow-capped peak, a snowy spruce, the full moon, Earth floating in space,
  *  a rainbow plasma. All six frames are generated locally — no sourcing, no
  *  attribution burden. */
-export const makeChroma: FlapShowFn = (board, { chroma }) => {
+export const makeChroma: FlapShowFn = (board, { chroma, aspect }) => {
 	const c0 = board.cols;
 	const r0 = board.rows;
 	// The image grid rides the panel resolution: double the columns, square
 	// flap-pixels at the canvas's 2:1 (so 18-wide text panel → 36×18 image).
+	// Modules of a fixed shape take the rows that make the picture 2:1 instead,
+	// and the picture stretches across them.
 	const COLS = Math.min(96, c0 * 2);
-	const ROWS = Math.round(COLS / 2);
+	const cell = aspect?.();
+	const ROWS = cell ? Math.max(2, Math.round((COLS * cell) / 2)) : Math.round(COLS / 2);
+	const fit = cell ? 'stretch' : 'contain';
 	let kind = chroma();
 	let drum = drumFor(kind);
 	board.setOptions({ cols: COLS, rows: ROWS, charset: drum.charset, palette: drum.palette });
@@ -478,7 +485,7 @@ export const makeChroma: FlapShowFn = (board, { chroma }) => {
 		const idx = frameAt(frames, now - start);
 		if (idx === last) return;
 		last = idx;
-		const s = sampleImageToGrid(frames[idx].src, COLS, ROWS, 'contain');
+		const s = sampleImageToGrid(frames[idx].src, COLS, ROWS, fit);
 		const rgb = new Float32Array(COLS * ROWS * 3);
 		for (let y = 0; y < ROWS; y++)
 			for (let x = 0; x < COLS; x++) {

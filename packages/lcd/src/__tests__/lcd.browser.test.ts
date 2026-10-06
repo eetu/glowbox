@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { LATIN_5X7 } from '../latin';
+import { LATIN_5X7 } from '../latin5x7';
 import { createLcdModule } from '../lcd';
 
 const makeCanvas = (w = 320, h = 100) => {

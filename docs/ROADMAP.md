@@ -113,6 +113,42 @@ torus — `d.torus()` is axis-aligned/single-colour, see the note in `torus.ts`.
    led-grid-integrated CRT pass so grid+effect costs one context), only after the
    golden screenshots exist — and go WebGL2-only when it happens.
 
+## Pixel data for games
+
+The cores as **data at whole-pixel scale**, for a game painting into its own low-resolution
+raster. The cores keep their canvas renders; this is an export beside them, as lcd's 5×7
+font already is. **All seven are in, unreleased; they ship together as one minor.**
+
+- **Contract** (`shared/pixel.ts`): a `PixelLayout` of `PixelPart`s, each the `PixelRect`s it
+  covers, plus the core's own address (a segment's name, a dot's column and row, a tube's
+  word). Geometry is static; what lights it each frame is a separate per-part
+  `Float32Array` (0 a ghost, 1 lit; neon strikes overshoot to 1.15) or, for the mechanical
+  boards, their phase state. A per-frame flat cell list was rejected: it rebuilds rects every
+  frame and cannot say "flap row 3 shows source row 7".
+- **Seeded wear** (`shared/wear.ts`): the arc every core repeats (`0.5+0.5·sin(seed+i·12.9898)`,
+  dying and runner-up, flicker at 0.7, dead at 0.95) as `(i, age, t, seed) → level`, flicker
+  a hash of time windows. The canvas cores keep their `Math.random` and `setTimeout`
+  version; retrofitting it would change shipping renders, the same reason the `rgba`
+  helpers aren't shared.
+- **Each export was judged by eye** on preview sheets before it went in; a core that read
+  as a thin font rather than its display would have been dropped.
+
+| core          | pixel export                                                                    | reads from                                        |
+| ------------- | ------------------------------------------------------------------------------- | ------------------------------------------------- |
+| seven-segment | `pixelText`, `pixelSegments`, `pixelLevels`                                     | ~9 px digits                                      |
+| nixie         | `nixiePixelText`, `nixiePixels`, `nixieLevels`; swept unbroken from 11 to 96 px | 16 px tall (11 px hand-drawn, the stack a smudge) |
+| flip-dot      | `flipDotPixels`, `flipFrames`, `flipPhases`, `flipLandings`                     | 4 px dots (below, a matrix with a sweep)          |
+| split-flap    | `flapPixels`, `flapGlyph`, `flapRows`, `flapState`, `flapLandings`              | 7×11 cards, odd heights                           |
+| lcd           | `lcdPixels`, `lcdTargets`, `stepCrystals`/`crystalAt`, `lcdInk`                 | 1 px a dot (a 16×2 is 95×18)                      |
+| neon          | `neonPixels`, `neonLevels`; needs the game's glow                               | sans caps 7–9 px, script 16 px                    |
+| vfd           | `compilePixelPanel`, `vfdTargets`, `stepPhosphor`, `vfdLevels`                  | 7seg/matrix/legend/bars/dots/rule; the rest throw |
+| led-grid      | none: with nz = 1 `createVoxelGrid().leds` already is a pixel buffer            | not worth it                                      |
+| crt           | none: scanlines and persistence would be the game's present step                | not worth it                                      |
+
+**Later, if asked:** vfd's 14/16-segment digits, icons and scale (diagonals staircase at these
+sizes, icons want a polygon fill); one stroke thinner for nixie and neon, which each grew
+their own.
+
 ## Deliberately not doing
 
 - **CJS builds** — `require(esm)` works in current Node; these are browser-runtime

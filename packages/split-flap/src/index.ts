@@ -20,6 +20,27 @@ export {
 	paletteFrame,
 	type PaletteFrameOptions
 } from './palette';
+export { type PixelLayout, type PixelPart, type PixelRect } from './pixel';
+export {
+	FLAP_FLIGHT,
+	FLAP_NEXT,
+	FLAP_ROW,
+	flapAngle,
+	type FlapCard,
+	type FlapCell,
+	type FlapGlyph,
+	flapGlyph,
+	type FlapGlyphOptions,
+	type FlapLanding,
+	flapLandings,
+	type FlapLayout,
+	type FlapPart,
+	type FlapPixelOptions,
+	flapPixels,
+	flapRows,
+	flapState,
+	type FlapStateOptions
+} from './pixel-flap';
 export { createMechSound, type MechSound, type MechTick } from './sound';
 export {
 	createSplitFlap,

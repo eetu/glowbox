@@ -47,9 +47,9 @@
 	},
 	"size-limit": [
 		{
-			"name": "esm (core + two vendored Hershey stroke faces + SVG path parser)",
+			"name": "esm (core + two vendored Hershey stroke faces + SVG path parser + pixel export)",
 			"path": "dist/index.js",
-			"limit": "16 kB"
+			"limit": "16.5 kB"
 		}
 	],
 	"devDependencies": {

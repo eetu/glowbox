@@ -7,11 +7,22 @@
 	// front of a receiver worked, hit SELF-TEST for the power-on flash, and pull AGE up
 	// until a multiplex grid gives out and bands a whole column of the face.
 	import {
+		compilePixelPanel,
 		createVfdPanel,
+		fallPeaks,
 		type FilterName,
+		FILTERS,
 		type PhosphorName,
+		PHOSPHORS,
+		type RGB,
+		stepPhosphor,
+		type VfdBars,
 		type VfdGlyphs,
-		type VfdPanel
+		vfdLevels,
+		type VfdPanel,
+		type VfdPixelPanel,
+		type VfdPixelValue,
+		vfdTargets
 	} from '@glowbox/vfd';
 	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
 	import X from '@lucide/svelte/icons/x';
@@ -19,6 +30,7 @@
 	import { untrack } from 'svelte';
 
 	import CoreNav from '$lib/components/CoreNav.svelte';
+	import PixelStage, { mixHex, type PixelPaint } from '$lib/components/PixelStage.svelte';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Slider from '$lib/components/Slider.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
@@ -26,17 +38,25 @@
 	import {
 		ANALYSER_FRAME,
 		analyserLayout,
+		analyserPixelLayout,
 		createAnalyserShow,
+		createPixelDrive,
 		createSceneClock,
 		createStereoShow,
 		STEREO_FRAME,
 		STEREO_ZONES,
 		stereoLayout,
+		stereoPixelLayout,
 		type StereoSource
 	} from '$lib/examples/vfd';
 	import { theme } from '$lib/theme.svelte';
 
 	let source = $state<StereoSource>('auto');
+	// Canvas is the component; pixel is the same two pieces of glass as data
+	// (`compilePixelPanel`), painted the way a game would into its own raster and scaled up
+	// by a whole number.
+	let render = $state<'canvas' | 'pixel'>('canvas');
+	let pixelH = $state(14);
 	// The bench mode's text. Read every frame by the show, so typing lands live.
 	let typed = $state('ABCDEFGH');
 	// ONE clock for the chassis, read by both panels — they have to agree on the scene, since
@@ -202,8 +222,183 @@
 		analyserPanel?.setOptions(envelope);
 	});
 
+	// --- the pixel render ----------------------------------------------------------------
+	// The same two shows, each recording by name what it sets, so both renders play one scene.
+	const faceDrive = createPixelDrive();
+	const stripDrive = createPixelDrive();
+	let selfTestUntil = 0;
+	const runPixelSelfTest = () => (selfTestUntil = performance.now() + 1000);
+	$effect(() => {
+		if (render !== 'pixel') return;
+		faceDrive.clear();
+		stripDrive.clear();
+		const shows = [
+			createStereoShow(faceDrive, clock, () => typed),
+			createAnalyserShow(stripDrive, clock)
+		];
+		// Switching over powers the glass on, as building the canvas panel does.
+		runPixelSelfTest();
+		return () => {
+			for (const s of shows) s.stop();
+		};
+	});
+	const power = () => {
+		on = !on;
+		if (on) runPixelSelfTest();
+	};
+
+	const facePixels = $derived.by(() => {
+		const g = stereoPixelLayout(mainGlyphs, pixelH);
+		return compilePixelPanel(g.frame, g.layout);
+	});
+	const stripPixels = $derived.by(() => {
+		const g = analyserPixelLayout(facePixels.width);
+		return compilePixelPanel(g.frame, g.layout);
+	});
+
+	// The canvas's colours, painted flat: the glass, the undriven paint (as much of it as the
+	// filter lets through, stronger than the canvas's so a pixel can show it), silkscreen ink
+	// and the lit phosphor with a little of its hot core, each through the filter's tint.
+	const SILK: RGB = [196 / 255, 204 / 255, 208 / 255];
+	const WHITE: RGB = [1, 1, 1];
+	const mixRgb = (a: RGB, b: RGB, k: number): RGB => [
+		a[0] + (b[0] - a[0]) * k,
+		a[1] + (b[1] - a[1]) * k,
+		a[2] + (b[2] - a[2]) * k
+	];
+	const tinted = (c: RGB, tint: RGB) =>
+		`#${c
+			.map((v, i) =>
+				Math.round(Math.max(0, Math.min(1, v * tint[i])) * 255)
+					.toString(16)
+					.padStart(2, '0')
+			)
+			.join('')}`;
+	const pixelInk = $derived.by(() => {
+		const spec = PHOSPHORS[phosphor];
+		const { floor, ghost, tint } = FILTERS[filter];
+		const glass: RGB = [floor, floor, floor];
+		return {
+			glass: tinted(glass, tint),
+			ghost: tinted(mixRgb(glass, spec.anode, 0.35 * ghost), tint),
+			silk: tinted(mixRgb(glass, SILK, 0.2), tint),
+			lit: tinted(mixRgb(spec.color, WHITE, spec.core * 0.25), tint)
+		};
+	});
+
+	const PAD = 2;
+	const LIT = 0.015;
+	/** One piece of glass's paint: targets from what its show set, persistence over the
+	 *  frame's dt, then the dimmer and wear. Ghosts and ink go down first and the lit parts
+	 *  over them, so no lit anode is covered by an undriven one laid over it (the EQ dots
+	 *  ride over the spectrum, the graphic area sits in it). */
+	const glassPaint = (
+		glass: () => VfdPixelPanel,
+		values: Map<string, VfdPixelValue>,
+		seed: number,
+		testing: () => boolean
+	): PixelPaint => {
+		let panel: VfdPixelPanel | null = null;
+		let targets = new Float32Array(0);
+		let levels = new Float32Array(0);
+		let shown = new Float32Array(0);
+		let caps: (number[] | null)[] = [];
+		let last = 0;
+		return (fill, t) => {
+			const p = glass();
+			const fresh = p !== panel;
+			if (fresh) {
+				panel = p;
+				targets = new Float32Array(p.parts.length);
+				shown = new Float32Array(p.parts.length);
+				caps = p.elements.map((el) =>
+					el.kind === 'bars' && (el.src as VfdBars).peakHold
+						? new Array<number>(el.cells).fill(-1)
+						: null
+				);
+			}
+			const dt = Math.min(0.1, Math.max(0, t - last));
+			last = t;
+			const drive: Record<string, VfdPixelValue> = {};
+			p.elements.forEach((el, e) => {
+				const v = values.get(el.name);
+				const cap = caps[e];
+				// Held caps are the driver's memory, so a stopped driver leaves none.
+				if (cap && v === undefined) cap.fill(-1);
+				if (v === undefined) return;
+				if (!cap) {
+					drive[el.name] = v;
+					return;
+				}
+				const bars = v as ArrayLike<number>;
+				fallPeaks(cap, bars, el.stride, (el.src as VfdBars).peakFall ?? 4, dt);
+				drive[el.name] = { levels: bars, peaks: cap };
+			});
+			vfdTargets(p, drive, { selfTest: testing() }, targets);
+			if (!on) targets.fill(0);
+			// A new layout lands on its targets, as the canvas panel's re-compile does.
+			if (fresh) levels = Float32Array.from(targets);
+			else stepPhosphor(levels, targets, dt, { persistence, phosphor });
+			vfdLevels(p, levels, { brightness, age, seed, t }, shown);
+
+			const ink = pixelInk;
+			fill(ink.glass, PAD, PAD, p.width, p.height);
+			const put = (i: number, colour: string, lit: boolean) => {
+				for (const r of p.parts[i].rects) fill(colour, PAD + r.x, PAD + r.y, r.w, r.h, lit);
+			};
+			p.parts.forEach((part, i) => {
+				if (shown[i] < LIT) put(i, part.printed ? ink.silk : ink.ghost, false);
+			});
+			p.parts.forEach((_, i) => {
+				if (shown[i] >= LIT) put(i, mixHex(ink.ghost, ink.lit, shown[i]), true);
+			});
+		};
+	};
+	const facePaint = glassPaint(
+		() => facePixels,
+		faceDrive.values,
+		7,
+		() => performance.now() < selfTestUntil
+	);
+	const stripPaint = glassPaint(
+		() => stripPixels,
+		stripDrive.values,
+		11,
+		() => false
+	);
+
+	// The chassis hugs the glass at the largest whole scale the width slider and the stage
+	// allow. 30 is the unit's padding and border.
+	const UNIT_CHROME = 30;
+	let stageBox = $state<DOMRectReadOnly>();
+	const pixelW = $derived(facePixels.width + 2 * PAD);
+	const pixelScale = $derived(
+		Math.max(
+			1,
+			Math.floor((Math.min(panelWidth, stageBox?.width ?? panelWidth) - UNIT_CHROME) / pixelW)
+		)
+	);
+	const unitWidth = $derived(render === 'pixel' ? pixelScale * pixelW + UNIT_CHROME : panelWidth);
+
+	/** The faceplate element under a click in pixel mode, the way `elementAt` answers it. */
+	const pixelElementAt = (e: MouseEvent): string | null => {
+		const unit = e.currentTarget as HTMLElement;
+		const r = unit.querySelector('.faceplate canvas')?.getBoundingClientRect();
+		if (!r?.width || !r.height) return null;
+		const x = ((e.clientX - r.left) / r.width) * pixelW - PAD;
+		const y = ((e.clientY - r.top) / r.height) * (facePixels.height + 2 * PAD) - PAD;
+		for (let i = facePixels.elements.length - 1; i >= 0; i--) {
+			const el = facePixels.elements[i];
+			if (!el.index.size) continue;
+			const b = el.bounds;
+			if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return el.name;
+		}
+		return null;
+	};
+
 	function onStageClick(e: MouseEvent) {
-		tapped = panel?.elementAt(e.clientX, e.clientY) ?? null;
+		tapped =
+			render === 'pixel' ? pixelElementAt(e) : (panel?.elementAt(e.clientX, e.clientY) ?? null);
 	}
 </script>
 
@@ -220,8 +415,8 @@
 <div class="app">
 	<header>
 		<CoreNav core="vfd" />
-		<label class="hdr-field"
-			>source
+		<div class="hdr-field">
+			source
 			<Segmented
 				bind:value={source}
 				ariaLabel="source"
@@ -234,8 +429,23 @@
 					{ value: 'type', label: 'Type' }
 				]}
 			/>
-		</label>
-		<span class="hint">one envelope · drag PERSISTENCE to smear it</span>
+		</div>
+		<div class="hdr-field last">
+			render
+			<Segmented
+				bind:value={render}
+				ariaLabel="render"
+				options={[
+					{ value: 'canvas', label: 'Canvas' },
+					{ value: 'pixel', label: 'Pixel' }
+				]}
+			/>
+		</div>
+		<span class="hint">
+			{render === 'pixel'
+				? 'pixel mode shows the kinds it draws · no icons, no dial'
+				: 'one envelope · drag PERSISTENCE to smear it'}
+		</span>
 		<ThemeToggle />
 		<button
 			class="panel-toggle"
@@ -250,16 +460,33 @@
 
 	<!-- The chassis is the PAGE's hardware, so a silver faceplate needs a lighter case
 	     and a lighter room to sit in — the core only owns what is on the plate. -->
-	<div class="stage" style={roomStyle}>
+	<div class="stage" style={roomStyle} bind:contentRect={stageBox}>
 		<!-- The core attaches no listeners; the page owns the click and asks the panel
 		     for geometry. Same contract as split-flap's cellAt and neon's sectionAt. -->
 		<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-		<div class="unit" style="width: {panelWidth}px" onclick={onStageClick}>
-			<canvas
-				class="face"
-				bind:this={canvas}
-				style="aspect-ratio: {STEREO_FRAME[0]} / {STEREO_FRAME[1]}"
-			></canvas>
+		<div class="unit" style="width: {unitWidth}px" onclick={onStageClick}>
+			{#snippet glassStage(name: string, glass: VfdPixelPanel, paint: PixelPaint, label: string)}
+				<div class="glass {name}" style="height: {(glass.height + 2 * PAD) * pixelScale}px">
+					<PixelStage
+						width={pixelW}
+						height={glass.height + 2 * PAD}
+						{paint}
+						{glow}
+						background={plateOn ? plateColor : pixelInk.glass}
+						maxScale={pixelScale}
+						{label}
+					/>
+				</div>
+			{/snippet}
+			{#if render === 'pixel'}
+				{@render glassStage('faceplate', facePixels, facePaint, 'mini-system display panel')}
+			{:else}
+				<canvas
+					class="face"
+					bind:this={canvas}
+					style="aspect-ratio: {STEREO_FRAME[0]} / {STEREO_FRAME[1]}"
+				></canvas>
+			{/if}
 			<div class="hw">
 				<button class="dimmer" onclick={(e) => (e.stopPropagation(), cycleDimmer())}>
 					DISPLAY
@@ -273,7 +500,7 @@
 				<button
 					class="power"
 					class:off={!on}
-					onclick={(e) => (e.stopPropagation(), (on = !on))}
+					onclick={(e) => (e.stopPropagation(), power())}
 					aria-pressed={on}
 				>
 					<Zap size={13} />
@@ -305,11 +532,15 @@
 
 			<!-- The analyser strip, on its own glass directly under the faceplate: spectrum and
 			     EQ, or the graphic display on the GIF source — one window, whichever job. -->
-			<canvas
-				class="analyser"
-				bind:this={analyserCanvas}
-				style="aspect-ratio: {ANALYSER_FRAME[0]} / {ANALYSER_FRAME[1]}"
-			></canvas>
+			{#if render === 'pixel'}
+				{@render glassStage('strip', stripPixels, stripPaint, 'spectrum analyser and equaliser')}
+			{:else}
+				<canvas
+					class="analyser"
+					bind:this={analyserCanvas}
+					style="aspect-ratio: {ANALYSER_FRAME[0]} / {ANALYSER_FRAME[1]}"
+				></canvas>
+			{/if}
 		</div>
 	</div>
 
@@ -376,10 +607,15 @@
 									: `${Math.round(v * 100)}%`}
 			/>
 			<div class="row">
-				<ToggleChip bind:checked={filament} label="filament" />
-				<ToggleChip bind:checked={grid} label="grid mesh" />
+				<ToggleChip bind:checked={filament} label="filament" disabled={render === 'pixel'} />
+				<ToggleChip bind:checked={grid} label="grid mesh" disabled={render === 'pixel'} />
 			</div>
-			<button class="wide" onclick={() => panel?.selfTest()}>run self-test</button>
+			{#if render === 'pixel'}<p class="note chips">canvas only</p>{/if}
+			<button
+				class="wide"
+				onclick={() => (render === 'pixel' ? runPixelSelfTest() : panel?.selfTest())}
+				>run self-test</button
+			>
 		</section>
 
 		<section>
@@ -404,6 +640,12 @@
 				Numerals use the same strokes in all three segment modes, so a frequency reads identically
 				whichever one a panel mixes in.
 			</p>
+			{#if render === 'pixel'}
+				<p class="note">
+					Pixel mode draws 14 and 16 as 5×7: a pixel panel's digits are 7-segment or matrix, and the
+					matrix is the one that spells.
+				</p>
+			{/if}
 		</section>
 
 		<section>
@@ -458,6 +700,17 @@
 
 		<section>
 			<h2>size</h2>
+			{#if render === 'pixel'}
+				<Slider
+					bind:value={pixelH}
+					label="digit height"
+					min={7}
+					max={28}
+					step={1}
+					format={(v) => `${v} px`}
+					hint="the main field, in the display's own pixels; 5×7 grows a whole dot at a time"
+				/>
+			{/if}
 			<Slider
 				bind:value={panelWidth}
 				label="width"
@@ -465,6 +718,9 @@
 				max={960}
 				step={10}
 				format={(v) => `${v}px`}
+				hint={render === 'pixel'
+					? `the room it gets: the glass scales up whole, ${pixelScale}× now`
+					: undefined}
 			/>
 		</section>
 	</aside>
@@ -591,7 +847,8 @@
 	.power.off {
 		color: #71767c;
 	}
-	.analyser {
+	.analyser,
+	.glass.strip {
 		display: block;
 		width: 100%;
 		margin-top: 10px;
@@ -725,6 +982,9 @@
 		line-height: 1.45;
 		color: var(--halo-text-muted);
 	}
+	.note.chips {
+		margin: -6px 0 12px;
+	}
 	.wide {
 		width: 100%;
 		padding: 7px;
@@ -748,6 +1008,23 @@
 		display: none;
 		border: none;
 		padding: 0;
+	}
+
+	/* Below this the header's fields leave the hint no room, and a hint squeezed to a word a
+	   line stands the header up as a column: it takes a line of its own under them instead. */
+	@media (min-width: 721px) and (max-width: 1460px) {
+		header {
+			flex-wrap: wrap;
+			row-gap: 2px;
+		}
+		.hdr-field.last {
+			margin-right: auto;
+		}
+		.hint {
+			order: 1;
+			flex-basis: 100%;
+			text-align: right;
+		}
 	}
 
 	@media (max-width: 720px) {

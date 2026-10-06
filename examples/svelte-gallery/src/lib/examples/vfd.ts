@@ -21,11 +21,13 @@
 //   • and a real frame animation, dot by dot, on the graphic area.
 import { decodeGif, frameAt, type GifFrame, sampleImageToGrid } from '@glowbox/extras';
 import {
+	FONT_5X7,
 	glyph5x7,
 	type VfdElement,
 	type VfdGlyphs,
 	type VfdPanel,
 	type VfdPanelOptions,
+	type VfdPixelValue,
 	wordRuns
 } from '@glowbox/vfd';
 
@@ -52,6 +54,8 @@ export const STEREO_FRAME: [number, number] = [320, 110];
 export const ANALYSER_FRAME: [number, number] = [320, 104];
 /** The spectrum's field. Twenty bars is what a full-width analyser carried. */
 export const SPEC = { bands: 20, rows: 12 } as const;
+/** The spectrum's printed frequency scale. */
+const SPEC_SCALE = ['31.5', '160', '1k', '6.3k', '16k'];
 /** The EQ curve's own grid, laid over the spectrum's upper third. Finer columns than the
  *  spectrum has bars, so the curve reads as a curve rather than a staircase. */
 export const EQ = { cols: 60, rows: 7 } as const;
@@ -451,7 +455,7 @@ export function analyserLayout(): VfdElement[] {
 			bands: SPEC.bands,
 			rows: SPEC.rows,
 			peakHold: true,
-			scale: ['31.5', '160', '1k', '6.3k', '16k'],
+			scale: SPEC_SCALE,
 			x: 8,
 			y: 22,
 			w: 304,
@@ -478,6 +482,231 @@ export function analyserLayout(): VfdElement[] {
 		// dot area sitting idle behind the bars is exactly what the real thing looked like.
 		{ kind: 'dots', name: 'graphic', cols: GRAPHIC.cols, rows: GRAPHIC.rows, ...GRAPHIC_BOX }
 	];
+}
+
+// --- the same glass on whole pixels ----------------------------------------------------
+// For the page's pixel render (`compilePixelPanel`): the same element NAMES, so the same
+// shows drive them, laid out afresh on whole pixels. A pixel panel draws digits ('7seg' or
+// 'matrix'), legends, bars, dots and rules, so the transport icons and the tuning dial are
+// left out, and a 14/16-segment field comes as 5×7, the one of the two that can spell.
+
+/** A pixel layout and its frame, both in the display's own pixels. */
+export interface PixelGlass {
+	frame: [number, number];
+	layout: VfdElement[];
+}
+
+const PX_MARGIN = 2;
+const PX_GAP = 4;
+const LINE = FONT_5X7.height;
+
+/** A legend at one pixel a dot, its box exactly the word. */
+const pxLegend = (name: string, text: string, x: number, y: number): VfdElement => ({
+	kind: 'legend',
+	name,
+	text,
+	x,
+	y,
+	w: wordRuns(text).width,
+	h: LINE
+});
+
+/** Legends left to right from `x`, and where the row ends. */
+function pxRow(words: [string, string][], x: number, y: number) {
+	let at = x;
+	const els = words.map(([name, text]) => {
+		const el = pxLegend(name, text, at, y);
+		at += wordRuns(text).width + PX_GAP;
+		return el;
+	});
+	return { els, end: at - PX_GAP };
+}
+
+/** The faceplate on whole pixels, its main field `digitH` px tall. The legends are one pixel
+ *  a dot; the ticker's 120 columns are 2 px apart (a 1 px dot and a gap), which sets the
+ *  glass's least width, and the room right of the split is where the transport would be. */
+export function stereoPixelLayout(main: VfdGlyphs, digitH: number): PixelGlass {
+	const m = PX_MARGIN;
+	const h = Math.max(LINE, Math.round(digitH));
+	// One pitch for both repertoires, so swapping them leaves the glass as it was: a 5×7 cell
+	// and its gutter at the largest whole dot, or a 7-segment digit with its point beside it.
+	const pitch = Math.max(
+		6 * Math.floor(h / LINE),
+		Math.round(h / 2) + Math.max(1, Math.round(h / 13)) + 2
+	);
+	const annunciators = pxRow(
+		[
+			['st', 'ST'],
+			['mono', 'MONO'],
+			['dolby', 'DOLBY NR'],
+			['memo', 'MEMO'],
+			['rand', 'RANDOM']
+		],
+		m,
+		m
+	);
+	const fieldY = m + LINE + 3;
+	// MHz over kHz beside the field, so its row is at least the two of them tall.
+	const fieldH = Math.max(h, 2 * LINE + 2);
+	const unitX = m + 8 * pitch + 3;
+	const sourceY = fieldY + fieldH + 3;
+	const sources = pxRow(
+		[
+			['tuner', 'TUNER'],
+			['cd', 'CD'],
+			['tape', 'TAPE'],
+			['aux', 'AUX'],
+			['rec', 'REC']
+		],
+		m,
+		sourceY
+	);
+	const splitX = Math.max(annunciators.end, unitX + wordRuns('MHz').width, sources.end) + 3;
+	// The disc counter at the right edge: TRACK over REMAIN, the two digits beside them.
+	const labelW = Math.max(wordRuns('TRACK').width, wordRuns('REMAIN').width);
+	const trkH = 2 * LINE + 2;
+	const trkW = 2 * (Math.round(trkH / 2) + 4);
+	const tickerW = TICKER.cols * 2;
+	const tickerH = TICKER.rows * 2;
+	const width = Math.max(splitX + 4 + labelW + 3 + trkW + m, tickerW + 2 * m + 6);
+	const trkX = width - m - trkW;
+	const labelX = trkX - 3 - labelW;
+	const stripY = sourceY + LINE + 3;
+	return {
+		frame: [width, stripY + tickerH + 6 + m],
+		layout: [
+			{ kind: 'rule', name: 'split', shape: 'line', x: splitX, y: m, w: 1, h: sourceY + LINE - m },
+			{
+				kind: 'rule',
+				name: 'strip',
+				shape: 'box',
+				weight: 1,
+				x: m,
+				y: stripY,
+				w: width - 2 * m,
+				h: tickerH + 6
+			},
+			...annunciators.els,
+			{
+				kind: 'digits',
+				name: 'main',
+				chars: 8,
+				glyphs: main === '7seg' ? '7seg' : 'matrix',
+				x: m,
+				y: fieldY + Math.floor((fieldH - h) / 2),
+				w: 8 * pitch,
+				h
+			},
+			pxLegend('mhz', 'MHz', unitX, fieldY),
+			pxLegend('khz', 'kHz', unitX, fieldY + fieldH - LINE),
+			...sources.els,
+			pxLegend('trklab', 'TRACK', labelX, m),
+			pxLegend('remain', 'REMAIN', labelX, m + LINE + 2),
+			{ kind: 'digits', name: 'trk', chars: 2, glyphs: '7seg', x: trkX, y: m, w: trkW, h: trkH },
+			{
+				kind: 'dots',
+				name: 'ticker',
+				cols: TICKER.cols,
+				rows: TICKER.rows,
+				gap: 0.5,
+				x: m + Math.floor((width - 2 * m - tickerW) / 2),
+				y: stripY + 3,
+				w: tickerW,
+				h: tickerH
+			}
+		]
+	};
+}
+
+/** The analyser strip on whole pixels, `width` px wide (the faceplate's, so the two stack).
+ *  The spectrum takes the width, its rows a third of a band's pitch; the EQ dots ride its top
+ *  at the finest whole pitch, and the graphic area sits in the middle at whole dots. */
+export function analyserPixelLayout(width: number): PixelGlass {
+	const inner = width - 8;
+	const band = Math.floor(inner / SPEC.bands);
+	const gridH = SPEC.rows * Math.max(2, Math.round(band / 3));
+	const specY = 4 + LINE + 3;
+	const height = specY + gridH + LINE + 1 + 4;
+	const eqDot = Math.max(1, Math.floor(inner / EQ.cols));
+	const gDot = Math.max(1, Math.floor((height - 8) / GRAPHIC.rows));
+	const presetX = 4 + wordRuns('EQ').width + PX_GAP;
+	return {
+		frame: [width, height],
+		layout: [
+			{
+				kind: 'rule',
+				name: 'edge',
+				shape: 'box',
+				weight: 1,
+				x: 1,
+				y: 1,
+				w: width - 2,
+				h: height - 2
+			},
+			{ ...pxLegend('eqlab', 'EQ', 4, 4), printed: true } as VfdElement,
+			// The five presets share one box, as on the canvas.
+			...EQ_PRESETS.map((p) => ({
+				...pxLegend(`eq${p.name}`, p.name.toUpperCase(), presetX, 4),
+				w: wordRuns('VOCAL').width
+			})),
+			{
+				kind: 'bars',
+				name: 'spec',
+				bands: SPEC.bands,
+				rows: SPEC.rows,
+				peakHold: true,
+				scale: SPEC_SCALE,
+				x: 4,
+				y: specY,
+				w: inner,
+				h: gridH + LINE + 1
+			},
+			{
+				kind: 'dots',
+				name: 'eq',
+				cols: EQ.cols,
+				rows: EQ.rows,
+				gap: 0.34,
+				x: 4,
+				y: specY,
+				w: inner,
+				h: EQ.rows * eqDot
+			},
+			{
+				kind: 'dots',
+				name: 'graphic',
+				cols: GRAPHIC.cols,
+				rows: GRAPHIC.rows,
+				x: Math.floor((width - GRAPHIC.cols * gDot) / 2),
+				y: Math.floor((height - GRAPHIC.rows * gDot) / 2),
+				w: GRAPHIC.cols * gDot,
+				h: GRAPHIC.rows * gDot
+			}
+		]
+	};
+}
+
+/** What a show drives: the handle's drive calls, so one show can run a canvas panel or record
+ *  for a pixel one. */
+export type VfdDrive = Pick<VfdPanel, 'set' | 'light' | 'setBars' | 'setDots' | 'clear'>;
+
+/** A drive that keeps what it is handed, by element name, in the form `vfdTargets` reads.
+ *  Arrays are copied, as the panel copies them: the shows reuse their buffers. Names the
+ *  pixel layout doesn't have (the icons, the dial) are kept too; the painter skips them. */
+export function createPixelDrive(): VfdDrive & { values: Map<string, VfdPixelValue> } {
+	const values = new Map<string, VfdPixelValue>();
+	return {
+		values,
+		set: (name, value) => void values.set(name, value),
+		light: (name, on) => void values.set(name, on),
+		setBars: (name, levels) => void values.set(name, Float32Array.from(levels)),
+		setDots: (name, bitmap) =>
+			void values.set(name, typeof bitmap === 'function' ? bitmap : Float32Array.from(bitmap)),
+		clear: (name) => {
+			if (name == null) values.clear();
+			else values.delete(name);
+		}
+	};
 }
 
 /** How long each scene runs in the attract cycle, seconds. Unhurried on purpose — the panel's
@@ -525,7 +754,7 @@ export type SceneClock = ReturnType<typeof createSceneClock>;
  *  spectrum from the synthetic feed with the EQ curve morphing over the top of it, or — on the
  *  GIF source — a frame animation on the graphic area, with the analyser itself blanked. That
  *  swap is the DISPLAY button, and it is why they share a field rather than each having one. */
-export function createAnalyserShow(panel: VfdPanel, clock: SceneClock): { stop(): void } {
+export function createAnalyserShow(panel: VfdDrive, clock: SceneClock): { stop(): void } {
 	const levels = new Array<number>(SPEC.bands).fill(0);
 	const bitmap = new Float32Array(EQ.cols * EQ.rows);
 	const shown = new Map<string, boolean>();
@@ -737,7 +966,7 @@ const pad2 = (n: number) => String(n).padStart(2, '0');
 /** Run the attract show on the faceplate. Owns its own rAF loop and returns a stop handle; the
  *  scene comes from the chassis clock, which the analyser strip reads too. */
 export function createStereoShow(
-	panel: VfdPanel,
+	panel: VfdDrive,
 	clock: SceneClock,
 	/** What the bench mode shows. Read every frame, so typing is live. */
 	typed: () => string = () => ''

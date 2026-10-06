@@ -40,6 +40,13 @@ export const PHOSPHORS: Record<PhosphorName, PhosphorSpec> = {
 	white: { color: [0.88, 0.95, 1], core: 0.88, anode: [0.54, 0.55, 0.56], halo: 1.7, lag: 1.1 }
 };
 
+// Persistence, as time constants in seconds. Attack is about one frame — phosphor lights
+// fast; the whole character of the thing is in the asymmetry with the release, which is
+// `DECAY_MIN + persistence × lag × DECAY_SPAN`.
+export const ATTACK_TAU = 0.012;
+export const DECAY_MIN = 0.02;
+export const DECAY_SPAN = 0.34;
+
 /** The tinted window in front of the envelope. 'green' is the stereo-faceplate classic,
  *  'smoke' the neutral grey one, 'amber' the warm strip; 'none' leaves bare glass (the
  *  undriven anode ghosts stay clearly visible, which is what a filterless panel looks

@@ -2,7 +2,7 @@
 // needs it (see `scripts/check-shared.mjs` and CLAUDE.md → Conventions). Editing it here
 // edits it for every one of them. It is not a package and nothing depends on it at
 // runtime: each bundler inlines it, so the cores stay genuinely zero-dep.
-// Shared by: neon, vfd.
+// Shared by: neon, nixie, vfd.
 //
 // SVG path data → flattened subpaths, pure and node-testable. The full command vocabulary
 // is handled (M/L/H/V/C/S/Q/T/A/Z, relatives, implicit repeats, the compact arc-flag form

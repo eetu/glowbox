@@ -25,8 +25,12 @@ export interface ShowKnobs {
 	stage(): HTMLElement | undefined;
 }
 
+/** What a show drives: the canvas board, or anything else that takes its frames (the page's
+ *  pixel render records them). */
+export type ShowBoard = Pick<FlipDotBoard, 'cols' | 'rows' | 'setFrame'>;
+
 /** A show: start it on a board, get back its stop(). */
-export type ShowFn = (board: FlipDotBoard, knobs: ShowKnobs) => () => void;
+export type ShowFn = (board: ShowBoard, knobs: ShowKnobs) => () => void;
 
 // --- 5×7 text onto a bit frame ------------------------------------------------
 
