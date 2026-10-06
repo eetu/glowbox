@@ -38,6 +38,26 @@ import { type PhosphorName } from './phosphor';
  *  VERTICAL BAND of the whole panel, across whatever elements happen to sit in it. */
 export const GRID_COLS = 24;
 
+/** From this age one multiplex grid is weak and its column passes 42 % of its light; from
+ *  0.85 a second grid passes 60 %. */
+const GRID_FAIL_AT = 0.6;
+const GRID_FAIL2_AT = 0.85;
+
+/** The two grid columns that give out, by the panel's seed. */
+export function failingCols(seed: number): [number, number] {
+	const first = Math.floor((0.5 + 0.5 * Math.sin(seed * 3.1)) * GRID_COLS) % GRID_COLS;
+	const skip = ((Math.floor(seed) % 7) + 7) % 7;
+	return [first, (first + 5 + skip) % GRID_COLS];
+}
+
+/** How much of an anode's light its grid column passes at `age`. */
+export function gridPass(col: number, age: number, [first, second]: [number, number]): number {
+	let v = 1;
+	if (age >= GRID_FAIL_AT && col === first) v *= 0.42;
+	if (age >= GRID_FAIL2_AT && col === second) v *= 0.6;
+	return v;
+}
+
 // --- elements -----------------------------------------------------------------------
 
 interface ElementBase {
@@ -233,7 +253,7 @@ export interface CompiledElement {
 // Address packing for `CompiledElement.index`. `sub` maxes out at 35 (a 5×7 matrix
 // cell), so a 1024 stride is room to spare.
 const SUB_STRIDE = 1024;
-const addr = (cell: number, sub: number) => cell * SUB_STRIDE + sub;
+export const addr = (cell: number, sub: number) => cell * SUB_STRIDE + sub;
 
 export interface VfdPanelLayout {
 	frame: [number, number];
