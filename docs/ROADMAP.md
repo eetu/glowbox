@@ -119,6 +119,10 @@ The cores as **data at whole-pixel scale**, for a game painting into its own low
 raster. The cores keep their canvas renders; this is an export beside them, as lcd's 5×7
 font already is.
 
+**Released as one minor**, once every core with a pixel export below has it (seven-segment,
+nixie, flip-dot, split-flap, lcd, neon, vfd) and `shared/wear.ts` exists. Until then the
+work merges to main under `[Unreleased]`, with no tag.
+
 - **Contract** (`shared/pixel.ts`): a `PixelLayout` of `PixelPart`s, each the `PixelRect`s it
   covers, plus the core's own address (a segment's name, a dot's column and row, a tube's
   word). Geometry is static; what lights it each frame is a separate per-part
