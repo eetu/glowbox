@@ -117,7 +117,7 @@ torus — `d.torus()` is axis-aligned/single-colour, see the note in `torus.ts`.
 
 The cores as **data at whole-pixel scale**, for a game painting into its own low-resolution
 raster. The cores keep their canvas renders; this is an export beside them, as lcd's 5×7
-font already is. **All seven are in, unreleased; they ship together as one minor.**
+font already is. **All seven shipped together in 1.13.0.**
 
 - **Contract** (`shared/pixel.ts`): a `PixelLayout` of `PixelPart`s, each the `PixelRect`s it
   covers, plus the core's own address (a segment's name, a dot's column and row, a tube's

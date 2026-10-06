@@ -144,8 +144,8 @@ on rerun (`npm view` guard); prerelease versions (`-rc.N`) go to the `rc` dist-t
 
 ## Status / next
 
-- **1.0.x–1.10.0 shipped** (latest: 1.10.0 on 2026-08-02 — the lcd character-module core
-  and the family-alignment pass) — **thirteen** packages in lockstep, all live on npm.
+- **1.0.x–1.13.0 shipped** (latest: 1.13.0 on 2026-10-06 — pixel data for games) —
+  **thirteen** packages in lockstep, all live on npm.
   NOTE for
   future new packages: npm needs the package to exist before a **trusted publisher**
   can be configured — first-publish a local `-rc.1` with `npm publish --tag rc
