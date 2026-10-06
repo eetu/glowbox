@@ -9,6 +9,7 @@ test('imports under node without browser globals', async () => {
 	expect(typeof mod.ditherFrame).toBe('function');
 	expect(typeof mod.createMechSound).toBe('function');
 	expect(typeof mod.parseColor).toBe('function');
+	expect(typeof mod.flipPhases).toBe('function');
 });
 
 test('createMechSound is a silent no-op without Web Audio', async () => {

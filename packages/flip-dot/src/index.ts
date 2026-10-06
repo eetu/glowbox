@@ -12,5 +12,19 @@ export {
 	type FlipDotsOptions,
 	type FlipDotStagger
 } from './flip-dot';
+export { type PixelLayout, type PixelPart, type PixelRect } from './pixel';
+export {
+	type FlipChange,
+	type FlipDotPart,
+	flipDotPixels,
+	type FlipFrame,
+	type FlipFrameOptions,
+	flipFrames,
+	type FlipLanding,
+	flipLandings,
+	flipPhases,
+	type FlipPixelOptions,
+	type FlipTiming
+} from './pixel-flipdot';
 export { createMechSound, type MechSound, type MechTick } from './sound';
 export { type Theme } from './theme';
