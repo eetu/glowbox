@@ -30,6 +30,19 @@
 import { type Color, parseColor, type RGB } from './color';
 import { compile5x7, FONT_5X7, glyph5x7 } from './font5x7';
 import { type PanelName, PANELS, type PanelSpec } from './panels';
+import {
+	ADV_X,
+	ADV_Y,
+	BLINK_S,
+	BOOT_S,
+	CELL_H,
+	CELL_W,
+	DOT_FILL,
+	driveDots,
+	inkOf,
+	potOf,
+	stepCrystals
+} from './pixel-lcd';
 import { resolveTheme, type Theme, themeOwner, watchTheme } from './theme';
 
 /** The cursor the controller draws over a cell: none, the steady underline, or the
@@ -138,13 +151,6 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [
 ];
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
-// One character cell is 5×8 dots (the 5×7 face + the cursor/descender row); the
-// advance adds one dot pitch between characters and two between rows — module glass,
-// not a text grid.
-const CELL_W = FONT_5X7.width; // 5
-const CELL_H = 8;
-const ADV_X = CELL_W + 1;
-const ADV_Y = CELL_H + 2;
 // Glass margin around the character field, in dot pitches.
 const GLASS_PAD = 2;
 // Default and maximum plastic-frame thickness, in dot pitches. The frame is a strip
@@ -154,10 +160,9 @@ const BEZEL_MAX = 16;
 // The wear arc thresholds — the franchise's, at column-driver granularity.
 const FLICKER_AT = 0.7;
 const DIE_AT = 0.95;
-// The uninitialised boot row's dwell.
-const BOOT_MS = 800;
-// The block cursor's blink half-period (the controller's ~1 Hz).
-const BLINK_MS = 530;
+// The uninitialised boot row's dwell; the block cursor's blink half-period (~1 Hz).
+const BOOT_MS = BOOT_S * 1000;
+const BLINK_MS = BLINK_S * 1000;
 
 /** Lay text onto a `cols`×`rows` module: '\n' splits a string, arrays are one entry
  *  per row; every line is truncated/padded to exactly `cols`. Pure — the module's
@@ -290,43 +295,20 @@ export function createLcdModule(
 	};
 
 	function retarget() {
-		target.fill(0);
-		if (on) {
-			if (booting) {
-				// The uninitialised controller: DDRAM full of 0xFF on the top row.
-				for (let cx = 0; cx < cols; cx++)
-					for (let ry = 0; ry < CELL_H; ry++)
-						for (let rx = 0; rx < CELL_W; rx++) target[ry * dotCols + cx * CELL_W + rx] = 1;
-			} else {
-				for (let cy = 0; cy < rows; cy++) {
-					const line = lines[cy];
-					for (let cx = 0; cx < cols; cx++) {
-						const ch = line[cx] ?? ' ';
-						for (let ry = 0; ry < CELL_H; ry++) {
-							const bits = glyphRow(ch, ry);
-							if (!bits) continue;
-							const row = (cy * CELL_H + ry) * dotCols + cx * CELL_W;
-							for (let rx = 0; rx < CELL_W; rx++)
-								if (bits & (1 << (CELL_W - 1 - rx))) target[row + rx] = 1;
-						}
-					}
-				}
-				// The cursor is drawn by the controller OVER the glyph (union), at
-				// crystal speed like everything else — a blink genuinely smears.
-				if (cursorStyle !== 'none' && cursorX < cols && cursorY < rows) {
-					const base = cursorX * CELL_W;
-					if (cursorStyle === 'line') {
-						const row = (cursorY * CELL_H + CELL_H - 1) * dotCols + base;
-						for (let rx = 0; rx < CELL_W; rx++) target[row + rx] = 1;
-					} else if (blinkOn || reduced) {
-						for (let ry = 0; ry < CELL_H; ry++) {
-							const row = (cursorY * CELL_H + ry) * dotCols + base;
-							for (let rx = 0; rx < CELL_W; rx++) target[row + rx] = 1;
-						}
-					}
-				}
-			}
-		}
+		const style = cursorStyle;
+		if (on)
+			driveDots(target, {
+				cols,
+				rows,
+				lines,
+				rowBits: glyphRow,
+				cursor:
+					style === 'line' || (style === 'block' && (blinkOn || reduced))
+						? { col: cursorX, row: cursorY, style }
+						: null,
+				booting
+			});
+		else target.fill(0);
 		colDrive.fill(0);
 		for (let i = 0; i < target.length; i++) if (target[i]) colDrive[i % dotCols]++;
 		for (let c = 0; c < dotCols; c++) colDrive[c] /= dotRows;
@@ -340,19 +322,7 @@ export function createLcdModule(
 		raf = 0;
 		const dt = Math.min(0.05, (now - lastT) / 1000);
 		lastT = now;
-		// Rise beats fall: a moving message drags its ghost behind it.
-		const base = 0.015 + response * 0.32;
-		const kUp = 1 - Math.exp(-dt / (base * 0.75));
-		const kDn = 1 - Math.exp(-dt / (base * 1.35));
-		let moving = false;
-		for (let i = 0; i < state.length; i++) {
-			const t = target[i];
-			const s = state[i];
-			const d = t - s;
-			if (d === 0) continue;
-			const n = s + d * (d > 0 ? kUp : kDn);
-			state[i] = Math.abs(t - n) < 0.004 ? t : ((moving = true), n);
-		}
+		const moving = stepCrystals(state, target, dt, response);
 		draw();
 		if (moving) {
 			raf = requestAnimationFrame(step);
@@ -477,15 +447,11 @@ export function createLcdModule(
 		g.fillRect(glass.x, glass.y, glass.w, glass.h);
 
 		// The pot: ink strength saturates near the top of the sweet spot; overdrive
-		// past it raises the resting lattice and feeds the crosstalk streaks.
-		const sag = 1 - age * 0.15;
-		const ink = clamp01((contrast - 0.08) / 0.72) ** 0.9 * sag;
-		const over = Math.max(0, contrast - 0.85) / 0.15;
-		const rest = ghost ? spec.ghost * (1 + over * 1.6) : 0;
-		// A negative panel's ink is light THROUGH the glass — no backlight, no image.
-		const through = spec.negative ? 0.12 + 0.88 * lit : 1;
+		// past it raises the resting lattice and feeds the crosstalk streaks. A negative
+		// panel's ink is light THROUGH the glass — no backlight, no image.
+		const pot = potOf(spec, contrast, ghost, age, lit);
 
-		const dot = pitch * 0.86; // dots almost touch — STN, not LED
+		const dot = pitch * DOT_FILL; // dots almost touch — STN, not LED
 		const inkCol = spec.ink;
 		g.fillStyle = rgba(inkCol, 1);
 		const die = age >= DIE_AT ? dying : -1;
@@ -502,10 +468,7 @@ export function createLcdModule(
 					s *= 1 - wear(c) * age * 0.5;
 					if (flickerDim > 0 && c === flick) s *= 1 - flickerDim;
 				}
-				let a = rest + (ink - rest) * s;
-				// Crosstalk: undriven dots in a hard-driven column pick up a shadow.
-				if (s < 1) a += colDrive[c] * (0.02 + over * 0.22) * (1 - s);
-				a *= through;
+				const a = inkOf(s, colDrive[c], pot);
 				if (a <= 0.004) continue;
 				const cx = (dx / CELL_W) | 0;
 				const rx = dx % CELL_W;

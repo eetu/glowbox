@@ -94,6 +94,51 @@ points 0–7 always win over injected glyphs; patch `glyphs: null` to hand back 
 plain face. Author your own table in the same art format (`compile5x7` gives the
 raw masks if you need them).
 
+## Pixel data
+
+For a game painting into its own low-resolution raster, the module comes as **data on whole
+pixels**, in the shape every glowbox core shares (a `PixelLayout` of `PixelPart`s, each the
+`PixelRect`s it covers). The layout is built once; each frame is three pure steps, functions of
+their inputs and `(t, seed)`, running the canvas core's own drive, crystal and contrast maths:
+
+- **`lcdPixels({ cols, rows, dot, pitch })`** gives the dots as parts `{ col, row, cell,
+rects }`, one rect each, row-major. A 16×2 at 1 px a dot is **95 × 18 px**: dots touch
+  within a cell, with a pitch between characters and two between rows, so the ghost lattice
+  reads as the 5×8 cell boxes. `pitch` defaults to `round(dot / 0.86)`, the canvas render's
+  ratio (dots part by a pixel from 4 px); `{ dot: 1, pitch: 2 }` is 189 × 35, a lattice of
+  separate dots. The glass around the field is yours to paint.
+- **`lcdTargets(text, { cols, rows, cgram, glyphs, cursor, boot, on, t })`** gives the dots
+  the controller drives, as a `Uint8Array`; `t` is seconds since power-on, which times the boot
+  row and the cursor blink.
+- **`stepCrystals(state, target, dt, response)`** moves the crystal state (a `Float32Array`)
+  in place. Rise beats fall, so changed text smears and power-off drains. A step is the exact
+  exponential, and `crystalAt(from, to, dt, response)` is one dot's closed form, for a world
+  that rewinds.
+- **`lcdInk(state, { cols, contrast, ghost, panel, backlight, age, seed, t })`** gives each
+  dot's ink, 0..1: the ghost lattice, overdrive (a darker lattice, crosstalk streaks down
+  driven columns), the blue glass riding its backlight, and wear per dot column by the seeded
+  `wearLevels`: dimming, a flickering column, then a dead one of bare lattice.
+
+**Ink darkens; it does not glow.** Paint each dot as the panel's `ink` mixed over its pane by
+the level. Only a backlit pane gives light (`paneOff` → `pane` with the backlight); on the
+negative blue glass the ink is that backlight let through, so it goes out with it.
+
+```ts
+import { lcdInk, lcdPixels, lcdTargets, PANELS, stepCrystals } from '@glowbox/lcd';
+
+const lcd = lcdPixels(); // 95 × 18
+const state = new Float32Array(lcd.parts.length);
+const { pane, ink } = PANELS.green;
+
+// each frame
+stepCrystals(state, lcdTargets(text, { cursor, t }), dt);
+const level = lcdInk(state, { age, seed, t });
+fill(pane, x0, y0, lcd.width, lcd.height);
+lcd.parts.forEach(({ rects: [r] }, i) =>
+	fill(mix(pane, ink, level[i]), x0 + r.x, y0 + r.y, r.w, r.h)
+);
+```
+
 ## No sound
 
 An LED-backlit module is silent — like the vfd, this core ships no sound module. (The
