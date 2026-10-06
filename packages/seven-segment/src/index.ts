@@ -5,6 +5,15 @@
 //   digit?.setValue(8);
 export { type Color, parseColor, type RGB } from './color';
 export {
+	type PixelDigitOptions,
+	type PixelLayout,
+	type PixelRect,
+	type PixelSegment,
+	pixelSegments,
+	pixelText,
+	type PixelTextOptions
+} from './pixel';
+export {
 	createSevenSegment,
 	litSegments,
 	SEGMENT_SLANT,

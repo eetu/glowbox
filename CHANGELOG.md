@@ -6,6 +6,12 @@ version and are released together.
 
 ## [Unreleased]
 
+### Added
+
+- **`@glowbox/seven-segment`: pixel digits** — `pixelSegments(height, { stroke, width })`
+  and `pixelText(text, { height, stroke, gap, colon })` give digits as whole-pixel rects,
+  upright, for a game painting into its own raster; each segment lit or a ghost.
+
 ### Changed
 
 - **`@glowbox/nixie`: the glass margin is proportional at every size** — 8% of the width,

@@ -76,6 +76,24 @@ plus the decimal-point circle in the **`SEGMENT_VIEWBOX`** (60×100, y-down, un-
 tells you which named segments to light. Extrude the polygons into prisms and you have
 a real 3D module.
 
+## Pixel digits
+
+For a game drawing into its own low-resolution raster, the digits come as **whole-pixel
+rects**, upright: at a dozen pixels tall the slant jogs every stroke a pixel halfway down
+(a 1 reads as a J) and a fractional digit width lands each digit on a different sub-pixel
+phase. **`pixelSegments(height, { stroke, width })`** gives one digit's segments, the
+horizontals between the verticals so none touch; **`pixelText(text, { height, stroke,
+gap, colon })`** lays out a row — `:` a colon, `.` the point of the digit before it —
+as `{ index, name, rect, on }` segments, the unlit ones being the ghosts to paint dim.
+
+```ts
+import { pixelText } from '@glowbox/seven-segment';
+
+const row = pixelText('10:34', { height: 14, colon: blinkOn });
+for (const { rect, on } of row.segments)
+	fill(on ? lit : ghost, x0 + rect.x, y0 + rect.y, rect.w, rect.h);
+```
+
 ## Themes
 
 `theme` bundles the housing: `'dark'` (the default), `'light'`, or `'auto'` to follow the
