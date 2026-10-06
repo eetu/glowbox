@@ -11,4 +11,17 @@ export {
 	type LcdModuleOptions
 } from './lcd';
 export { type PanelName, PANELS, type PanelSpec } from './panels';
+export { type PixelLayout, type PixelPart, type PixelRect } from './pixel';
+export {
+	crystalAt,
+	type LcdDot,
+	lcdInk,
+	type LcdInkOptions,
+	type LcdPixelOptions,
+	lcdPixels,
+	type LcdTargetOptions,
+	lcdTargets,
+	stepCrystals
+} from './pixel-lcd';
 export { type Theme } from './theme';
+export { DEAD_AT, FLICKER_FROM, type Wear, wearLevels, wearOf } from './wear';

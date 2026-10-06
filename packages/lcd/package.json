@@ -47,9 +47,21 @@
 	},
 	"size-limit": [
 		{
-			"name": "esm (core + panel presets + vendored 5×7 face + opt-in latin table)",
+			"name": "esm (core + panel presets + vendored 5×7 face + opt-in latin table + pixel export)",
 			"path": "dist/index.js",
+			"limit": "6.5 kB"
+		},
+		{
+			"name": "canvas core alone (the pixel export tree-shakes away)",
+			"path": "dist/index.js",
+			"import": "{ createLcdModule }",
 			"limit": "5 kB"
+		},
+		{
+			"name": "pixel export alone",
+			"path": "dist/index.js",
+			"import": "{ lcdPixels, lcdTargets, stepCrystals, crystalAt, lcdInk }",
+			"limit": "3 kB"
 		}
 	],
 	"devDependencies": {

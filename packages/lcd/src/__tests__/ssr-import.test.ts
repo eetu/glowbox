@@ -12,6 +12,7 @@ describe('node/SSR import safety', () => {
 		expect(mod.PANELS.blue.negative).toBe(true);
 		expect(mod.glyph5x7('A').length).toBe(mod.FONT_5X7.height);
 		expect(mod.layLines('HI', 4, 2)).toEqual(['HI  ', '    ']);
+		expect(mod.lcdPixels().width).toBe(95);
 	});
 
 	it('parses colours without a DOM (hex path; CSS names need a canvas)', async () => {
