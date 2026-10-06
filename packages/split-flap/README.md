@@ -175,6 +175,60 @@ the render loop stops when the last card lands. A 40×20 chroma wall (800
 modules) cascades smoothly at dpr 2; the practical ceiling is a couple of
 thousand modules.
 
+## Pixel flaps
+
+For a game painting the board into its own low-resolution raster, the board comes as
+**data on whole pixels**. Built once: **`flapPixels({ cols, rows, card: [w, h], gap })`**
+lays out each card's top flap, hinge row and bottom flap as parts `{ col, row, half,
+rects }`, with `cards` the modules' rects in row-major order; **`flapGlyph(char, card)`**
+prints a character in the 5×7 face across a card, the hinge cutting it four rows over
+three, as `top` and `bottom` rects and each row's runs. A 7×11 card carries it with a pixel
+to spare. The face is ASCII: give the Nordic drum's Å, Ä and Ö as `glyphs` art (the format
+of `@glowbox/lcd`'s `LATIN_5X7`).
+
+Each frame, **`flapState(from, to, ms, { charset, drums, seed, flipMs })`** gives every
+module `ms` after the board was told to change, as `{ idx, char, next, fall }`, in closed
+form: drums turn forward only, and each module's strobe delay and pace hash from `seed`, so
+a world that rewinds sees the same board. **`flapRows(fall, card)`** says which row each row
+of the card shows: `& FLAP_ROW` is the source row, `FLAP_NEXT` marks the next character's,
+`FLAP_FLIGHT` the falling card's. Shade the falling rows, the front lit and the back dim by
+`sin(flapAngle(fall))`: with five rows to a flap, that shading is what makes the fold read
+as a card. **`flapLandings(from, to, ms0, ms1, options)`** lists the cards that landed in a
+frame's window, for the slap. The shape (`PixelLayout` of `PixelPart`s, each the
+`PixelRect`s it covers) is the one every glowbox core shares for pixel data.
+
+```ts
+import {
+	DRUM_ALNUM,
+	FLAP_FLIGHT,
+	FLAP_NEXT,
+	FLAP_ROW,
+	flapAngle,
+	flapGlyph,
+	flapPixels,
+	flapRows,
+	flapsOf,
+	flapState
+} from '@glowbox/split-flap';
+
+const card = [7, 11] as const;
+const board = flapPixels({ cols: 14, rows: 2, card });
+const print = new Map(flapsOf(DRUM_ALNUM).map((ch) => [ch, flapGlyph(ch, card)]));
+const map = new Int16Array(card[1]);
+
+for (const { half, rects } of board.parts)
+	for (const r of rects) fill(half === 'hinge' ? split : paper, r.x, r.y, r.w, r.h);
+flapState(was, now, ms, { charset: DRUM_ALNUM, seed: 7 }).forEach(({ char, next, fall }, i) => {
+	const { x, y } = board.cards[i];
+	const lit = Math.sin(flapAngle(fall));
+	flapRows(fall, card, map).forEach((v, row) => {
+		if (v & FLAP_FLIGHT) fill(v & FLAP_NEXT ? dim(lit) : lift(lit), x, y + row, card[0], 1);
+		for (const r of print.get(v & FLAP_NEXT ? next : char)!.rows[v & FLAP_ROW])
+			fill(ink, x + r.x, y + row, r.w, 1);
+	});
+});
+```
+
 ## Themes
 
 `theme` is a bundle of colour **defaults**, not a render path: `'dark'` (the default —
