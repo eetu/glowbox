@@ -14,6 +14,7 @@ describe('node/SSR import safety', () => {
 		expect(mod.glyphPath('x')).toBeNull();
 		expect(mod.nixieCathodes()).toHaveLength(10);
 		expect(mod.nixieMesh(60, 100).cells.length).toBeGreaterThan(0);
+		expect(mod.nixiePixelText('12:34', { height: 16 }).parts).toHaveLength(41);
 	});
 
 	it('parses colours without a DOM (hex path; CSS names need a canvas)', async () => {

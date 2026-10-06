@@ -9,6 +9,8 @@
 // the honeycomb anode grille; `glyphPath(symbol)` / `GLYPH_VIEWBOX` are the raw centreline +
 // its coordinate space; and `{ bare: true }` renders a tube's glowing contents on a
 // transparent canvas (no 2D glass) for compositing.
+// For a game painting its own low-resolution raster, `nixiePixelText` lays tubes out on
+// whole pixels as data, and `nixieLevels` lights them, worn and seeded.
 export { type Color, parseColor, type RGB } from './color';
 export {
 	createNixieTube,
@@ -24,5 +26,15 @@ export {
 	nixieStyle,
 	type NixieTube
 } from './nixie';
+export { type PixelLayout, type PixelPart, type PixelRect } from './pixel';
+export {
+	nixieLevels,
+	type NixiePixelOptions,
+	type NixiePixelPart,
+	nixiePixels,
+	nixiePixelText,
+	type NixiePixelTextOptions
+} from './pixel-nixie';
 export { createNixieRow, type NixieRow, type NixieRowOptions } from './row';
 export { type Theme } from './theme';
+export { DEAD_AT, FLICKER_FROM, type Wear, wearLevels, wearOf } from './wear';
