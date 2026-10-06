@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { compile5x7, glyph5x7 } from '../font5x7';
-import { LATIN_5X7 } from '../latin';
+import { LATIN_5X7 } from '../latin5x7';
 import { PANELS } from '../panels';
 import { crystalAt, lcdInk, lcdPixels, lcdTargets, stepCrystals } from '../pixel-lcd';
 import { wearOf } from '../wear';

@@ -1,3 +1,9 @@
+// SHARED SOURCE. This file lives in `shared/` and is SYMLINKED into each package that
+// needs it (see `scripts/check-shared.mjs` and CLAUDE.md → Conventions). Editing it here
+// edits it for every one of them. It is not a package and nothing depends on it at
+// runtime: each bundler inlines it, so the cores stay genuinely zero-dep.
+// Shared by: flip-dot, neon, nixie, split-flap, vfd.
+//
 // Lines and masks in whole pixels: a polyline as the cells a 1 px line through it covers, and
 // any mask as the fewest rects that cover it (row runs, stacked where rows repeat), so a
 // vertical stroke is one rect and not one per row.

@@ -34,12 +34,13 @@ const EXPECTED = {
 		'vfd'
 	],
 	'sound.ts': ['flip-dot', 'neon', 'split-flap'],
-	'font5x7.ts': ['extras', 'lcd', 'vfd'],
-	'path-parse.ts': ['neon', 'vfd'],
-	'pixel.ts': ['neon', 'nixie', 'seven-segment'],
-	'pixel-stroke.ts': ['neon', 'nixie'],
-	'pixel-segments.ts': ['seven-segment'],
-	'wear.ts': ['seven-segment'],
+	'font5x7.ts': ['extras', 'lcd', 'split-flap', 'vfd'],
+	'latin5x7.ts': ['lcd', 'split-flap'],
+	'path-parse.ts': ['neon', 'nixie', 'vfd'],
+	'pixel.ts': ['flip-dot', 'lcd', 'neon', 'nixie', 'seven-segment', 'split-flap', 'vfd'],
+	'pixel-stroke.ts': ['flip-dot', 'neon', 'nixie', 'split-flap', 'vfd'],
+	'pixel-segments.ts': ['seven-segment', 'vfd'],
+	'wear.ts': ['flip-dot', 'lcd', 'neon', 'nixie', 'seven-segment', 'vfd'],
 	'theme.ts': ['flip-dot', 'lcd', 'led-grid', 'neon', 'nixie', 'seven-segment', 'split-flap', 'vfd']
 };
 

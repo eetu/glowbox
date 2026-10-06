@@ -1,3 +1,9 @@
+// SHARED SOURCE. This file lives in `shared/` and is SYMLINKED into each package that
+// needs it (see `scripts/check-shared.mjs` and CLAUDE.md → Conventions). Editing it here
+// edits it for every one of them. It is not a package and nothing depends on it at
+// runtime: each bundler inlines it, so the cores stay genuinely zero-dep.
+// Shared by: flip-dot, lcd, neon, nixie, seven-segment, vfd.
+//
 // The wear the displays age by, as a function of (part, age, t, seed) for the pixel exports:
 // a game's world is a function of time and seed, so nothing here keeps state, reads a clock
 // or calls Math.random. The arc is the canvas cores' (they keep their own timer-scheduled
@@ -17,7 +23,8 @@ export const DEAD_AT = 0.95;
 /** A dip is due once in each window of this many seconds, if at all. */
 const WINDOW = 1.4;
 
-const unit = (a: number, b: number, c: number): number => {
+/** A seeded hash of three integers to 0..1: the jitter and the dips are its draws. */
+export const unit = (a: number, b: number, c: number): number => {
 	let h =
 		Math.imul(a | 0, 0x27d4eb2d) ^ Math.imul(b | 0, 0x165667b1) ^ Math.imul(c | 0, 0x9e3779b1);
 	h = Math.imul(h ^ (h >>> 15), 0x85ebca6b);

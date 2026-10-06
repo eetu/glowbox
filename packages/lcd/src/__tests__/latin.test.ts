@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { compile5x7, FONT_5X7, glyph5x7, repertoire5x7 } from '../font5x7';
-import { LATIN_5X7 } from '../latin';
+import { LATIN_5X7 } from '../latin5x7';
 
 describe('LATIN_5X7', () => {
 	it('every entry is one character mapped to 7 rows of exactly 5 dots', () => {

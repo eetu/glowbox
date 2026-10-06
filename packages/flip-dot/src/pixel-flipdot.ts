@@ -8,6 +8,8 @@
 import type { FlipDotShape, FlipDotStagger } from './flip-dot';
 import type { PixelLayout, PixelPart, PixelRect } from './pixel';
 import { maskRects } from './pixel-stroke';
+// The same dot on the same board always draws the same jitter.
+import { unit } from './wear';
 
 export interface FlipPixelOptions {
 	cols: number;
@@ -207,15 +209,6 @@ export function flipFrames(
 	const steps = 4 * dot;
 	return Array.from({ length: steps + 1 }, (_, i) => frame(Math.cos((i / steps) * Math.PI)));
 }
-
-// A seeded hash to 0..1 (wear's): the same dot on the same board always has the same jitter.
-const unit = (a: number, b: number, c: number): number => {
-	let h =
-		Math.imul(a | 0, 0x27d4eb2d) ^ Math.imul(b | 0, 0x165667b1) ^ Math.imul(c | 0, 0x9e3779b1);
-	h = Math.imul(h ^ (h >>> 15), 0x85ebca6b);
-	h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
-	return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-};
 
 /** The last change at or before `t`, or −1. */
 const lastAt = (changes: readonly FlipChange[], t: number) => {

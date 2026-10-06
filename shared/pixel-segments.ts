@@ -1,3 +1,9 @@
+// SHARED SOURCE. This file lives in `shared/` and is SYMLINKED into each package that
+// needs it (see `scripts/check-shared.mjs` and CLAUDE.md → Conventions). Editing it here
+// edits it for every one of them. It is not a package and nothing depends on it at
+// runtime: each bundler inlines it, so the cores stay genuinely zero-dep.
+// Shared by: seven-segment, vfd.
+//
 // A seven-segment digit on whole pixels, for every core that has one (seven-segment, vfd's
 // `7seg` digits). At a dozen pixels tall the outline geometry doesn't survive rounding: a slant
 // jogs every stroke a pixel halfway down (a 1 reads as a J), and a fractional width lands each

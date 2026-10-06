@@ -117,11 +117,7 @@ torus — `d.torus()` is axis-aligned/single-colour, see the note in `torus.ts`.
 
 The cores as **data at whole-pixel scale**, for a game painting into its own low-resolution
 raster. The cores keep their canvas renders; this is an export beside them, as lcd's 5×7
-font already is.
-
-**Released as one minor**, once every core with a pixel export below has it (seven-segment,
-nixie, flip-dot, split-flap, lcd, neon, vfd) and `shared/wear.ts` exists. Until then the
-work merges to main under `[Unreleased]`, with no tag.
+font already is. **All seven are in, unreleased; they ship together as one minor.**
 
 - **Contract** (`shared/pixel.ts`): a `PixelLayout` of `PixelPart`s, each the `PixelRect`s it
   covers, plus the core's own address (a segment's name, a dot's column and row, a tube's
@@ -129,24 +125,29 @@ work merges to main under `[Unreleased]`, with no tag.
   `Float32Array` (0 a ghost, 1 lit; neon strikes overshoot to 1.15) or, for the mechanical
   boards, their phase state. A per-frame flat cell list was rejected: it rebuilds rects every
   frame and cannot say "flap row 3 shows source row 7".
-- **Seeded wear** (`shared/wear.ts`, to do with the next core): the arc every core repeats
-  (`0.5+0.5·sin(seed+i·12.9898)`, dying and runner-up, flicker at 0.7, dead at 0.95) as
-  `(i, age, t, seed) → level`, flicker a hash of time windows. The canvas cores run it on
-  `Math.random` and `setTimeout`; a game's world is a function of time and seed. Pixel APIs
-  use the seeded one; the canvas cores are not retrofitted (it would change shipping
-  renders, the same reason the `rgba` helpers aren't shared).
+- **Seeded wear** (`shared/wear.ts`): the arc every core repeats (`0.5+0.5·sin(seed+i·12.9898)`,
+  dying and runner-up, flicker at 0.7, dead at 0.95) as `(i, age, t, seed) → level`, flicker
+  a hash of time windows. The canvas cores keep their `Math.random` and `setTimeout`
+  version; retrofitting it would change shipping renders, the same reason the `rgba`
+  helpers aren't shared.
+- **Each export was judged by eye** on preview sheets before it went in; a core that read
+  as a thin font rather than its display would have been dropped.
 
-| core          | pixel export                                                                                                                                                    | verdict                                                                                                                                               |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| seven-segment | `pixelSegments`, `pixelText`                                                                                                                                    | shipped (unreleased)                                                                                                                                  |
-| nixie         | `nixiePixels(symbol, height)`, ghost-cathode stack, `nixiePixelText`; 1 px wire under ~45 px tall                                                               | next: a clock is the commonest pixel-scene display. Builds `pixel-stroke.ts` (polyline → 1 px runs); authored bitmaps if curves at ≤ 11 px look lumpy |
-| flip-dot      | dot layout; `flipFrames` masks per phase; `flipPhases(state, t, { seed, stagger })` (scan delay, jitter, finish-the-last-flip, all closed form)                 | soon: a destination board, world-lit since it is paint                                                                                                |
-| split-flap    | card halves + hinge; `flapRows(fall, half)` row map; `flapState(from, to, τ, { seed })`; needs `font5x7.ts` (its glyphs are `fillText` today)                   | soon: a departure board                                                                                                                               |
-| lcd           | dot layout; `lcdTargets`; `stepCrystals`; `lcdInk(state, { contrast, ghost, age, seed })` (ink is darkening, only the pane glows)                               | later: the 5×7 font is already exported for text                                                                                                      |
-| neon          | `neonPixels(text, { capHeight })` sections with `ends`/`word`/`line`; `neonLevels(t, { seed, age, program })` (export `strikeBri`); sans ≥ 7 px cap, script ~12 | later, on nixie's rasteriser: a sign whose glow lights the wall                                                                                       |
-| vfd           | `compilePixelPanel`; reuse `driveElement`; `stepPhosphor`; rect-native kinds (7seg, matrix, legend, bars, dots, rule) first, starbursts and icons only if asked | later; its `7seg` takes `pixelSegments` once it moves to `shared/`                                                                                    |
-| led-grid      | none: with nz = 1 `createVoxelGrid().leds` already is a pixel buffer                                                                                            | not worth it                                                                                                                                          |
-| crt           | none: scanlines and persistence would be the game's present step                                                                                                | not worth it                                                                                                                                          |
+| core          | pixel export                                                                    | reads from                                        |
+| ------------- | ------------------------------------------------------------------------------- | ------------------------------------------------- |
+| seven-segment | `pixelText`, `pixelSegments`, `pixelLevels`                                     | ~9 px digits                                      |
+| nixie         | `nixiePixelText`, `nixiePixels`, `nixieLevels`; swept unbroken from 11 to 96 px | 16 px tall (11 px hand-drawn, the stack a smudge) |
+| flip-dot      | `flipDotPixels`, `flipFrames`, `flipPhases`, `flipLandings`                     | 4 px dots (below, a matrix with a sweep)          |
+| split-flap    | `flapPixels`, `flapGlyph`, `flapRows`, `flapState`, `flapLandings`              | 7×11 cards, odd heights                           |
+| lcd           | `lcdPixels`, `lcdTargets`, `stepCrystals`/`crystalAt`, `lcdInk`                 | 1 px a dot (a 16×2 is 95×18)                      |
+| neon          | `neonPixels`, `neonLevels`; needs the game's glow                               | sans caps 7–9 px, script 16 px                    |
+| vfd           | `compilePixelPanel`, `vfdTargets`, `stepPhosphor`, `vfdLevels`                  | 7seg/matrix/legend/bars/dots/rule; the rest throw |
+| led-grid      | none: with nz = 1 `createVoxelGrid().leds` already is a pixel buffer            | not worth it                                      |
+| crt           | none: scanlines and persistence would be the game's present step                | not worth it                                      |
+
+**Later, if asked:** vfd's 14/16-segment digits, icons and scale (diagonals staircase at these
+sizes, icons want a polygon fill); one stroke thinner for nixie and neon, which each grew
+their own.
 
 ## Deliberately not doing
 

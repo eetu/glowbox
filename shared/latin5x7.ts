@@ -2,7 +2,7 @@
 // needs it (see `scripts/check-shared.mjs` and CLAUDE.md → Conventions). Editing it here
 // edits it for every one of them. It is not a package and nothing depends on it at
 // runtime: each bundler inlines it, so the cores stay genuinely zero-dep.
-// Shared by: lcd (as `latin.ts`), split-flap.
+// Shared by: lcd, split-flap.
 //
 // A 5×7 extension face to `font5x7.ts`: the Western European / Nordic set, in the same
 // ASCII-art authoring format (7 rows of 5, '#' = ink). Hardware framing: this is the
