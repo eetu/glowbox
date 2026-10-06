@@ -17,5 +17,14 @@ export {
 } from './layout';
 export { createNeonSign, type NeonProgram, type NeonSign, type NeonSignOptions } from './neon';
 export { pathToStrokes, type PathToStrokesOptions } from './path';
+export { type PixelLayout, type PixelPart, type PixelRect } from './pixel';
+export {
+	type NeonLevelOptions,
+	neonLevels,
+	type NeonPixelOptions,
+	type NeonPixelPart,
+	neonPixels,
+	type NeonSwitch
+} from './pixel-neon';
 export { createHum, createMechSound, type HumVoice, type MechSound, type MechTick } from './sound';
 export { type Theme } from './theme';
