@@ -4,13 +4,22 @@
 	// slots, container-fitted sizing). Mirrors the LED-grid demo's shell: shared CoreNav
 	// header + a right-hand control drawer (an off-canvas sheet on mobile), so the two
 	// cores read as one app.
-	import { createNixieRow, type NixieRow, type NixieStyle } from '@glowbox/nixie';
+	import {
+		createNixieRow,
+		DEAD_AT,
+		FLICKER_FROM,
+		nixieLevels,
+		nixiePixelText,
+		type NixieRow,
+		type NixieStyle
+	} from '@glowbox/nixie';
 	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
 	import X from '@lucide/svelte/icons/x';
 	import { untrack } from 'svelte';
 
 	import CoreNav from '$lib/components/CoreNav.svelte';
 	import NixieScene3D from '$lib/components/NixieScene3D.svelte';
+	import PixelStage, { mixHex, type PixelPaint } from '$lib/components/PixelStage.svelte';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Slider from '$lib/components/Slider.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
@@ -34,6 +43,15 @@
 	// 2D = flat <NixieTube> canvases; 3D = real bent-wire cathodes in refractive glass
 	// tubes (three.js), extruded from the same glyph paths via @glowbox/nixie's glyphPath.
 	let mode = $state<'2d' | '3d'>('2d');
+	// Canvas is the component; pixel is the same tubes as data (`nixiePixelText`), painted the
+	// way a game would into its own raster and scaled up by a whole number. Pixel shows the
+	// 2D row only.
+	let render = $state<'canvas' | 'pixel'>('canvas');
+	const threeD = $derived(render === 'canvas' && mode === '3d');
+	let pixelH = $state(20);
+	let glow = $state(0.7);
+	let ghost = $state(true);
+	let age = $state(0);
 	// Tube dimensions (px) — the row turns them into a digit aspect + container height
 	// and handles separator widths + shrink-to-fit itself.
 	let tubeW = $state(84);
@@ -73,6 +91,8 @@
 				color,
 				background: glass,
 				wire: filament,
+				glow,
+				ghost,
 				bare: !glassOn,
 				theme: theme.mode,
 				digitAspect: tubeW / tubeH
@@ -89,13 +109,37 @@
 			color,
 			background: glass,
 			wire: filament,
+			glow,
+			ghost,
 			bare: !glassOn,
+			theme: theme.mode,
 			digitAspect: tubeW / tubeH
 		});
 	});
 	$effect(() => {
 		row?.setValue(time);
 	});
+
+	// The pixel render: the row on whole pixels, each tube its ten cathodes. The ghosts are
+	// the filament over the glass, fainter the farther back, as the canvas strokes them; the
+	// lit cathode is the glow colour, dimmed by its wear. Seed 3 wears out the seconds
+	// tube's 5, then hands its dips to the colon before the seconds.
+	const PAD = 2;
+	const pixelRow = $derived(nixiePixelText(time, { height: pixelH }));
+	const pixelFace = $derived(glassOn ? glass : backdrop);
+	const ghostInk = $derived(
+		Array.from({ length: 10 }, (_, depth) => mixHex(pixelFace, filament, 0.3 - (depth / 9) * 0.19))
+	);
+	const pixelPaint: PixelPaint = (fill, t) => {
+		const levels = nixieLevels(pixelRow, { age, seed: 3, t });
+		pixelRow.parts.forEach((p, i) => {
+			const on = levels[i] > 0;
+			if (!on && !ghost) return;
+			const dim = ghostInk[p.depth];
+			const colour = on ? mixHex(dim, color, levels[i]) : dim;
+			for (const r of p.rects) fill(colour, r.x + PAD, r.y + PAD, r.w, r.h, on);
+		});
+	};
 </script>
 
 <svelte:head>
@@ -107,18 +151,18 @@
 <div class="app">
 	<header>
 		<CoreNav core="nixie" />
-		<label class="hdr-field"
+		<label class="hdr-field" class:off={render === 'pixel'} inert={render === 'pixel'}
 			>mode
 			<Segmented
 				bind:value={mode}
-				ariaLabel="render mode"
+				ariaLabel="2D or 3D"
 				options={[
 					{ value: '2d', label: '2D' },
 					{ value: '3d', label: '3D' }
 				]}
 			/>
 		</label>
-		<label class="hdr-field style-field"
+		<label class="hdr-field style-field" class:off={render === 'pixel'} inert={render === 'pixel'}
 			>style
 			<Segmented
 				bind:value={style}
@@ -130,10 +174,23 @@
 				]}
 			/>
 		</label>
+		<label class="hdr-field"
+			>render
+			<Segmented
+				bind:value={render}
+				ariaLabel="render"
+				options={[
+					{ value: 'canvas', label: 'Canvas' },
+					{ value: 'pixel', label: 'Pixel' }
+				]}
+			/>
+		</label>
 		<span class="hint"
-			>{mode === '3d'
-				? 'bent-wire cathodes in refractive glass · drag to orbit'
-				: 'one createNixieRow call · one tube per char'}</span
+			>{render === 'pixel'
+				? 'nixiePixelText · mode, style: canvas only'
+				: mode === '3d'
+					? 'bent-wire cathodes in refractive glass · drag to orbit'
+					: 'one createNixieRow call · one tube per char'}</span
 		>
 		<ThemeToggle />
 		<button
@@ -148,7 +205,19 @@
 	</header>
 
 	<div class="stage" style="background: {backdrop}">
-		{#if mode === '3d'}
+		{#if render === 'pixel'}
+			<div class="clock pixel">
+				<PixelStage
+					width={pixelRow.width + 2 * PAD}
+					height={pixelRow.height + 2 * PAD}
+					paint={pixelPaint}
+					{glow}
+					background={pixelFace}
+					maxScale={16}
+					label={time}
+				/>
+			</div>
+		{:else if mode === '3d'}
 			<NixieScene3D {digits} {color} {glass} wire={filament} {backdrop} {style} />
 		{:else}
 			<div class="clock" bind:this={rowEl} style="height: {tubeH}px"></div>
@@ -176,14 +245,25 @@
 			<h2>tube</h2>
 			<!-- The 3D scene builds its own tube geometry and sizes itself to the stage;
 			     width/height drive the 2D canvas slots only. -->
+			{#if render === 'pixel'}
+				<Slider
+					bind:value={pixelH}
+					label="tube height"
+					min={11}
+					max={40}
+					step={1}
+					format={(v) => `${v} px`}
+					hint="in the display's own pixels; the stage scales them up whole"
+				/>
+			{/if}
 			<Slider
 				bind:value={tubeW}
 				label="width"
 				min={40}
 				max={140}
 				step={2}
-				disabled={mode === '3d'}
-				hint={mode === '3d' ? '2D mode only' : undefined}
+				disabled={render === 'pixel' || mode === '3d'}
+				hint={render === 'pixel' ? 'canvas only' : mode === '3d' ? '2D mode only' : undefined}
 				format={(v) => `${v}px`}
 			/>
 			<Slider
@@ -192,10 +272,41 @@
 				min={80}
 				max={280}
 				step={2}
-				disabled={mode === '3d'}
-				hint={mode === '3d' ? '2D mode only' : undefined}
+				disabled={render === 'pixel' || mode === '3d'}
+				hint={render === 'pixel' ? 'canvas only' : mode === '3d' ? '2D mode only' : undefined}
 				format={(v) => `${v}px`}
 			/>
+		</section>
+
+		<section>
+			<h2>display</h2>
+			<Slider
+				bind:value={glow}
+				label="glow"
+				min={0}
+				max={1}
+				step={0.05}
+				disabled={threeD}
+				hint={threeD ? '2D mode only' : undefined}
+			/>
+			{#if render === 'pixel'}
+				<Slider
+					bind:value={age}
+					label="age"
+					min={0}
+					max={1}
+					step={0.02}
+					format={(v) =>
+						v >= DEAD_AT
+							? `${Math.round(v * 100)}% · dead cathode`
+							: v > FLICKER_FROM
+								? `${Math.round(v * 100)}% · dying`
+								: `${Math.round(v * 100)}%`}
+				/>
+			{/if}
+			<div class="row">
+				<ToggleChip bind:checked={ghost} label="cathode ghosts" disabled={threeD} />
+			</div>
 		</section>
 
 		<section>
@@ -209,12 +320,12 @@
 				<input
 					type="color"
 					bind:value={glass}
-					disabled={!glassOn && mode === '2d'}
+					disabled={!glassOn && !threeD}
 					aria-label="tube glass colour"
 				/>
 			</div>
 			<div class="row">
-				<ToggleChip bind:checked={glassOn} label="glass module" disabled={mode === '3d'} />
+				<ToggleChip bind:checked={glassOn} label="glass module" disabled={threeD} />
 			</div>
 			<div class="row">
 				<span class="rlabel">filament</span>
@@ -271,6 +382,10 @@
 		font-size: 13px;
 		color: var(--halo-text-muted);
 	}
+	/* A header field the current render doesn't use: greyed and inert. */
+	.hdr-field.off {
+		opacity: 0.45;
+	}
 	.hint {
 		margin-left: auto;
 		font-size: 12px;
@@ -305,6 +420,9 @@
 	   The div just gives it a box — full stage width, slider-driven height. */
 	.clock {
 		width: 100%;
+	}
+	.clock.pixel {
+		height: 100%;
 	}
 	/* The 3D scene fills the stage regardless of the flex centring used for the 2D row. */
 	.stage :global(.scene3d) {
