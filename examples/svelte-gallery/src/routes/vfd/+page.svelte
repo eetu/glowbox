@@ -415,8 +415,8 @@
 <div class="app">
 	<header>
 		<CoreNav core="vfd" />
-		<label class="hdr-field"
-			>source
+		<div class="hdr-field">
+			source
 			<Segmented
 				bind:value={source}
 				ariaLabel="source"
@@ -429,9 +429,9 @@
 					{ value: 'type', label: 'Type' }
 				]}
 			/>
-		</label>
-		<label class="hdr-field last"
-			>render
+		</div>
+		<div class="hdr-field last">
+			render
 			<Segmented
 				bind:value={render}
 				ariaLabel="render"
@@ -440,7 +440,7 @@
 					{ value: 'pixel', label: 'Pixel' }
 				]}
 			/>
-		</label>
+		</div>
 		<span class="hint">
 			{render === 'pixel'
 				? 'pixel mode shows the kinds it draws · no icons, no dial'

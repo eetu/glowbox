@@ -494,8 +494,8 @@
 <div class="app">
 	<header>
 		<CoreNav core="lcd" />
-		<label class="hdr-field"
-			>mode
+		<div class="hdr-field">
+			mode
 			<Segmented
 				bind:value={mode}
 				ariaLabel="mode"
@@ -504,9 +504,9 @@
 					{ value: 'type', label: 'Type' }
 				]}
 			/>
-		</label>
-		<label class="hdr-field"
-			>glass
+		</div>
+		<div class="hdr-field">
+			glass
 			<Segmented
 				bind:value={panel}
 				ariaLabel="panel glass"
@@ -516,9 +516,9 @@
 					{ value: 'white', label: 'FSTN' }
 				]}
 			/>
-		</label>
-		<label class="hdr-field"
-			>render
+		</div>
+		<div class="hdr-field">
+			render
 			<Segmented
 				bind:value={render}
 				ariaLabel="render"
@@ -527,7 +527,7 @@
 					{ value: 'pixel', label: 'Pixel' }
 				]}
 			/>
-		</label>
+		</div>
 		<span class="hint">slow crystals · twist CONTRAST past 0.85 · tap to park the cursor</span>
 		<ThemeToggle />
 		<button
@@ -752,7 +752,8 @@
 	.hdr-field {
 		display: inline-flex;
 		/* Never squeezed: a segmented control broken across two rows reads as a
-		   mistake. The hint takes the hit instead — it moves to a row of its own. */
+		   mistake. The hint takes the hit instead: it wraps, or drops to a row of
+		   its own. */
 		flex: none;
 		align-items: center;
 		gap: 8px;
@@ -760,8 +761,8 @@
 		color: var(--halo-text-muted);
 	}
 	.hint {
-		min-width: 0;
-		margin-left: auto;
+		flex: 1 0 12em;
+		text-align: right;
 		font-size: 12px;
 		color: var(--halo-text-muted);
 	}

@@ -301,7 +301,7 @@
 <div class="app">
 	<header>
 		<CoreNav core="flipdot" />
-		<label class="hdr-field example-field">
+		<div class="hdr-field example-field">
 			<span class="lbl">show</span>
 			<Select
 				bind:value={show}
@@ -314,9 +314,9 @@
 					{ value: 'counter', label: 'Counter' }
 				]}
 			/>
-		</label>
-		<label class="hdr-field style-field"
-			>dots
+		</div>
+		<div class="hdr-field style-field">
+			dots
 			<Segmented
 				bind:value={shape}
 				ariaLabel="dot shape"
@@ -325,9 +325,9 @@
 					{ value: 'square', label: 'square' }
 				]}
 			/>
-		</label>
-		<label class="hdr-field"
-			>render
+		</div>
+		<div class="hdr-field">
+			render
 			<Segmented
 				bind:value={render}
 				ariaLabel="render"
@@ -336,7 +336,7 @@
 					{ value: 'pixel', label: 'Pixel' }
 				]}
 			/>
-		</label>
+		</div>
 		<span class="hint">watch the scan wave · turn SOUND on</span>
 		<ThemeToggle />
 		<button
@@ -553,20 +553,26 @@
 	header {
 		grid-area: header;
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: 16px;
+		gap: 6px 16px;
 		padding: 8px 16px;
 		background: var(--halo-bg-light);
 	}
 	.hdr-field {
 		display: inline-flex;
+		/* Never squeezed: a segmented control broken across two rows reads as a
+		   mistake. The hint takes the hit instead: it wraps, or drops to a row of
+		   its own. */
+		flex: none;
 		align-items: center;
 		gap: 8px;
 		font-size: 13px;
 		color: var(--halo-text-muted);
 	}
 	.hint {
-		margin-left: auto;
+		flex: 1 0 12em;
+		text-align: right;
 		font-size: 12px;
 		color: var(--halo-text-muted);
 	}

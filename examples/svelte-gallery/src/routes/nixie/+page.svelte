@@ -151,8 +151,8 @@
 <div class="app">
 	<header>
 		<CoreNav core="nixie" />
-		<label class="hdr-field" class:off={render === 'pixel'} inert={render === 'pixel'}
-			>mode
+		<div class="hdr-field" class:off={render === 'pixel'} inert={render === 'pixel'}>
+			mode
 			<Segmented
 				bind:value={mode}
 				ariaLabel="2D or 3D"
@@ -161,9 +161,9 @@
 					{ value: '3d', label: '3D' }
 				]}
 			/>
-		</label>
-		<label class="hdr-field style-field" class:off={render === 'pixel'} inert={render === 'pixel'}
-			>style
+		</div>
+		<div class="hdr-field style-field" class:off={render === 'pixel'} inert={render === 'pixel'}>
+			style
 			<Segmented
 				bind:value={style}
 				ariaLabel="tube style"
@@ -173,9 +173,9 @@
 					{ value: 'tall', label: 'tall' }
 				]}
 			/>
-		</label>
-		<label class="hdr-field"
-			>render
+		</div>
+		<div class="hdr-field">
+			render
 			<Segmented
 				bind:value={render}
 				ariaLabel="render"
@@ -184,7 +184,7 @@
 					{ value: 'pixel', label: 'Pixel' }
 				]}
 			/>
-		</label>
+		</div>
 		<span class="hint"
 			>{render === 'pixel'
 				? 'nixiePixelText · mode, style: canvas only'
@@ -370,13 +370,18 @@
 	header {
 		grid-area: header;
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: 16px;
+		gap: 6px 16px;
 		padding: 8px 16px;
 		background: var(--halo-bg-light);
 	}
 	.hdr-field {
 		display: inline-flex;
+		/* Never squeezed: a segmented control broken across two rows reads as a
+		   mistake. The hint takes the hit instead: it wraps, or drops to a row of
+		   its own. */
+		flex: none;
 		align-items: center;
 		gap: 8px;
 		font-size: 13px;
@@ -387,7 +392,8 @@
 		opacity: 0.45;
 	}
 	.hint {
-		margin-left: auto;
+		flex: 1 0 12em;
+		text-align: right;
 		font-size: 12px;
 		color: var(--halo-text-muted);
 	}

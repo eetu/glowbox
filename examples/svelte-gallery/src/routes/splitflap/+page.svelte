@@ -221,7 +221,7 @@
 <div class="app">
 	<header>
 		<CoreNav core="splitflap" />
-		<label class="hdr-field example-field">
+		<div class="hdr-field example-field">
 			<span class="lbl">show</span>
 			<Select
 				bind:value={show}
@@ -239,7 +239,7 @@
 					{ value: 'pong', label: 'Pong' }
 				]}
 			/>
-		</label>
+		</div>
 		{#if show === 'chroma'}
 			<!-- Not a <label>: it would name the group's first button. -->
 			<div class="hdr-field style-field">
