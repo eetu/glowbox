@@ -183,8 +183,11 @@ lays out each card's top flap, hinge row and bottom flap as parts `{ col, row, h
 rects }`, with `cards` the modules' rects in row-major order; **`flapGlyph(char, card)`**
 prints a character in the 5×7 face across a card, the hinge cutting it four rows over
 three, as `top` and `bottom` rects and each row's runs. A 7×11 card carries it with a pixel
-to spare. The face is ASCII: give the Nordic drum's Å, Ä and Ö as `glyphs` art (the format
-of `@glowbox/lcd`'s `LATIN_5X7`).
+to spare; from 5×9 it fits, and from 12×19 it doubles. Keep the height odd: an even one
+takes a two-row hinge, which reads as two letters stacked. The face covers ASCII and the
+Western European / Nordic set, so every flap on the shipped drums prints; `glyphs` takes
+5×7 art of your own. The print is a bitmap at whole-pixel scales, so a stroke breaks only
+where the seam crosses it.
 
 Each frame, **`flapState(from, to, ms, { charset, drums, seed, flipMs })`** gives every
 module `ms` after the board was told to change, as `{ idx, char, next, fall }`, in closed

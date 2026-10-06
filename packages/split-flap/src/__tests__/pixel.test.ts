@@ -86,16 +86,27 @@ test('flapGlyph: the 5×7 face centred and cut under its middle row, four rows o
 	expect(flapGlyph(' ', card).rows.flat()).toEqual([]);
 });
 
-test('flapGlyph: the missing-glyph box, extension art, and a doubled face on a big card', () => {
-	expect(dump([7, 11], 'Å', ' ', -1).slice(1, 5)).toEqual([
+test('flapGlyph: the Nordic letters, the missing-glyph box, own art first, a doubled face', () => {
+	// The ring and the apex ride the top flap.
+	expect(dump([7, 11], 'Å', ' ', -1).slice(0, 9)).toEqual([
+		'.......',
+		'...#...',
+		'..#.#..',
+		'...#...',
+		'..###..',
+		'-------',
+		'.#...#.',
+		'.#####.',
+		'.#...#.'
+	]);
+	expect(dump([7, 11], '€', ' ', -1).slice(1, 5)).toEqual([
 		'.#####.',
 		'.#...#.',
 		'.#...#.',
 		'.#...#.'
 	]);
-	const ring = { Å: '..#..\n.#.#.\n..#..\n.###.\n#...#\n#####\n#...#' };
-	const a = flapGlyph('Å', [7, 11], { glyphs: ring });
-	expect(a.rows[1]).toEqual([{ x: 3, y: 1, w: 1, h: 1 }]);
+	const plain = { Å: '.###.\n#...#\n#...#\n#####\n#...#\n#...#\n#...#' };
+	expect(flapGlyph('Å', [7, 11], { glyphs: plain }).rows[1]).toEqual([{ x: 2, y: 1, w: 3, h: 1 }]);
 	// 12 × 19 fits the face at two pixels a dot with a pixel of card each side.
 	const big = flapGlyph('I', [12, 19]);
 	expect(big.top[0]).toEqual({ x: 3, y: 1, w: 6, h: 2 });

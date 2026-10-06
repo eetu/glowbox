@@ -6,6 +6,7 @@
 // mid-fall (`flapRows`). Nothing keeps state, reads a clock or calls Math.random.
 import { DEFAULT_CHARSET, flapIndex, flapsOf, padCells, stepsBetween } from './drum';
 import { compile5x7, FONT_5X7, glyph5x7 } from './font5x7';
+import { LATIN_5X7 } from './latin5x7';
 import type { PixelLayout, PixelPart, PixelRect } from './pixel';
 import { maskRects } from './pixel-stroke';
 import type { DrumZone } from './split-flap';
@@ -83,10 +84,10 @@ export function flapPixels({ cols, rows = 1, card, gap = 1 }: FlapPixelOptions):
 }
 
 export interface FlapGlyphOptions {
-	/** Glyphs past the built-in face, as 5×7 art ('#' ink, 7 rows of 5): the format of
-	 *  @glowbox/lcd's `LATIN_5X7`, which carries the Nordic drum's Å, Ä and Ö. */
+	/** Glyphs of your own, as 5×7 art ('#' ink, 7 rows of 5), ahead of the face's. */
 	glyphs?: Record<string, string>;
-	/** Pixels per face dot. Default the largest that leaves a pixel of card around the print. */
+	/** Pixels per face dot. Default the largest that leaves a pixel of card around the print;
+	 *  never more than fits the card. */
 	scale?: number;
 }
 
@@ -105,18 +106,29 @@ export interface FlapGlyph {
 const ABOVE = 4;
 
 /**
- * `char` in the 5×7 face, centred across a card and cut at the hinge: four face rows on the
- * top flap, three on the bottom, so the hinge row runs through the letter as the seam does
- * on the hardware. A character the face lacks prints as its hollow missing-glyph box; a
- * blank prints nothing.
+ * `char` in the 5×7 face (ASCII, and the Western European / Nordic set that carries the
+ * Nordic drum's Å, Ä and Ö), centred across a card and cut at the hinge: four face rows on
+ * the top flap, three on the bottom, so the hinge row runs through the letter as the seam
+ * does on the hardware. Whole-pixel scales of a bitmap, so a stroke breaks only where the
+ * seam crosses it. A card from 5 × 9 holds the whole face; a character the face lacks
+ * prints as its hollow missing-glyph box; a blank prints nothing.
  */
 export function flapGlyph(char: string, card: FlapCard, options: FlapGlyphOptions = {}): FlapGlyph {
 	const w = Math.max(1, Math.floor(card[0]));
 	const h = Math.max(3, Math.floor(card[1]));
 	const { half, hinge } = cut(h);
 	const { width: fw, height: fh } = FONT_5X7;
-	const s = Math.max(1, Math.floor(options.scale ?? Math.min((w - 2) / fw, (half - 1) / ABOVE)));
-	const art = options.glyphs?.[char];
+	const fits = Math.min(Math.floor(w / fw), Math.floor(half / ABOVE));
+	const s = Math.max(
+		1,
+		Math.min(fits, Math.floor(options.scale ?? Math.min((w - 2) / fw, (half - 1) / ABOVE)))
+	);
+	const own = options.glyphs ?? {};
+	const art = Object.hasOwn(own, char)
+		? own[char]
+		: Object.hasOwn(LATIN_5X7, char)
+			? LATIN_5X7[char]
+			: undefined;
 	const bits = art !== undefined ? compile5x7(art) : glyph5x7(char);
 	const x0 = Math.floor((w - fw * s) / 2);
 	const y0 = half - ABOVE * s;
