@@ -33,13 +33,22 @@ import {
 	compilePanel,
 	driveElement,
 	type ElementState,
+	failingCols,
 	fallPeaks,
-	GRID_COLS,
+	gridPass,
 	type VfdBars,
 	type VfdElement,
 	type VfdPanelLayout
 } from './panel';
-import { type FilterName, FILTERS, type PhosphorName, PHOSPHORS } from './phosphor';
+import {
+	ATTACK_TAU,
+	DECAY_MIN,
+	DECAY_SPAN,
+	type FilterName,
+	FILTERS,
+	type PhosphorName,
+	PHOSPHORS
+} from './phosphor';
 import { resolveTheme, type Theme, themeOwner, watchTheme } from './theme';
 
 export interface VfdPanelOptions {
@@ -187,14 +196,8 @@ const clamp01 = (v: number) => (v > 0 ? (v > 1 ? 1 : v) : 0);
 const WHITE: RGB = [1, 1, 1];
 
 // The wear arc thresholds — the franchise's, at anode granularity.
-const GRID_FAIL_AT = 0.6;
 const FLICKER_AT = 0.7;
 const DIE_AT = 0.95;
-// Persistence, as time constants in seconds. Attack is about one frame — phosphor lights
-// fast; the whole character of the thing is in the asymmetry with the release.
-const ATTACK_TAU = 0.012;
-const DECAY_MIN = 0.02;
-const DECAY_SPAN = 0.34;
 const SELF_TEST_MS = 1000;
 // The bloom is rendered at 1/Nth of the glass and composited back upscaled — the upscale
 // is the blur. 3 is the sweet spot: soft enough to read as phosphor halation, sharp enough
@@ -290,8 +293,7 @@ export function createVfdPanel(
 	const seed = Math.random() * 1000;
 	let dying = 0;
 	let second = 0;
-	let failCol = 0;
-	let failCol2 = 0;
+	let failCols: [number, number] = [0, 0];
 	let flickerDim = 1;
 	let flickTarget = 0;
 	let selfTestEnd = 0;
@@ -327,8 +329,7 @@ export function createVfdPanel(
 		dying = worst < 0 ? 0 : worst;
 		second = runner < 0 ? dying : runner;
 		flickTarget = dying;
-		failCol = Math.floor((0.5 + 0.5 * Math.sin(seed * 3.1)) * GRID_COLS) % GRID_COLS;
-		failCol2 = (failCol + 5 + (Math.floor(seed) % 7)) % GRID_COLS;
+		failCols = failingCols(seed);
 		// Carry drive state across a re-compile by NAME, so swapping a layout doesn't
 		// blank a panel that's mid-programme.
 		states = panel.elements.map((el) => {
@@ -460,8 +461,7 @@ export function createVfdPanel(
 			if (i === dying && age >= DIE_AT) return 0;
 			v *= 1 - wear[i] * age * 0.5;
 			// A weak grid drags its whole column down, across every element in it.
-			if (age >= GRID_FAIL_AT && a.col === failCol) v *= 0.42;
-			if (age >= 0.85 && a.col === failCol2) v *= 0.6;
+			v *= gridPass(a.col, age, failCols);
 			if (i === flickTarget && age > FLICKER_AT) v *= flickerDim;
 		}
 		return v * dimmer();
