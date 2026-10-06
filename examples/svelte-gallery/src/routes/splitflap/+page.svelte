@@ -4,22 +4,32 @@
 	// falling from the drum about the hinge line, forward-only wrap-through
 	// cascades — and turn SOUND on for the card-slap clatter.
 	import { createCrtScreen } from '@glowbox/crt';
-	import { createSplitFlap, type SplitFlapBoard } from '@glowbox/split-flap';
+	import { createSplitFlap, flapPixels, type SplitFlapBoard } from '@glowbox/split-flap';
 	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
 	import X from '@lucide/svelte/icons/x';
 	import { untrack } from 'svelte';
 
 	import CoreNav from '$lib/components/CoreNav.svelte';
+	import PixelStage, { type PixelPaint } from '$lib/components/PixelStage.svelte';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Select from '$lib/components/Select.svelte';
 	import Slider from '$lib/components/Slider.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import ToggleChip from '$lib/components/ToggleChip.svelte';
 	import { type ChromaKind, FLAP_SHOWS, type FlapShow } from '$lib/examples/splitflap';
+	import {
+		createPixelFlap,
+		paintFlaps,
+		type PixelFlapBoard,
+		type PixelFlapView
+	} from '$lib/examples/splitflap-pixel';
 	import { theme } from '$lib/theme.svelte';
 
 	let show = $state<FlapShow>('departures');
 	let chromaKind = $state<ChromaKind>('rich');
+	// Canvas is the component; pixel is the same board as data (`flapState`), painted the
+	// way a game would into its own raster and scaled up by a whole number.
+	let render = $state<'canvas' | 'pixel'>('canvas');
 	// The tappable shows (they still self-play; a tap just takes the wheel).
 	let interactive = $derived(show === 'counter' || show === 'scroller' || show === 'poll');
 
@@ -125,15 +135,71 @@
 		});
 	});
 
+	// The pixel render's board: the same commands, kept as data and read in closed form
+	// each frame on the stage's clock. Odd card heights only: an even one takes a two-row
+	// hinge, which reads as two letters stacked. 12 wide is where the print doubles.
+	const CARDS = [
+		[7, 11],
+		[9, 15],
+		[12, 19]
+	] as const;
+	const PAD = 2;
+	const GAP = 1;
+	const SEED = 7;
+	let cardStep = $state(0);
+	const card = $derived(CARDS[cardStep]);
+	let grid = $state({ cols: 18, rows: 6 });
+	const pixelLayout = $derived(flapPixels({ ...grid, card, gap: GAP }));
+	let pixelBoard = $state.raw<PixelFlapBoard | null>(null);
+	const pixelView = (): PixelFlapView | null => {
+		const el = stageWrap?.querySelector<HTMLCanvasElement>('.pixel-stage canvas');
+		return el ? { canvas: el, layout: pixelLayout, pad: PAD } : null;
+	};
+	$effect(() => {
+		if (render !== 'pixel') return;
+		const c = clampDim(cols, 48);
+		const r = clampDim(rows, 24);
+		const b = createPixelFlap(
+			untrack(() => ({
+				cols: c,
+				rows: r,
+				seed: SEED,
+				flipMs,
+				sound: soundOn ? volume : 0,
+				view: pixelView,
+				onregrid: (gc: number, gr: number) => (grid = { cols: gc, rows: gr })
+			}))
+		);
+		grid = { cols: c, rows: r };
+		pixelBoard = b;
+		return () => {
+			b.dispose();
+			pixelBoard = null;
+		};
+	});
+	$effect(() => {
+		pixelBoard?.setOptions({ flipMs, sound: soundOn ? volume : 0 });
+	});
+	const pixelPaint: PixelPaint = (fill, t) => {
+		const b = pixelBoard;
+		if (!b) return;
+		const split = frameOn ? boardColor : backdrop;
+		const inks = { card: cardColor, ink: inkColor, split };
+		paintFlaps(fill, b.frame(t), pixelLayout, card, b.palette, inks, PAD);
+	};
+
 	// One show at a time; each returns its stop(). The knobs are getters so live
 	// edits (the text field) apply without restarting the show.
+	const activeBoard = $derived<SplitFlapBoard | null>(render === 'pixel' ? pixelBoard : board);
 	$effect(() => {
-		const b = board;
+		const b = activeBoard;
 		if (!b) return;
+		const pixel = render === 'pixel';
 		return FLAP_SHOWS[show](b, {
 			text: () => freeText,
 			chroma: () => chromaKind,
-			stage: () => stageWrap
+			stage: () => stageWrap,
+			aspect: pixel ? () => untrack(() => (card[0] + GAP) / (card[1] + GAP)) : undefined
 		});
 	});
 
@@ -175,8 +241,9 @@
 			/>
 		</label>
 		{#if show === 'chroma'}
-			<label class="hdr-field style-field"
-				>drum
+			<!-- Not a <label>: it would name the group's first button. -->
+			<div class="hdr-field style-field">
+				drum
 				<Segmented
 					bind:value={chromaKind}
 					ariaLabel="chroma drum"
@@ -187,8 +254,19 @@
 						{ value: 'ultra', label: 'Ultra' }
 					]}
 				/>
-			</label>
+			</div>
 		{/if}
+		<div class="hdr-field">
+			render
+			<Segmented
+				bind:value={render}
+				ariaLabel="render"
+				options={[
+					{ value: 'canvas', label: 'Canvas' },
+					{ value: 'pixel', label: 'Pixel' }
+				]}
+			/>
+		</div>
 		<span class="hint">{interactive ? 'tap the board' : 'forward-only drums'} · turn SOUND on</span>
 		<ThemeToggle />
 		<button
@@ -203,8 +281,23 @@
 	</header>
 
 	<div class="stage" style="background: {backdrop}">
-		<div class="board-wrap" class:clickable={interactive} bind:this={stageWrap}>
-			<canvas bind:this={canvas} aria-label="split-flap display"></canvas>
+		<div
+			class="board-wrap"
+			class:clickable={interactive}
+			class:pixel={render === 'pixel'}
+			bind:this={stageWrap}
+		>
+			{#if render === 'pixel'}
+				<PixelStage
+					width={pixelLayout.width + 2 * PAD}
+					height={pixelLayout.height + 2 * PAD}
+					paint={pixelPaint}
+					background={frameOn ? boardColor : backdrop}
+					label="split-flap display"
+				/>
+			{:else}
+				<canvas bind:this={canvas} aria-label="split-flap display"></canvas>
+			{/if}
 		</div>
 	</div>
 
@@ -286,12 +379,26 @@
 				</label>
 			</div>
 			<div class="count"><b>{clampDim(cols, 48) * clampDim(rows, 24)}</b> modules</div>
+			{#if render === 'pixel'}
+				<div class="card-size">
+					<Slider
+						bind:value={cardStep}
+						label="card"
+						min={0}
+						max={CARDS.length - 1}
+						step={1}
+						format={(v) => `${CARDS[v][0]} × ${CARDS[v][1]} px`}
+						hint="in the display's own pixels; the stage scales them up whole"
+					/>
+				</div>
+			{/if}
 		</section>
 
 		<section>
 			<h2>scene</h2>
 			<div class="row">
-				<ToggleChip bind:checked={shaded} label="shaded details" />
+				<ToggleChip bind:checked={shaded} label="shaded details" disabled={render === 'pixel'} />
+				{#if render === 'pixel'}<span class="chip-hint">canvas only</span>{/if}
 			</div>
 			<div class="row">
 				<span class="rlabel">card</span>
@@ -335,20 +442,26 @@
 	header {
 		grid-area: header;
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: 16px;
+		gap: 6px 16px;
 		padding: 8px 16px;
 		background: var(--halo-bg-light);
 	}
 	.hdr-field {
 		display: inline-flex;
+		/* Never squeezed: a segmented control broken across two rows reads as a
+		   mistake. The hint takes the hit instead: it wraps, and where it can't
+		   fit at all (the chroma drum is up) it drops to a row of its own. */
+		flex: none;
 		align-items: center;
 		gap: 8px;
 		font-size: 13px;
 		color: var(--halo-text-muted);
 	}
 	.hint {
-		margin-left: auto;
+		flex: 1 0 12em;
+		text-align: right;
 		font-size: 12px;
 		color: var(--halo-text-muted);
 	}
@@ -380,6 +493,16 @@
 		width: min(100%, 900px);
 	}
 	.board-wrap.clickable {
+		cursor: pointer;
+	}
+	.board-wrap.pixel {
+		width: 100%;
+		height: 100%;
+	}
+	.board-wrap.pixel.clickable {
+		cursor: default;
+	}
+	.board-wrap.pixel.clickable :global(canvas) {
 		cursor: pointer;
 	}
 	.board-wrap canvas {
@@ -504,6 +627,13 @@
 	}
 	.count b {
 		color: var(--halo-text-main);
+	}
+	.card-size {
+		margin-top: 14px;
+	}
+	.chip-hint {
+		font-size: 12px;
+		color: var(--halo-text-muted);
 	}
 
 	.row input[type='color'] {
