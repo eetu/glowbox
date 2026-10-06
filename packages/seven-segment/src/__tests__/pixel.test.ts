@@ -1,7 +1,8 @@
 // The pixel layout is pure data — node-testable by design.
 import { expect, test } from 'vitest';
 
-import { type PixelRect, pixelSegments, pixelText } from '../pixel';
+import type { PixelRect } from '../pixel';
+import { pixelSegments, pixelText } from '../pixel-digits';
 import { litSegments } from '../seven';
 
 const cells = (r: PixelRect) =>
@@ -46,31 +47,30 @@ test('pixelText: a clock row, every digit whole, the colon between', () => {
 	const row = pixelText('10:34', { height: 14 });
 	// 4 digits of 7, a 1 px colon, 4 gaps of 2.
 	expect(row.width).toBe(4 * 7 + 1 + 4 * 2);
-	const digit = (i: number) => row.segments.filter((s) => s.index === i && s.name !== 'colon');
+	const digit = (i: number) => row.parts.filter((s) => s.index === i && s.name !== 'colon');
 	expect(
 		digit(0)
 			.filter((s) => s.on)
 			.map((s) => s.name)
 	).toEqual(litSegments('1'));
 	expect(digit(0)).toHaveLength(7);
-	const colon = row.segments.filter((s) => s.name === 'colon');
+	const colon = row.parts.filter((s) => s.name === 'colon');
 	// Digits at 0, 9, 21, 30; the colon at 18.
-	expect(colon.map((s) => s.rect.x)).toEqual([18, 18]);
+	expect(colon).toHaveLength(1);
+	expect(colon[0].rects.map((r) => r.x)).toEqual([18, 18]);
 	expect(colon.every((s) => s.on)).toBe(true);
-	expect(digit(4)[0].rect.x).toBe(30 + 1);
+	expect(digit(4)[0].rects[0].x).toBe(30 + 1);
 	expect(
-		pixelText('10:34', { height: 14, colon: false }).segments.some(
-			(s) => s.name === 'colon' && s.on
-		)
+		pixelText('10:34', { height: 14, colon: false }).parts.some((s) => s.name === 'colon' && s.on)
 	).toBe(false);
 });
 
 test('pixelText: a point lights in the gap after its digit; blanks and unknowns light nothing', () => {
 	const row = pixelText('1.5', { height: 14 });
-	const dp = row.segments.find((s) => s.name === 'dp');
-	expect(dp).toMatchObject({ index: 0, on: true, rect: { x: 7, y: 13, w: 1, h: 1 } });
+	const dp = row.parts.find((s) => s.name === 'dp');
+	expect(dp).toMatchObject({ index: 0, on: true, rects: [{ x: 7, y: 13, w: 1, h: 1 }] });
 	expect(row.width).toBe(7 + 2 + 7);
 	expect(pixelText('5.', { height: 14 }).width).toBe(8);
-	expect(pixelText(' x', { height: 14 }).segments.some((s) => s.on)).toBe(false);
-	expect(pixelText(' x', { height: 14 }).segments).toHaveLength(14);
+	expect(pixelText(' x', { height: 14 }).parts.some((s) => s.on)).toBe(false);
+	expect(pixelText(' x', { height: 14 }).parts).toHaveLength(14);
 });

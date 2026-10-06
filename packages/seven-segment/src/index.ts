@@ -4,15 +4,14 @@
 //   const digit = createSevenSegment(canvas, { value: 7, style: "vfd" });
 //   digit?.setValue(8);
 export { type Color, parseColor, type RGB } from './color';
+export { type PixelLayout, type PixelPart, type PixelRect } from './pixel';
 export {
 	type PixelDigitOptions,
-	type PixelLayout,
-	type PixelRect,
 	type PixelSegment,
 	pixelSegments,
 	pixelText,
 	type PixelTextOptions
-} from './pixel';
+} from './pixel-digits';
 export {
 	createSevenSegment,
 	litSegments,

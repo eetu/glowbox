@@ -84,14 +84,16 @@ rects**, upright: at a dozen pixels tall the slant jogs every stroke a pixel hal
 phase. **`pixelSegments(height, { stroke, width })`** gives one digit's segments, the
 horizontals between the verticals so none touch; **`pixelText(text, { height, stroke,
 gap, colon })`** lays out a row — `:` a colon, `.` the point of the digit before it —
-as `{ index, name, rect, on }` segments, the unlit ones being the ghosts to paint dim.
+as parts `{ index, name, rects, on }`, the unlit ones being the ghosts to paint dim. The
+shape (`PixelLayout` of `PixelPart`s, each the `PixelRect`s it covers) is the one every
+glowbox core is to share for pixel data.
 
 ```ts
 import { pixelText } from '@glowbox/seven-segment';
 
 const row = pixelText('10:34', { height: 14, colon: blinkOn });
-for (const { rect, on } of row.segments)
-	fill(on ? lit : ghost, x0 + rect.x, y0 + rect.y, rect.w, rect.h);
+for (const { rects, on } of row.parts)
+	for (const r of rects) fill(on ? lit : ghost, x0 + r.x, y0 + r.y, r.w, r.h);
 ```
 
 ## Themes

@@ -36,6 +36,7 @@ const EXPECTED = {
 	'sound.ts': ['flip-dot', 'neon', 'split-flap'],
 	'font5x7.ts': ['extras', 'lcd', 'vfd'],
 	'path-parse.ts': ['neon', 'vfd'],
+	'pixel.ts': ['seven-segment'],
 	'theme.ts': ['flip-dot', 'lcd', 'led-grid', 'neon', 'nixie', 'seven-segment', 'split-flap', 'vfd']
 };
 

@@ -113,6 +113,38 @@ torus — `d.torus()` is axis-aligned/single-colour, see the note in `torus.ts`.
    led-grid-integrated CRT pass so grid+effect costs one context), only after the
    golden screenshots exist — and go WebGL2-only when it happens.
 
+## Pixel data for games
+
+The cores as **data at whole-pixel scale**, for a game painting into its own raster (first
+consumers: `@anarkisti/korpi` and nahkarele, 320×180 scenes, one sprite pixel to a scene
+pixel). The cores keep their canvas renders; this is an export beside them, as lcd's 5×7
+font already is.
+
+- **Contract** (`shared/pixel.ts`): a `PixelLayout` of `PixelPart`s, each the `PixelRect`s it
+  covers, plus the core's own address (a segment's name, a dot's column and row, a tube's
+  word). Geometry is static; what lights it each frame is a separate per-part
+  `Float32Array` (0 a ghost, 1 lit; neon strikes overshoot to 1.15) or, for the mechanical
+  boards, their phase state. A per-frame flat cell list was rejected: it rebuilds rects every
+  frame and cannot say "flap row 3 shows source row 7".
+- **Seeded wear** (`shared/wear.ts`, to do with the next core): the arc every core repeats
+  (`0.5+0.5·sin(seed+i·12.9898)`, dying and runner-up, flicker at 0.7, dead at 0.95) as
+  `(i, age, t, seed) → level`, flicker a hash of time windows. The canvas cores run it on
+  `Math.random` and `setTimeout`; a game's world is a function of time and seed. Pixel APIs
+  use the seeded one; the canvas cores are not retrofitted (it would change shipping
+  renders, the same reason the `rgba` helpers aren't shared).
+
+| core          | pixel export                                                                                                                                                    | verdict                                                                                                                                                   |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| seven-segment | `pixelSegments`, `pixelText`                                                                                                                                    | shipped (unreleased)                                                                                                                                      |
+| nixie         | `nixiePixels(symbol, height)`, ghost-cathode stack, `nixiePixelText`; 1 px wire under ~45 px tall                                                               | next: nahkarele's factory clock is a DOM overlay today. Builds `pixel-stroke.ts` (polyline → 1 px runs); authored bitmaps if curves at ≤ 11 px look lumpy |
+| flip-dot      | dot layout; `flipFrames` masks per phase; `flipPhases(state, t, { seed, stagger })` (scan delay, jitter, finish-the-last-flip, all closed form)                 | soon: a destination board, world-lit since it is paint                                                                                                    |
+| split-flap    | card halves + hinge; `flapRows(fall, half)` row map; `flapState(from, to, τ, { seed })`; needs `font5x7.ts` (its glyphs are `fillText` today)                   | soon: a departure board                                                                                                                                   |
+| lcd           | dot layout; `lcdTargets`; `stepCrystals`; `lcdInk(state, { contrast, ghost, age, seed })` (ink is darkening, only the pane glows)                               | later: korpi `text` already covers the glyphs                                                                                                             |
+| neon          | `neonPixels(text, { capHeight })` sections with `ends`/`word`/`line`; `neonLevels(t, { seed, age, program })` (export `strikeBri`); sans ≥ 7 px cap, script ~12 | later, on nixie's rasteriser: a sign whose glow lights the wall                                                                                           |
+| vfd           | `compilePixelPanel`; reuse `driveElement`; `stepPhosphor`; rect-native kinds (7seg, matrix, legend, bars, dots, rule) first, starbursts and icons only if asked | later; its `7seg` takes `pixelSegments` once it moves to `shared/`                                                                                        |
+| led-grid      | none: with nz = 1 `createVoxelGrid().leds` already is a pixel buffer                                                                                            | not worth it                                                                                                                                              |
+| crt           | none: scanlines and persistence would be the game's present step                                                                                                | not worth it                                                                                                                                              |
+
 ## Deliberately not doing
 
 - **CJS builds** — `require(esm)` works in current Node; these are browser-runtime

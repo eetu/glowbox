@@ -10,7 +10,9 @@ version and are released together.
 
 - **`@glowbox/seven-segment`: pixel digits** — `pixelSegments(height, { stroke, width })`
   and `pixelText(text, { height, stroke, gap, colon })` give digits as whole-pixel rects,
-  upright, for a game painting into its own raster; each segment lit or a ghost.
+  upright, for a game painting into its own raster; each segment lit or a ghost. The layout
+  is a `PixelLayout` of `PixelPart`s (`rects: PixelRect[]`), the shape the other cores
+  will share (`shared/pixel.ts`).
 
 ### Changed
 

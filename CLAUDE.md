@@ -73,7 +73,7 @@ Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
   one is genuinely zero-dep. Cores set `role="img"` + `aria-label` (the `label` option).
 - **Shared sources = `shared/` + symlinks.** The files more than one package needs live once
   in `shared/` and are **symlinked** into each package's `src/` (`color.ts` ×9, `sound.ts`
-  ×3, `font5x7.ts` ×3, `path-parse.ts` ×2). Editing `shared/x.ts` edits it for all of them.
+  ×3, `font5x7.ts` ×3, `path-parse.ts` ×2, `pixel.ts` ×1). Editing `shared/x.ts` edits it for all of them.
   Nothing depends on it at runtime — each bundler inlines the file, so the dists and the
   zero-dep claim are unchanged; this replaced hand-copied duplicates that were identical only
   by discipline. `shared/color.ts` is a superset (led-grid's `Vec3` + `parseColor01`); the 2D
