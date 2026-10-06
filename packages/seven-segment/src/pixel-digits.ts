@@ -1,47 +1,13 @@
-// Seven-segment digits on whole pixels, as data, for a game drawing them into its own
-// low-resolution raster (the way @glowbox/lcd hands out its 5×7 font). At a dozen pixels
-// tall the outlines of `segmentGeometry` don't survive rounding: the slant jogs every
-// stroke a pixel halfway down (a 1 reads as a J), and a fractional digit width lands each
-// digit on a different sub-pixel phase. These are upright rects on an integer grid. The
-// caller paints them; `on: false` segments are the unlit ghosts a real display shows.
-import type { PixelLayout, PixelPart, PixelRect } from './pixel';
+// Seven-segment digits laid out in a row on whole pixels, as data, for a game drawing them
+// into its own low-resolution raster (the way @glowbox/lcd hands out its 5×7 font). One
+// digit's rects are `pixelSegments` (shared/pixel-segments.ts). The caller paints them;
+// `on: false` segments are the unlit ghosts a real display shows.
+import type { PixelLayout, PixelPart } from './pixel';
+import { type PixelDigitOptions, pixelSegments } from './pixel-segments';
 import { litSegments, type SegmentName } from './seven';
-
-export interface PixelDigitOptions {
-	/** Stroke thickness, px. Default 1. */
-	stroke?: number;
-	/** Digit width, px. Default `round(height / 2)`. */
-	width?: number;
-}
+import { type Wear, wearLevels } from './wear';
 
 const SEGMENTS: Exclude<SegmentName, 'dp'>[] = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
-
-/**
- * Each segment of a digit `height` px tall as a rect from the digit's top-left. The
- * horizontals sit between the verticals, so no two segments touch; the middle bar sits at
- * `floor((height − stroke) / 2)`, so with an odd split the lower half is the taller, as on
- * the hardware. `dp` sits just right of the digit's foot, in the gap to the next one.
- */
-export function pixelSegments(
-	height: number,
-	{ stroke = 1, width = Math.round(height / 2) }: PixelDigitOptions = {}
-): Record<SegmentName, PixelRect> {
-	const s = stroke;
-	const mid = Math.floor((height - s) / 2);
-	const across = { x: s, w: width - 2 * s, h: s };
-	const upper = { y: s, w: s, h: mid - s };
-	const lower = { y: mid + s, w: s, h: height - s - (mid + s) };
-	return {
-		a: { ...across, y: 0 },
-		b: { ...upper, x: width - s },
-		c: { ...lower, x: width - s },
-		d: { ...across, y: height - s },
-		e: { ...lower, x: 0 },
-		f: { ...upper, x: 0 },
-		g: { ...across, y: mid },
-		dp: { x: width, y: height - s, w: s, h: s }
-	};
-}
 
 export interface PixelTextOptions extends PixelDigitOptions {
 	/** Digit height, px. */
@@ -108,4 +74,18 @@ export function pixelText(text: string, options: PixelTextOptions): PixelLayout<
 		last = index;
 	});
 	return { width: Math.max(x, right), height, parts };
+}
+
+/**
+ * Each part's light at `wear.t`, 0 (a ghost) … 1: lit parts at their worn level, the most-worn
+ * segment flickering past age 0.7 and dead from 0.95 (see `wearLevels`), unlit parts 0. Paint
+ * a part lit in proportion, or as a ghost at 0. Seeded, so a world that rewinds sees the same
+ * flicker.
+ */
+export function pixelLevels(layout: PixelLayout<PixelSegment>, wear: Wear): Float32Array {
+	const levels = wearLevels(layout.parts.length, wear);
+	layout.parts.forEach((p, i) => {
+		if (!p.on) levels[i] = 0;
+	});
+	return levels;
 }

@@ -2,7 +2,8 @@
 import { expect, test } from 'vitest';
 
 import type { PixelRect } from '../pixel';
-import { pixelSegments, pixelText } from '../pixel-digits';
+import { pixelText } from '../pixel-digits';
+import { pixelSegments } from '../pixel-segments';
 import { litSegments } from '../seven';
 
 const cells = (r: PixelRect) =>
