@@ -6,6 +6,10 @@ version and are released together.
 
 ## [Unreleased]
 
+## [1.13.0] — 2026-10-06
+
+**Seven displays as whole-pixel data, for games that paint their own raster.**
+
 ### Added
 
 - **Pixel data for games** — every display but led-grid and crt exports itself as data at
