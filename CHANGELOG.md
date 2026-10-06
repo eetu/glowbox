@@ -60,6 +60,12 @@ lineOn, wordOn })` gives each section's light: 0 unlit glass, 1 lit, 1.15 mid-st
   tall); tubes under ~50 px wide or ~80 px tall now show more glass and numeral than
   before, larger ones are unchanged.
 
+### Fixed
+
+- **`@glowbox/nixie`: the 6 and 9 draw each stretch of wire once** — the bowl ends where it
+  meets the tail instead of running back along it, so the pixel tube's tail no longer
+  splits off the bowl. The canvas glyphs look the same.
+
 ## [1.12.0] — 2026-08-25
 
 **Neon inks in colour, and the mechanical boards learn what room they hang in.**
