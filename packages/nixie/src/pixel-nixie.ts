@@ -224,7 +224,9 @@ const fill = (mask: Uint8Array, w: number, r: PixelRect) => {
 
 // A 1 px wire drawn through many points clumps where it bends back on itself and steps
 // in stair corners: drop each pixel that fills out a 2 × 2 square while its neighbours stay
-// joined without it, then the inner corner of each step.
+// joined without it, then the inner corner of each step, whose two neighbours touch
+// diagonally. Neither ever breaks the wire; loosen either test and a sharp bend (the 3's,
+// the 5's) does, which the sweep test catches.
 const tidy = (m: Uint8Array, w: number, h: number) => {
 	const at = (x: number, y: number) => (x >= 0 && y >= 0 && x < w && y < h ? m[y * w + x] : 0);
 	for (let y = 0; y < h; y++)
@@ -352,7 +354,7 @@ const separator = (ch: string, height: number, wire: number) => {
  * One tube `height` px tall on whole pixels. A digit, a blank or anything unknown is a digit
  * tube: its ten cathodes front to back, the symbol's lit and the rest ghosts (all of them for
  * a blank). `:` `.` `-` are separator tubes, one lit part as wide as its ink. Rects are from
- * the tube's top-left; the wires read from 11 px.
+ * the tube's top-left. It reads as a nixie from 16 px; 11 px is a hand-drawn fallback.
  */
 export function nixiePixels(
 	symbol: string | number | null,

@@ -118,9 +118,9 @@ from these (three.js owns only the glass cylinder + bloom).
 
 For a game drawing into its own low-resolution raster, the tubes come as **whole-pixel
 rects**: the canvas tube's own wires, a pixel wide (two from 48 px tall), each glyph's
-extremes snapped to whole pixels; at 11 px the digits are hand-drawn. They read as nixies
-from about 16 px, where the ghost stack shows as wire behind the lit one; at 11–14 px the
-digits stay legible but the stack is a smudge. **`nixiePixelText(text, { height, gap,
+extremes snapped to whole pixels, unbroken at every height. It reads as a nixie from
+16 px, where the ghost stack shows as wire behind the lit one. 11 px is a hand-drawn
+fallback: legible digits, the stack a smudge. **`nixiePixelText(text, { height, gap,
 colon, wire })`** lays out a row, one tube per character: a digit tube is its ten cathodes
 front to back as parts `{ index, symbol, depth, rects, on }`, the lit one `on` and the
 others the ghosts to paint dim (farther by `depth`, as the canvas does); `:` `.` `-` are
