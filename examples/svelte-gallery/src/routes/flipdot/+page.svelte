@@ -6,25 +6,38 @@
 	import { createCrtScreen } from '@glowbox/crt';
 	import {
 		createFlipDots,
+		createMechSound,
 		type DitherMode,
+		type FlipChange,
 		type FlipDotBoard,
+		flipDotPixels,
 		type FlipDotShape,
-		type FlipDotStagger
+		type FlipDotStagger,
+		flipFrames,
+		type FlipLanding,
+		flipLandings,
+		flipPhases,
+		type MechSound
 	} from '@glowbox/flip-dot';
 	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
 	import X from '@lucide/svelte/icons/x';
 	import { untrack } from 'svelte';
 
 	import CoreNav from '$lib/components/CoreNav.svelte';
+	import PixelStage, { mixHex, type PixelPaint } from '$lib/components/PixelStage.svelte';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Select from '$lib/components/Select.svelte';
 	import Slider from '$lib/components/Slider.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import ToggleChip from '$lib/components/ToggleChip.svelte';
-	import { FLIP_SHOWS, type FlipShow } from '$lib/examples/flipdot';
+	import { FLIP_SHOWS, type FlipShow, type ShowBoard } from '$lib/examples/flipdot';
 	import { theme } from '$lib/theme.svelte';
 
 	let show = $state<FlipShow>('clock');
+	// Canvas is the component; pixel is the same board as data (`flipDotPixels`, `flipPhases`),
+	// painted the way a game would into its own raster and scaled up by a whole number.
+	let render = $state<'canvas' | 'pixel'>('canvas');
+	let pixelDot = $state(6);
 	let soundOn = $state(false);
 	let volume = $state(0.5);
 	let shape = $state<FlipDotShape>('disc');
@@ -42,6 +55,7 @@
 	const clampDim = (v: number, max: number) => Math.max(2, Math.min(max, Math.round(v) || 2));
 	let cols = $state(56);
 	let rows = $state(28);
+	const dims = $derived({ cols: clampDim(cols, 128), rows: clampDim(rows, 64) });
 	const PRESETS: [number, number][] = [
 		[14, 7],
 		[28, 14],
@@ -96,8 +110,7 @@
 	let board = $state.raw<FlipDotBoard | null>(null);
 	$effect(() => {
 		if (!canvas) return;
-		const c = clampDim(cols, 128);
-		const r = clampDim(rows, 64);
+		const { cols: c, rows: r } = dims;
 		const b = createFlipDots(
 			canvas,
 			untrack(() => ({
@@ -140,10 +153,127 @@
 		});
 	});
 
+	// The pixel board: the shows drive it as they drive the canvas one, and each frame they set
+	// that differs from the last goes into a short history of `{ t, frame }` on the pixel
+	// stage's clock, all `flipPhases` needs to replay the scan wave and every flip.
+	const PAD = 2;
+	const SEED = 1;
+	let clock = 0; // the pixel stage's t at its last paint, s
+	let history: FlipChange[] = [];
+	let pixelBoard = $state.raw<ShowBoard | null>(null);
+	const sameBits = (a: ArrayLike<number>, b: ArrayLike<number>) => {
+		if (a.length !== b.length) return false;
+		for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+		return true;
+	};
+	const record = (frame: Uint8Array) => {
+		const last = history.at(-1);
+		if (last && sameBits(last.frame, frame)) return;
+		// Two frames before a paint: no time passed between them, so only the second counts.
+		if (last && last.t >= clock) history[history.length - 1] = { t: clock, frame };
+		else history.push({ t: clock, frame });
+		// Once a change has swept and landed, what came before it can't move a dot: drop it, and
+		// the oldest change left is the board at rest. (Untracked: a show's first frame is set
+		// inside the show's effect, which must not restart when the timing moves.)
+		const settled = untrack(() => (scanMs + flipMs * 1.15) / 1000 + 0.1);
+		while (history.length > 1 && (history[1].t + settled <= clock || history.length > 48)) {
+			history.shift();
+			history[0] = { t: -Infinity, frame: history[0].frame };
+		}
+	};
+	// The pixel stage mounts with its clock at 0.
+	$effect(() => {
+		if (render === 'pixel') clock = 0;
+	});
+	$effect(() => {
+		if (render !== 'pixel') return;
+		const { cols: c, rows: r } = dims;
+		// A new board starts on face A everywhere, as the canvas one does.
+		history = [];
+		pixelBoard = {
+			cols: c,
+			rows: r,
+			setFrame: (frame) => {
+				const bits = new Uint8Array(c * r);
+				for (let i = 0; i < bits.length; i++) {
+					const v = typeof frame === 'function' ? frame(i % c, Math.floor(i / c)) : frame[i];
+					bits[i] = v ? 1 : 0;
+				}
+				record(bits);
+			}
+		};
+		return () => {
+			pixelBoard = null;
+		};
+	});
+
+	// In pixel mode the clicks come from `flipLandings`, played as the canvas board plays its
+	// own: at most three a frame, quieter the denser they land, panned to where they land, and
+	// some 70 a second at most once the board flips without pause.
+	const CLICKS_PER_S = 70;
+	let clickBudget = CLICKS_PER_S;
+	let pixelSound = $state.raw<MechSound | null>(null);
+	$effect(() => {
+		if (render !== 'pixel' || !soundOn || show === 'gif') return;
+		const s = createMechSound({ volume: untrack(() => volume) });
+		pixelSound = s;
+		return () => {
+			s.dispose();
+			pixelSound = null;
+		};
+	});
+	$effect(() => {
+		pixelSound?.setVolume(volume);
+	});
+	const rattle = (sound: MechSound, lands: FlipLanding[], dt: number) => {
+		clickBudget = Math.min(CLICKS_PER_S, clickBudget + Math.min(0.1, dt) * CLICKS_PER_S);
+		const count = Math.min(lands.length, 3, Math.floor(clickBudget));
+		if (count <= 0) return;
+		clickBudget -= count;
+		const g = Math.min(1, 1.6 / lands.length) * 0.7 + 0.3;
+		const col = lands.reduce((sum, l) => sum + l.col, 0) / lands.length;
+		const pan = dims.cols > 1 ? (col / (dims.cols - 1)) * 1.4 - 0.7 : 0;
+		for (let i = 0; i < count; i++) {
+			const j = Math.random();
+			sound.tick({
+				delay: j * 0.012,
+				freq: 6300 + j * 4200,
+				decay: 0.004 + j * 0.012,
+				noise: 0.9,
+				noiseHz: 5200,
+				gain: g * (0.25 + 0.75 * j * j),
+				pan
+			});
+		}
+	};
+
+	// The pixel render: each dot's phase picks a frame of its flip, painted in the face colours.
+	// The faces are paint, so nothing glows; edge-on, the socket shows empty as on the flat
+	// canvas board, or with shaded details the rim catches the light in the theme's colour.
+	const RIM = { dark: '#fffceb', light: '#5c5447' } as const;
+	const pixelLayout = $derived(flipDotPixels({ ...dims, dot: pixelDot, shape }));
+	const pixelFrames = $derived(flipFrames(pixelDot, { shape, axis }));
+	const pixelPaint: PixelPaint = (fill, t) => {
+		const from = clock;
+		clock = t;
+		const timing = { ...dims, seed: SEED, stagger, scanMs, flipMs };
+		const phases = flipPhases(history, t, timing);
+		const frames = pixelFrames;
+		const last = frames.length - 1;
+		const rim = shaded ? mixHex(panelOn ? boardColor : backdrop, RIM[scheme], 0.6) : null;
+		pixelLayout.parts.forEach(({ x, y }, i) => {
+			const { a, b, edge } = frames[Math.round(phases[i] * last)];
+			for (const r of a) fill(offColor, PAD + x + r.x, PAD + y + r.y, r.w, r.h);
+			for (const r of b) fill(onColor, PAD + x + r.x, PAD + y + r.y, r.w, r.h);
+			if (rim) for (const r of edge) fill(rim, PAD + x + r.x, PAD + y + r.y, r.w, r.h);
+		});
+		if (pixelSound) rattle(pixelSound, flipLandings(history, from, t, timing), t - from);
+	};
+
 	// One show at a time; each returns its stop(). The knobs are getters so live
 	// edits (dither mode, marquee text) apply without restarting the show.
 	$effect(() => {
-		const b = board;
+		const b = render === 'pixel' ? pixelBoard : board;
 		if (!b) return;
 		return FLIP_SHOWS[show](b, {
 			dither: () => dither,
@@ -196,6 +326,17 @@
 				]}
 			/>
 		</label>
+		<label class="hdr-field"
+			>render
+			<Segmented
+				bind:value={render}
+				ariaLabel="render"
+				options={[
+					{ value: 'canvas', label: 'Canvas' },
+					{ value: 'pixel', label: 'Pixel' }
+				]}
+			/>
+		</label>
 		<span class="hint">watch the scan wave · turn SOUND on</span>
 		<ThemeToggle />
 		<button
@@ -210,8 +351,23 @@
 	</header>
 
 	<div class="stage" style="background: {backdrop}">
-		<div class="board-wrap" class:clickable={show === 'counter'} bind:this={stageWrap}>
-			<canvas bind:this={canvas} aria-label="flip-dot display"></canvas>
+		<div
+			class="board-wrap"
+			class:pixel={render === 'pixel'}
+			class:clickable={show === 'counter'}
+			bind:this={stageWrap}
+		>
+			{#if render === 'pixel'}
+				<PixelStage
+					width={pixelLayout.width + 2 * PAD}
+					height={pixelLayout.height + 2 * PAD}
+					paint={pixelPaint}
+					background={panelOn ? boardColor : backdrop}
+					label="flip-dot display"
+				/>
+			{:else}
+				<canvas bind:this={canvas} aria-label="flip-dot display"></canvas>
+			{/if}
 		</div>
 	</div>
 
@@ -336,7 +492,18 @@
 					<input type="number" min="2" max="64" bind:value={rows} aria-label="rows" />
 				</label>
 			</div>
-			<div class="count"><b>{clampDim(cols, 128) * clampDim(rows, 64)}</b> dots</div>
+			<div class="count"><b>{dims.cols * dims.rows}</b> dots</div>
+			{#if render === 'pixel'}
+				<Slider
+					bind:value={pixelDot}
+					label="dot size"
+					min={2}
+					max={10}
+					step={1}
+					format={(v) => `${v} px`}
+					hint="in the display's own pixels; the flip reads from 4"
+				/>
+			{/if}
 		</section>
 
 		<section>
@@ -432,6 +599,10 @@
 	}
 	.board-wrap.clickable {
 		cursor: pointer;
+	}
+	.board-wrap.pixel {
+		width: 100%;
+		height: 100%;
 	}
 	.board-wrap canvas {
 		display: block;
