@@ -479,7 +479,7 @@ __metadata:
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/nixie": "workspace:^"
     "@glowbox/svelte": "workspace:^"
-    "@lucide/svelte": "npm:^1.47"
+    "@lucide/svelte": "npm:^1.49"
     "@playwright/test": "npm:^1.63"
     "@sveltejs/adapter-static": "npm:^3.0.10"
     "@sveltejs/kit": "npm:^2.70"
@@ -692,12 +692,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lucide/svelte@npm:^1.47":
-  version: 1.47.0
-  resolution: "@lucide/svelte@npm:1.47.0"
+"@lucide/svelte@npm:^1.49":
+  version: 1.49.0
+  resolution: "@lucide/svelte@npm:1.49.0"
   peerDependencies:
     svelte: ^5
-  checksum: 10/f9d4b07b01254c5afa1e6ef849f10ff65411d35d4f96c9403a47613960daaee9aca19b34f4f29957346e46d5194a7c4fc5895867d33a03f832cb3cf72b02cdae
+  checksum: 10/67f2fe63c4b5ea069671fb4af47199620830eb92ab31cee5b21ffccb06f4a57de212a04769d8b11703bb31fbf3397a2efee18cd6435dda22490ff7c4695109a7
   languageName: node
   linkType: hard
 
@@ -1167,11 +1167,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:^26":
-  version: 26.6.3
-  resolution: "@types/node@npm:26.6.3"
+  version: 26.6.4
+  resolution: "@types/node@npm:26.6.4"
   dependencies:
     undici-types: "npm:~8.9.0"
-  checksum: 10/278d5241522520fbadd46b41065d7587bbb214adb3c6f8a2a9a28754d374c578d090f7387866d09c79be1e9bbf5adc7eeea453032a52f77e70b06077f85c5c14
+  checksum: 10/649173a03497020b8d3624a5149e0286bd175baf6d1df070c538637ccb256ce5554a76c5b63b454bda2cdb1821fa457e074477a75c3c78fc8f562d5c4a31cba8
   languageName: node
   linkType: hard
 

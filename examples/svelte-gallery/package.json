@@ -18,7 +18,7 @@
 		"@glowbox/led-grid": "workspace:^",
 		"@glowbox/nixie": "workspace:^",
 		"@glowbox/svelte": "workspace:^",
-		"@lucide/svelte": "^1.47",
+		"@lucide/svelte": "^1.49",
 		"three": "^0.186.1"
 	},
 	"devDependencies": {
