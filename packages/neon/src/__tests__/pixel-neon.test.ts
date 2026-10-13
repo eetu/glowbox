@@ -97,6 +97,18 @@ test('neonPixels: art keeps its index, and a steady piece says so', () => {
 	expect(sign.parts.some((p) => p.steady && p.art == null)).toBe(false);
 });
 
+test('neonPixels: a flat rule is a line under the word, not a sign millions of pixels wide', () => {
+	const word = neonPixels('BAR', { capHeight: 9, font: 'sans' });
+	const sign = neonPixels('BAR', {
+		capHeight: 9,
+		font: 'sans',
+		art: [{ d: 'M0 0 L10 0', place: 'below', size: 1 }]
+	});
+	expect(sign.width).toBe(word.width);
+	const rule = sign.parts.find((p) => p.art === 0)!;
+	expect(new Set(rule.rects.map((r) => r.y)).size).toBe(1); // one row of glass
+});
+
 test('neonLevels: lit by default, unlit glass when off, the same at the same moment', () => {
 	const sign = neonPixels('HOTEL', { capHeight: 9, font: 'sans', tubes: 'glyph' });
 	expect([...neonLevels(sign, 3)]).toEqual([1, 1, 1, 1, 1]);

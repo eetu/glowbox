@@ -85,7 +85,7 @@ createNeonSign(canvas, {
 `d` is SVG path data (a `d` string or several — author in any vector editor)
 or centreline polylines. `place` anchors the piece `behind` the text or beside
 it (`left`/`right`/`above`/`below`); `size` scales it against the text block's
-height, `dx`/`dy` nudge, `rotate` tilts. Each piece is its own tube — its own
+height (a flat rule by its length), `dx`/`dy` nudge, `rotate` tilts. Each piece is its own tube — its own
 `gas`/`color`, its own strike, wear and death; `tubes: 'path'` splits it per
 subpath, `steady: true` wires it past the flasher cam (the diner border that
 stays lit around the blinking word), and `behind` pieces light first under
