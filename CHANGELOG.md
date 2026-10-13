@@ -6,6 +6,8 @@ version and are released together.
 
 ## [Unreleased]
 
+## [1.13.1] — 2026-10-13
+
 ### Fixed
 
 - **Types resolve under `node16`/`nodenext`** — every package but `@glowbox/svelte` ships
