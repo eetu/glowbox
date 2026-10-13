@@ -52,6 +52,7 @@
 	],
 	"devDependencies": {
 		"@anarkisti/eslint-config": "^1",
+		"@microsoft/api-extractor": "^7.59",
 		"@vitest/browser": "^5",
 		"@vitest/browser-playwright": "^5",
 		"eslint": "^10",

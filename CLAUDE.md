@@ -92,6 +92,9 @@ Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
   `svelte` condition, ships `.svelte` source via `@sveltejs/package`). All are
   public-npm scoped (`publishConfig.access: public`), versions **lockstep**. size-limit
   budgets in every package (svelte's measures shipped files with `esbuild: false`).
+  Types ship as ONE bundled `index.d.ts` per package (`dts({ bundleTypes: true })`,
+  api-extractor): the sources' extensionless relative imports would otherwise land in the
+  declarations, which `node16`/`nodenext` consumers can't resolve. A new package sets it too.
 - **Monorepo dev loop.** Demo + wrapper tests resolve `@glowbox/*` to package **source**
   (SvelteKit `kit.alias`; Vite aliases in tests), so dev/typecheck/test need no prior
   build. The `workspace:^` deps are for install-linking + publish version rewrite.
@@ -115,7 +118,8 @@ Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
   built gallery, switches examples, checks the canvas paints.
 - **`node scripts/publish-smoke.mjs` = the published artifacts**: packs all packages →
   npm-installs the tarballs into a throwaway consumer → bare-node imports each package
-  (catches SSR crashes) → `tsc` against the shipped `.d.ts` → mounts both cores in
+  (catches SSR crashes) → `tsc` against the shipped `.d.ts` (bundler, then nodenext with
+  `skipLibCheck: false`; svelte only in the first) → mounts both cores in
   headless chromium straight from the installed dist (import map, no bundler). Runs in
   CI and gates every release — the only coverage of what npm users actually receive.
 - CI installs chromium once (`yarn playwright install --with-deps chromium`).

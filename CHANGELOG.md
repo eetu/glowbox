@@ -6,6 +6,12 @@ version and are released together.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Types resolve under `node16`/`nodenext`** — every package but `@glowbox/svelte` ships
+  one bundled `index.d.ts` with no relative imports, so a strict ESM consumer typechecks
+  without `skipLibCheck` and no re-exported type degrades to `any`.
+
 ## [1.13.0] — 2026-10-06
 
 **Seven displays as whole-pixel data, for games that paint their own raster.**
