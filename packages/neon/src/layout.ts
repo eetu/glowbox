@@ -50,8 +50,8 @@ export interface NeonArt {
 	d: string | string[] | [number, number][][];
 	/** Where the piece sits relative to the text block (default 'behind'). */
 	place?: 'behind' | 'left' | 'right' | 'above' | 'below';
-	/** The piece's height as a multiple of the text block's height (defaults:
-	 *  behind 1.5, left/right 1, above/below 0.7). */
+	/** The piece's height as a multiple of the text block's height — a flat piece's
+	 *  width (defaults: behind 1.5, left/right 1, above/below 0.7). */
 	size?: number;
 	/** Nudge from the anchored position, in text-block heights (y-down). */
 	dx?: number;
@@ -685,7 +685,9 @@ export function layoutTubes(
 			a.size ?? (place === 'behind' ? 1.5 : place === 'left' || place === 'right' ? 1 : 0.7);
 		const bw = Math.max(1e-6, hi - lo);
 		const bh = Math.max(1e-6, hiv - lov);
-		const k = (size * blockH) / bh;
+		// A flat piece (a rule: a thousand times wider than tall) has no height to size
+		// by — scaled to one, it would run millions of blocks long — so its width counts.
+		const k = (size * blockH) / (hiv - lov < (hi - lo) / 1000 ? bw : bh);
 		const gap = blockH * 0.35; // breathing room between the text box and a side piece
 		let cx = width / 2;
 		let cy = blockTop + blockH / 2;

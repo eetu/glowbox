@@ -159,6 +159,19 @@ test('art: side and stacked anchors clear the text box; dx/dy nudge; rotate tilt
 	expect(bw(tilted.strokes[0]) / bw(flat.strokes[0])).toBeCloseTo(Math.SQRT2, 1);
 });
 
+test('art: a flat piece is sized by its width; a thin one still by its height', () => {
+	const t = layoutTubes('HI', 'sans');
+	const span = (s: [number, number][], i: 0 | 1) =>
+		Math.max(...s.map((p) => p[i])) - Math.min(...s.map((p) => p[i]));
+	const piece = (d: string, frame?: [number, number]) => {
+		const l = layoutTubes('HI', 'sans', { art: [{ d, place: 'below', size: 2, frame }] });
+		return l.sections[l.sections.length - 1].strokes[0];
+	};
+	expect(span(piece('M0 0 L10 0'), 0)).toBeCloseTo(2 * t.height);
+	expect(span(piece('M0 0 L10 0', [10, 0]), 0)).toBeCloseTo(2 * t.height);
+	expect(span(piece('M0 0 L100 0 L100 1'), 1)).toBeCloseTo(2 * t.height);
+});
+
 test('opaque art cuts the tubes behind it, shy of its edge (the dice pair)', () => {
 	const SQ: [number, number][][] = [
 		[

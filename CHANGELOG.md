@@ -11,6 +11,9 @@ version and are released together.
 - **Types resolve under `node16`/`nodenext`** — every package but `@glowbox/svelte` ships
   one bundled `index.d.ts` with no relative imports, so a strict ESM consumer typechecks
   without `skipLibCheck` and no re-exported type degrades to `any`.
+- **`@glowbox/neon`: flat art** — a piece with no height (a rule, `M0 0 L10 0`) is sized by
+  its width, `size` text-block heights long; it no longer breaks the canvas fit or hangs
+  `neonPixels`.
 
 ## [1.13.0] — 2026-10-06
 
