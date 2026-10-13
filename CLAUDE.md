@@ -148,7 +148,8 @@ on rerun (`npm view` guard); prerelease versions (`-rc.N`) go to the `rc` dist-t
 
 ## Status / next
 
-- **1.0.x–1.13.0 shipped** (latest: 1.13.0 on 2026-10-06 — pixel data for games) —
+- **1.0.x–1.13.1 shipped** (latest: 1.13.1 on 2026-10-13 — nodenext-safe types; 1.13.0
+  brought pixel data for games) —
   **thirteen** packages in lockstep, all live on npm.
   NOTE for
   future new packages: npm needs the package to exist before a **trusted publisher**
