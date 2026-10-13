@@ -4,7 +4,7 @@ import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
 
-// @glowbox/led-grid ships as an ESM library (single bundled entry + per-module .d.ts).
+// @glowbox/led-grid ships as an ESM library (single bundled entry + one bundled .d.ts).
 // Tests use three vitest projects:
 //   • unit    — pure voxel-grid geometry in node (jsdom has no GL).
 //   • browser — the WebGL render path in real headless chromium AND webkit (Safari is
@@ -17,7 +17,8 @@ export default defineConfig({
 	plugins: [
 		dts({
 			include: ['src'],
-			exclude: ['src/**/*.test.ts', 'src/**/*.browser.test.ts', 'src/**/*.golden.test.ts']
+			exclude: ['src/**/*.test.ts', 'src/**/*.browser.test.ts', 'src/**/*.golden.test.ts'],
+			bundleTypes: true
 		})
 	],
 	build: {

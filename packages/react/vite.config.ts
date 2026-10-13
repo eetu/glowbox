@@ -13,7 +13,10 @@ const nixieSrc = resolve(import.meta.dirname, '../nixie/src/index.ts');
 const sevenSrc = resolve(import.meta.dirname, '../seven-segment/src/index.ts');
 
 export default defineConfig({
-	plugins: [react(), dts({ include: ['src'], exclude: ['src/**/*.test.ts', 'src/**/*.test.tsx'] })],
+	plugins: [
+		react(),
+		dts({ include: ['src'], exclude: ['src/**/*.test.ts', 'src/**/*.test.tsx'], bundleTypes: true })
+	],
 	build: {
 		target: 'esnext',
 		sourcemap: true,

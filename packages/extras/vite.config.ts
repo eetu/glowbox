@@ -10,7 +10,13 @@ import dts from 'vite-plugin-dts';
 const coreSrc = resolve(import.meta.dirname, '../led-grid/src/index.ts');
 
 export default defineConfig({
-	plugins: [dts({ include: ['src'], exclude: ['src/**/*.test.ts', 'src/**/*.browser.test.ts'] })],
+	plugins: [
+		dts({
+			include: ['src'],
+			exclude: ['src/**/*.test.ts', 'src/**/*.browser.test.ts'],
+			bundleTypes: true
+		})
+	],
 	build: {
 		target: 'esnext',
 		sourcemap: true,

@@ -15,7 +15,8 @@ export default defineConfig({
 	plugins: [
 		dts({
 			include: ['src'],
-			exclude: ['src/**/*.test.ts', 'src/**/*.browser.test.ts', 'src/**/*.golden.test.ts']
+			exclude: ['src/**/*.test.ts', 'src/**/*.browser.test.ts', 'src/**/*.golden.test.ts'],
+			bundleTypes: true
 		})
 	],
 	build: {

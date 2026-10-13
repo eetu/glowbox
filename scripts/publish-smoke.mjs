@@ -240,6 +240,41 @@ export type D = LedDisplay;
 	);
 	run(process.execPath, [join(root, 'node_modules', 'typescript', 'bin', 'tsc'), '-p', dir]);
 
+	// --- the same types as a strict ESM consumer sees them: nodenext rejects extensionless
+	// relative imports inside a .d.ts (bundler forgives them, and skipLibCheck turns them
+	// into silent `any`s). @glowbox/svelte is svelte-check's to resolve — plain tsc can't
+	// follow its `./X.svelte` imports under nodenext. ---
+	log('tsc against shipped types (nodenext, lib check on)');
+	writeFileSync(
+		join(dir, 'check-nodenext.ts'),
+		NODE_IMPORTABLE.map((p, i) => `export * as m${i} from '@glowbox/${p}';\n`).join('')
+	);
+	writeFileSync(
+		join(dir, 'tsconfig.nodenext.json'),
+		JSON.stringify(
+			{
+				compilerOptions: {
+					strict: true,
+					noEmit: true,
+					skipLibCheck: false,
+					module: 'nodenext',
+					target: 'esnext',
+					moduleResolution: 'nodenext',
+					jsx: 'react-jsx',
+					lib: ['esnext', 'dom', 'dom.iterable']
+				},
+				include: ['check-nodenext.ts']
+			},
+			null,
+			'\t'
+		)
+	);
+	run(process.execPath, [
+		join(root, 'node_modules', 'typescript', 'bin', 'tsc'),
+		'-p',
+		join(dir, 'tsconfig.nodenext.json')
+	]);
+
 	// --- mount both cores in a real browser from the installed dist (no bundler) ---
 	log('browser mount from installed tarballs');
 	writeFileSync(
