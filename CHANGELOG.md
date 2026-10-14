@@ -6,6 +6,8 @@ version and are released together.
 
 ## [Unreleased]
 
+## [1.13.2] — 2026-10-14
+
 ### Fixed
 
 - **`@glowbox/react`, `@glowbox/vue`: led-grid's types only** — 1.13.1's declarations also
