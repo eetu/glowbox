@@ -8,6 +8,10 @@ name: Release
 # before its first OIDC publish; a brand-new package/scope is bootstrapped either with an
 # org-level trusted publisher or one seed publish via a granular token.
 #
+# Two jobs, so publish rights never meet third-party code: `verify` installs the dev
+# dependencies, runs the full suite and packs the tarballs with no way to mint a token;
+# `publish` holds the OIDC token and runs nothing but npm on those tarballs.
+#
 # Monorepo wrinkle: the packages depend on each other via `workspace:^`, which plain
 # `npm publish` won't rewrite. So `yarn pack` builds each tarball (resolving `workspace:^`
 # to a real range + running the package's prepack), then `npm publish <tarball>` does the
@@ -18,10 +22,15 @@ on:
 
 permissions:
   contents: read
-  id-token: write # mint the OIDC token npm exchanges for a short-lived publish credential
+
+env:
+  TAG: ${{ github.ref_name }}
+  # Enumeration, not discovery: adding a package means adding it here (vfd was missed
+  # for 1.9.0 and had to ship by hand). led-grid first, so dependents resolve.
+  PACKAGES: led-grid nixie seven-segment flip-dot split-flap neon vfd lcd crt svelte react vue extras
 
 jobs:
-  publish:
+  verify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -32,21 +41,19 @@ jobs:
         with:
           node-version-file: .node-version
       - name: Verify tag is on main
-        run: git merge-base --is-ancestor "${{ github.sha }}" origin/main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
       - name: Verify tag matches every @glowbox/* version
         # Everything publishes in lockstep — a stale version field in ANY package must
-        # block the whole release, not publish silently under the wrong tag. This list
-        # is enumeration, not discovery: adding a package means adding it HERE and in
-        # the publish loop below (vfd was missed for 1.9.0 and had to ship by hand).
+        # block the whole release, not publish silently under the wrong tag.
         run: |
-          for pkg in led-grid nixie seven-segment flip-dot split-flap neon vfd lcd crt svelte react vue extras; do
+          for pkg in $PACKAGES; do
             v="v$(node -p "require('./packages/$pkg/package.json').version")"
-            if [ "$v" != "${{ github.ref_name }}" ]; then
-              echo "@glowbox/$pkg is $v but the tag is ${{ github.ref_name }}"
+            if [ "$v" != "$TAG" ]; then
+              echo "@glowbox/$pkg is $v but the tag is $TAG"
               exit 1
             fi
           done
-      - name: Validate, build & publish
+      - name: Validate & build
         run: |
           yarn() { node .yarn/releases/yarn-*.cjs "$@"; }
           yarn install --immutable
@@ -71,17 +78,50 @@ jobs:
           # Publish-integrity smoke — the packages exactly as npm consumers get them
           # (pack → install → node import → tsc on shipped types → browser mount).
           node scripts/publish-smoke.mjs
+      - name: Pack
+        run: |
+          mkdir -p tarballs
+          for pkg in $PACKAGES; do
+            node .yarn/releases/yarn-*.cjs workspace "@glowbox/$pkg" pack --out "tarballs/$pkg.tgz"
+          done
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: tarballs
+          path: tarballs/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # mint the OIDC token npm exchanges for a short-lived publish credential
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .node-version
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: tarballs
+          path: tarballs
+      - name: Publish
+        run: |
+          VERSION="${TAG#v}"
           # npm dist-tag: prereleases (1.0.0-rc.1) → `rc`, finals → `latest`.
-          VERSION=$(node -p "require('./packages/led-grid/package.json').version")
-          if [[ "$VERSION" == *-* ]]; then TAG=rc; else TAG=latest; fi
-          # led-grid first so dependents resolve. `npm view` guard makes reruns idempotent
-          # (npm has no --tolerate-republish; republishing a version is a hard 403).
-          for pkg in led-grid nixie seven-segment flip-dot split-flap neon vfd lcd crt svelte react vue extras; do
+          if [[ "$VERSION" == *-* ]]; then DIST_TAG=rc; else DIST_TAG=latest; fi
+          # The `npm view` guard makes reruns idempotent (npm has no --tolerate-republish;
+          # republishing a version is a hard 403).
+          for pkg in $PACKAGES; do
             name="@glowbox/$pkg"
             if npm view "$name@$VERSION" version >/dev/null 2>&1; then
               echo "$name@$VERSION already published — skipping"
               continue
             fi
-            yarn workspace "$name" pack --out "/tmp/glowbox-$pkg.tgz"
-            npm publish "/tmp/glowbox-$pkg.tgz" --provenance --access public --tag "$TAG"
+            npm publish "tarballs/$pkg.tgz" --provenance --access public --tag "$DIST_TAG"
           done
