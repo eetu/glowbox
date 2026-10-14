@@ -33,6 +33,7 @@
 // Give it a canvas + text; drive it with setText/power/setOptions. Import-safe
 // under node/SSR (no browser globals at module scope; Path2D built lazily).
 import { type Color, parseColor, type RGB } from './color';
+import { fitCanvas, measureCanvas } from './fit';
 import { type NeonFont } from './font';
 import { GASES, type GasName, type GasSpec, pigment } from './gas';
 import {
@@ -791,6 +792,7 @@ export function createNeonSign(
 	// dropouts); a resting sign — lit or dark — costs nothing.
 	let raf = 0;
 	let lastT = 0;
+	let disposed = false; // dispose() is final: every later handle call is a no-op
 
 	function snapAll() {
 		for (let i = 0; i < n; i++) {
@@ -1024,19 +1026,9 @@ export function createNeonSign(
 	}
 
 	function resize() {
-		const cap = pixelRatio > 0 ? pixelRatio : 1;
-		dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, cap);
-		const r = canvas.getBoundingClientRect();
-		w = Math.max(1, r.width || canvas.clientWidth || 1);
-		h = Math.max(1, r.height || canvas.clientHeight || 1);
-		// Pin the CSS box if the attributes drive layout — a HiDPI backing-store
-		// write must not feed back into the ResizeObserver (nixie's retina loop).
-		if (Math.abs(w - canvas.width) < 1 && Math.abs(h - canvas.height) < 1) {
-			canvas.style.width = `${w}px`;
-			canvas.style.height = `${h}px`;
-		}
-		canvas.width = Math.max(1, Math.round(w * dpr));
-		canvas.height = Math.max(1, Math.round(h * dpr));
+		const box = measureCanvas(canvas, pixelRatio);
+		({ w, h, dpr } = box);
+		fitCanvas(canvas, box);
 		draw();
 	}
 
@@ -1058,12 +1050,21 @@ export function createNeonSign(
 	pushHum();
 	syncAll();
 
-	return {
+	const handle: NeonSign = {
 		setText(t) {
+			if (disposed) return;
 			const next = String(t ?? '');
 			if (next === text) return;
+			const was = text;
 			text = next;
-			relayout();
+			try {
+				relayout();
+			} catch (err) {
+				// A custom face that can't bend this text keeps the sign on the last that bent.
+				text = was;
+				relayout();
+				throw err;
+			}
 			applyAria();
 			if (on) beginStrikes();
 			else snapAll();
@@ -1074,7 +1075,7 @@ export function createNeonSign(
 			// what an unstable tube looks like (dip depth, eased recovery, the
 			// re-strike through its ignition pops, the hum ducking with it) exactly
 			// as the `flicker` scheduler does — the consumer owns when it happens.
-			if (n === 0) return;
+			if (disposed || n === 0) return;
 			const hit = section == null ? -1 : Math.floor(section);
 			const targets = hit >= 0 && hit < n ? [hit] : Array.from({ length: n }, (_, i) => i);
 			let struck = false;
@@ -1151,7 +1152,7 @@ export function createNeonSign(
 			};
 		},
 		power(v) {
-			if (v === on) return;
+			if (disposed || v === on) return;
 			on = v;
 			if (on) beginStrikes();
 			else {
@@ -1164,8 +1165,20 @@ export function createNeonSign(
 			syncAll();
 		},
 		setOptions(patch) {
+			if (disposed) return;
 			let rebuild = false;
 			let redraw = false;
+			const glass = {
+				font,
+				tubes,
+				align,
+				lineSpacing,
+				letterSpacing,
+				tilt,
+				outline,
+				lineScale,
+				art
+			};
 			// Anything named in this patch becomes the consumer's for good, so mark it
 			// before the theme gets a chance to move it.
 			themed.mark(patch);
@@ -1178,7 +1191,7 @@ export function createNeonSign(
 				redraw = true;
 			}
 			if (patch.text !== undefined && patch.text !== text) {
-				this.setText(patch.text);
+				handle.setText(patch.text);
 			}
 			if (patch.font !== undefined && patch.font !== font) {
 				font = patch.font;
@@ -1225,8 +1238,17 @@ export function createNeonSign(
 			}
 			if (rebuild) {
 				// A re-bend is new glass, but option twiddling shouldn't strike — the
-				// new tubes land at the sign's current state instantly.
-				relayout();
+				// new tubes land at the sign's current state instantly. Glass that can't
+				// be bent (art path data that won't parse) leaves the sign as it was, so
+				// the next setText doesn't trip over it again.
+				try {
+					relayout();
+				} catch (err) {
+					({ font, tubes, align, lineSpacing, letterSpacing, tilt, outline, lineScale, art } =
+						glass);
+					relayout();
+					throw err;
+				}
 				snapAll();
 			}
 			if (patch.color !== undefined) {
@@ -1323,7 +1345,7 @@ export function createNeonSign(
 				label = patch.label;
 				applyAria();
 			}
-			if (patch.on != null && patch.on !== on) this.power(patch.on);
+			if (patch.on != null && patch.on !== on) handle.power(patch.on);
 			if (patch.pixelRatio != null) {
 				pixelRatio = patch.pixelRatio;
 				resize();
@@ -1334,12 +1356,16 @@ export function createNeonSign(
 			syncAll();
 			animate();
 		},
-		resize,
+		resize() {
+			if (!disposed) resize();
+		},
 		snapshot() {
-			draw();
+			if (!disposed) draw();
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			if (disposed) return;
+			disposed = true;
 			stopTheme();
 			ro?.disconnect();
 			if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVis);
@@ -1355,4 +1381,5 @@ export function createNeonSign(
 			canvas.removeAttribute('aria-hidden');
 		}
 	};
+	return handle;
 }

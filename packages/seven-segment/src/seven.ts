@@ -13,6 +13,7 @@
 // Give it a canvas + a value; drive it with setValue/setOptions. Import-safe under
 // node/SSR (no browser globals at module scope; Path2D built lazily on first draw).
 import { type Color, parseColor } from './color';
+import { fitCanvas, measureCanvas } from './fit';
 import { resolveTheme, type Theme, watchTheme } from './theme';
 
 const VB_W = 60;
@@ -267,6 +268,7 @@ export function createSevenSegment(
 	let raf = 0;
 	let lastT = 0;
 	let flickerTimer: ReturnType<typeof setTimeout> | null = null;
+	let disposed = false; // dispose() is final: every later handle call is a no-op
 
 	const styleOf = () => {
 		if (style === 'vfd')
@@ -543,17 +545,9 @@ export function createSevenSegment(
 	}
 
 	function resize() {
-		const cap = pixelRatio > 0 ? pixelRatio : 1;
-		dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, cap);
-		const r = canvas.getBoundingClientRect();
-		w = Math.max(1, r.width || canvas.clientWidth || 1);
-		h = Math.max(1, r.height || canvas.clientHeight || 1);
-		if (Math.abs(w - canvas.width) < 1 && Math.abs(h - canvas.height) < 1) {
-			canvas.style.width = `${w}px`;
-			canvas.style.height = `${h}px`;
-		}
-		canvas.width = Math.max(1, Math.round(w * dpr));
-		canvas.height = Math.max(1, Math.round(h * dpr));
+		const box = measureCanvas(canvas, pixelRatio);
+		({ w, h, dpr } = box);
+		fitCanvas(canvas, box);
 		draw();
 	}
 
@@ -590,11 +584,13 @@ export function createSevenSegment(
 
 	return {
 		setValue(v) {
+			if (disposed) return;
 			value = norm(v);
 			applyAria();
 			animate();
 		},
 		setOptions(patch) {
+			if (disposed) return;
 			// The theme only tunes the housing, so nothing here needs a re-layout.
 			if (patch.theme !== undefined && patch.theme !== theme) {
 				theme = patch.theme;
@@ -624,12 +620,16 @@ export function createSevenSegment(
 			}
 			animate();
 		},
-		resize,
+		resize() {
+			if (!disposed) resize();
+		},
 		snapshot() {
-			draw();
+			if (!disposed) draw();
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			if (disposed) return;
+			disposed = true;
 			stopTheme();
 			ro?.disconnect();
 			if (raf) cancelAnimationFrame(raf);

@@ -14,9 +14,10 @@
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, extname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES = [
@@ -57,6 +58,9 @@ try {
 			[yarnRelease, 'workspace', `@glowbox/${pkg}`, 'pack', '--out', join(dir, `${pkg}.tgz`)],
 			{ cwd: root }
 		);
+		const files = execFileSync('tar', ['-tzf', join(dir, `${pkg}.tgz`)], { encoding: 'utf8' });
+		if (!files.split('\n').includes('package/LICENSE'))
+			throw new Error(`@glowbox/${pkg}: the tarball ships no LICENSE`);
 	}
 
 	// --- install the tarballs into a fresh consumer ---
@@ -101,6 +105,42 @@ try {
 			],
 			{ cwd: dir }
 		);
+	}
+
+	// --- the shipped .d.ts declares exactly the values the shipped JS exports: a declaration
+	// bundler can turn a type-only re-export into a value one, which typechecks and then
+	// fails to link ---
+	log('.d.ts value exports match the runtime exports');
+	const ts = createRequire(import.meta.url)('typescript');
+	const installed = (pkg, file) => join(dir, 'node_modules', '@glowbox', pkg, 'dist', file);
+	const program = ts.createProgram(
+		NODE_IMPORTABLE.map((p) => installed(p, 'index.d.ts')),
+		{
+			noEmit: true,
+			skipLibCheck: true,
+			module: ts.ModuleKind.NodeNext,
+			moduleResolution: ts.ModuleResolutionKind.NodeNext,
+			target: ts.ScriptTarget.ESNext,
+			jsx: ts.JsxEmit.ReactJSX
+		}
+	);
+	const checker = program.getTypeChecker();
+	for (const pkg of NODE_IMPORTABLE) {
+		const mod = checker.getSymbolAtLocation(program.getSourceFile(installed(pkg, 'index.d.ts')));
+		const declared = checker
+			.getExportsOfModule(mod)
+			.filter((s) => {
+				const target = s.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(s) : s;
+				return target.flags & ts.SymbolFlags.Value;
+			})
+			.map((s) => s.name);
+		const shipped = Object.keys(await import(pathToFileURL(installed(pkg, 'index.js')).href));
+		const typedOnly = declared.filter((n) => !shipped.includes(n));
+		const untyped = shipped.filter((n) => !declared.includes(n));
+		if (typedOnly.length || untyped.length)
+			throw new Error(
+				`@glowbox/${pkg}: declared but not shipped [${typedOnly}], shipped but not declared [${untyped}]`
+			);
 	}
 
 	// --- typecheck a consumer against the shipped .d.ts (all six, svelte included) ---

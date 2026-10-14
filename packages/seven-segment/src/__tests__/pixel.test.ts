@@ -75,3 +75,22 @@ test('pixelText: a point lights in the gap after its digit; blanks and unknowns 
 	expect(pixelText(' x', { height: 14 }).parts.some((s) => s.on)).toBe(false);
 	expect(pixelText(' x', { height: 14 }).parts).toHaveLength(14);
 });
+
+test('sizes round to whole pixels; one not finite, or a digit too small for its segments, throws', () => {
+	expect(pixelText('12:3.4', { height: 11.5 })).toEqual(pixelText('12:3.4', { height: 12 }));
+	expect(pixelText('8', { height: 14, stroke: 1.2, gap: 2.4 })).toEqual(
+		pixelText('8', { height: 14, stroke: 1, gap: 2 })
+	);
+	expect(pixelSegments(13.6)).toEqual(pixelSegments(14));
+	// The smallest digit whose every segment is a pixel long, and one short of it.
+	for (const r of Object.values(pixelSegments(5))) expect(r.w > 0 && r.h > 0).toBe(true);
+	expect(() => pixelSegments(4)).toThrow(RangeError);
+	expect(() => pixelSegments(8, { stroke: 2 })).toThrow(/width/);
+	for (const bad of [NaN, Infinity, -5, 0, 3]) {
+		expect(() => pixelText('8', { height: bad })).toThrow(RangeError);
+		expect(() => pixelSegments(bad)).toThrow(RangeError);
+	}
+	expect(() => pixelText('8', { height: 14, stroke: NaN })).toThrow(RangeError);
+	expect(() => pixelText('8', { height: 14, width: Infinity })).toThrow(RangeError);
+	expect(() => pixelText('88', { height: 14, gap: -1 })).toThrow(RangeError);
+});

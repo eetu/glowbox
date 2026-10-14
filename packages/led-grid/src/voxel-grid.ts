@@ -80,6 +80,27 @@ export interface VoxelGridInternal extends VoxelGrid {
 	readonly active: ActiveSet;
 }
 
+const finite3 = (v: Vec3) =>
+	Number.isFinite(v[0]) && Number.isFinite(v[1]) && Number.isFinite(v[2]);
+
+/** `line`'s walk along an axis moving `d` of the driving axis's `dm` after `s` steps: the
+ *  steps that axis has taken and its error term. `s · d` can pass 2^53 on an int32 line,
+ *  where only BigInt keeps the remainder exact. */
+function walk(s: number, d: number, dm: number): [number, number] {
+	let q: number;
+	let r: number;
+	if (s * d <= Number.MAX_SAFE_INTEGER) {
+		r = (s * d) % dm;
+		q = (s * d - r) / dm;
+	} else {
+		const p = BigInt(s) * BigInt(d);
+		const m = BigInt(dm);
+		q = Number(p / m);
+		r = Number(p % m);
+	}
+	return 2 * r > dm ? [q + 1, dm * 1.5 - r] : [q, dm / 2 - r];
+}
+
 /** Create a voxel grid. Pass an existing `leds` buffer (e.g. the display's) to
  *  draw straight into it; otherwise a fresh nx*ny*nz*3 Float32Array is allocated. */
 export function createVoxelGrid(
@@ -174,6 +195,7 @@ export function createVoxelGrid(
 		filled = true;
 	}
 	function line(a: Vec3, b: Vec3, color: Color) {
+		if (!finite3(a) || !finite3(b)) return;
 		// 3D Bresenham: step the driving (longest) axis, accumulate error on the
 		// other two → a contiguous voxel line, no gaps.
 		const c = parseColor(color);
@@ -191,10 +213,26 @@ export function createVoxelGrid(
 			sz = z0 < z1 ? 1 : -1;
 		const dm = Math.max(dx, dy, dz);
 		if (dm === 0) return put(x0, y0, z0, c);
+		// The driving axis moves every step, so only steps `lo`…`hi` can land on the
+		// grid: start the walk there, its state in closed form, and a line from far off
+		// the grid costs what its visible part does.
+		const [p0, sp, n] = dx === dm ? [x0, sx, nx] : dy === dm ? [y0, sy, ny] : [z0, sz, nz];
+		const lo = Math.max(0, sp > 0 ? -p0 : p0 - (n - 1));
+		const hi = Math.min(dm, sp > 0 ? n - 1 - p0 : p0);
+		if (lo > hi) return;
 		let ex = dm / 2,
 			ey = dm / 2,
 			ez = dm / 2;
-		for (let s = 0; s <= dm; s++) {
+		if (lo > 0) {
+			let k: number;
+			[k, ex] = walk(lo, dx, dm);
+			x0 += sx * k;
+			[k, ey] = walk(lo, dy, dm);
+			y0 += sy * k;
+			[k, ez] = walk(lo, dz, dm);
+			z0 += sz * k;
+		}
+		for (let s = lo; s <= hi; s++) {
 			put(x0, y0, z0, c);
 			ex -= dx;
 			if (ex < 0) {

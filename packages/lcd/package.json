@@ -55,7 +55,7 @@
 			"name": "canvas core alone (the pixel export tree-shakes away)",
 			"path": "dist/index.js",
 			"import": "{ createLcdModule }",
-			"limit": "5 kB"
+			"limit": "5.2 kB"
 		},
 		{
 			"name": "pixel export alone",

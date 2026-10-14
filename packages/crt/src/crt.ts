@@ -376,7 +376,7 @@ export function createCrtScreen(
 
 	// --- render loop --------------------------------------------------------------
 	let dpr = 1;
-	let running = true;
+	let running = true; // until dispose(), which is final: every later handle call is a no-op
 	let raf = 0;
 	const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
 
@@ -584,6 +584,7 @@ export function createCrtScreen(
 	return {
 		canvas,
 		setOptions(patch) {
+			if (!running) return;
 			if (patch.curvature != null) curvature = patch.curvature;
 			if (patch.scanlines != null) scanlines = patch.scanlines;
 			if (patch.mask != null) mask = patch.mask;
@@ -601,12 +602,15 @@ export function createCrtScreen(
 				resize();
 			}
 		},
-		resize,
+		resize() {
+			if (running) resize();
+		},
 		snapshot() {
-			renderFrame();
+			if (running) renderFrame();
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			if (!running) return;
 			running = false;
 			if (raf) cancelAnimationFrame(raf);
 			ro?.disconnect();

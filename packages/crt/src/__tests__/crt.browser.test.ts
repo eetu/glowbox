@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 
 import { createCrtScreen } from '../crt';
 
@@ -97,6 +97,35 @@ test('dispose stops the loop and removes the output canvas', () => {
 	expect(document.body.contains(crt.canvas)).toBe(true);
 	crt.dispose();
 	expect(document.body.contains(crt.canvas)).toBe(false);
+});
+
+test('dispose is final: later calls schedule and resize nothing, and a second dispose restores nothing', () => {
+	const box = document.createElement('div');
+	box.style.cssText = 'width:200px;height:100px';
+	box.appendChild(makeSource());
+	document.body.appendChild(box);
+	const crt = createCrtScreen(box);
+	if (!crt) return;
+	crt.dispose();
+	expect(box.style.position).toBe(''); // handed back as found
+	box.style.position = 'absolute'; // the consumer's own, after the screen is gone
+	const width = crt.canvas.width;
+	const timeout = vi.spyOn(window, 'setTimeout');
+	const frame = vi.spyOn(window, 'requestAnimationFrame');
+	try {
+		crt.setOptions({ pixelRatio: 1, curvature: 0 });
+		crt.resize();
+		crt.snapshot();
+		crt.dispose();
+		expect(timeout).not.toHaveBeenCalled();
+		expect(frame).not.toHaveBeenCalled();
+	} finally {
+		timeout.mockRestore();
+		frame.mockRestore();
+	}
+	expect(crt.canvas.width).toBe(width);
+	expect(box.style.position).toBe('absolute');
+	box.remove();
 });
 
 test('element mode: slaps over a container, composites child canvases, restores on dispose', async () => {

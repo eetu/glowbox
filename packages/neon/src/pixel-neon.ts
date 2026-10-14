@@ -5,7 +5,7 @@
 import { type NeonFont, resolveFont } from './font';
 import { type LayoutOptions, layoutTubes } from './layout';
 import { CHASE_MIN, FLASH_MIN, type NeonProgram, strikeBri } from './neon';
-import type { PixelLayout, PixelPart, PixelRect } from './pixel';
+import { finitePx, type PixelLayout, type PixelPart, type PixelRect, wholePx } from './pixel';
 import { maskRects } from './pixel-stroke';
 import { wearLevels } from './wear';
 
@@ -95,12 +95,14 @@ const cellPath = (pts: Point[]): Point[] => {
  * `text` as tube sections on whole pixels, one part per section of `layoutTubes` (same
  * order, same `line`/`word`/`art`): its glass as rects, and an electrode stub at each end,
  * 1 px long on a 1 px tube under a 14 px cap height, 2 px otherwise. A capital is
- * `capHeight` rows, the tube included. Rects are from the sign's top-left.
+ * `capHeight` rows, the tube included. Rects are from the sign's top-left. `capHeight` rounds
+ * to whole pixels; under 1 px, or it or `stroke` not finite, is a RangeError.
  */
 export const neonPixels = (text: string, options: NeonPixelOptions): PixelLayout<NeonPixelPart> => {
-	const { capHeight, font = 'script', stroke = 1, ...rest } = options;
+	const { capHeight: cap, font = 'script', stroke = 1, ...rest } = options;
+	const capHeight = wholePx(cap, 'neonPixels capHeight');
+	const w = Math.max(1, Math.round(finitePx(stroke, 'neonPixels stroke')));
 	const lay = layoutTubes(text, font, rest);
-	const w = Math.max(1, Math.round(stroke));
 	const lo = (w - 1) >> 1;
 	const k = Math.max(1, capHeight - w) / resolveFont(font).capHeight;
 	// A margin for the brush and the stubs; trimmed off once everything is placed.

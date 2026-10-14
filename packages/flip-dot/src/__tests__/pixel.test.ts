@@ -45,6 +45,18 @@ test('flipDotPixels: row-major dots dot + gap apart, whole pixels, no trailing g
 	expect(flipDotPixels({ cols: 2, rows: 1, dot: 2, gap: 0 }).width).toBe(4);
 });
 
+test('a size that is not a finite number throws instead of laying out NaN or forever', () => {
+	for (const bad of [NaN, Infinity]) {
+		expect(() => flipDotPixels({ cols: bad, rows: 2, dot: 3 })).toThrow(RangeError);
+		expect(() => flipDotPixels({ cols: 2, rows: bad, dot: 3 })).toThrow(RangeError);
+		expect(() => flipDotPixels({ cols: 2, rows: 2, dot: bad })).toThrow(RangeError);
+		expect(() => flipDotPixels({ cols: 2, rows: 2, dot: 3, gap: bad })).toThrow(RangeError);
+		expect(() => flipFrames(bad)).toThrow(RangeError);
+		expect(() => flipPhases([], 0, { cols: bad, rows: 2 })).toThrow(/cols/);
+		expect(() => flipLandings([], 0, 1, { cols: 2, rows: bad })).toThrow(/rows/);
+	}
+});
+
 test('flipDotPixels: square at 1–2 px, round from 3, in the fewest rects', () => {
 	const face = (dot: number, shape?: 'disc' | 'square') =>
 		flipDotPixels({ cols: 1, rows: 1, dot, shape }).parts[0].rects;

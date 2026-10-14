@@ -6,6 +6,37 @@ version and are released together.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`@glowbox/react`, `@glowbox/vue`: led-grid's types only** — 1.13.1's declarations also
+  typed `createLedDisplay`, `createVoxelGrid` and `parseColor` as exports, which neither
+  package ships.
+- **Licences** — every package ships its MIT `LICENSE`; `@glowbox/extras` adds the notice
+  for the gifuct-js it bundles.
+- **Canvas sizing** — every 2D core and led-grid fit their canvas the same way: a
+  responsive canvas keeps following its container at 1× (nixie, seven-segment, neon and vfd
+  froze it at its first size), and an unstyled canvas no longer grows without bound on a
+  HiDPI screen (flip-dot, split-flap, lcd and led-grid).
+- **Wrappers: a regrid keeps the content** — changing `cols`/`rows` on `<SplitFlap>`,
+  `<FlipDots>` or `<LcdModule>` (svelte/react/vue) re-applies `text`/`frame` to the new
+  grid, alone or together with the content change.
+- **Every core: `dispose()` is final** — handle calls after it are no-ops (no timers, frames,
+  canvas or aria writes); lcd's flicker no longer outlives a dispose that lands mid-dip.
+- **Detached handle methods** — `board.clear`, `board.fill` and `setOptions({ text, on })`
+  work when passed as callbacks.
+- **Modern CSS colours** — `oklch()`, `oklab()`, `lab()`, `lch()`, `color()` and `color-mix()`
+  read as their sRGB instead of black; the parsed-colour memo holds at most 2048 strings.
+- **Pixel exports reject sizes they can't lay out** — a NaN or infinite size throws a
+  `RangeError` instead of hanging; heights round to whole pixels and too-small ones throw.
+- **`@glowbox/led-grid`: `line()` clips to the grid** — a line from far off the grid costs
+  its visible part; non-finite ends draw nothing.
+- **`@glowbox/neon`: degenerate input** — non-finite options take their defaults, a frame of
+  no size is ignored, a stroke needs two finite points, an outlined dot gets a square ring,
+  and art that won't parse throws once and leaves the sign as it was. A piece of 800
+  subpaths lays out in 0.2 s, not 19.
+- **Budgets** for the guards above — flip-dot 7 → 7.3 kB, split-flap 9.8 → 10 kB (board
+  alone 7.4 → 7.5), nixie 8.5 → 8.6 kB, lcd core alone 5 → 5.2 kB, neon 16.5 → 17 kB.
+
 ## [1.13.1] — 2026-10-13
 
 ### Fixed

@@ -1,8 +1,8 @@
 // Pure layout arithmetic — text → placed tube sections, no canvas anywhere.
 import { expect, test, vi } from 'vitest';
 
-import { resolveFont } from '../font';
-import { layoutTubes, type NeonLayout, roundCorners } from '../layout';
+import { type NeonFont, resolveFont } from '../font';
+import { circuitEnds, layoutTubes, type NeonLayout, roundCorners } from '../layout';
 
 const sans = resolveFont('sans');
 
@@ -410,4 +410,200 @@ test('wired circuits: an opaque face still cuts, and covered circuit ends lose t
 	// The face swallows the word's middle; whatever glass survives keeps at most
 	// the two routed electrodes, and only where they are not under the face.
 	for (const sec of l.sections) expect(sec.ends.length).toBeLessThanOrEqual(2);
+});
+
+test('a number that is not finite takes its default', () => {
+	const plain = layoutTubes('HI\nOK', 'sans');
+	for (const bad of [NaN, Infinity])
+		expect(
+			layoutTubes('HI\nOK', 'sans', {
+				letterSpacing: bad,
+				lineSpacing: bad,
+				lineScale: [bad, 1],
+				tilt: bad
+			})
+		).toEqual(plain);
+	const art = (a: object) => layoutTubes('HI', 'sans', { art: [{ d: RING, place: 'left', ...a }] });
+	expect(art({ size: NaN, dx: Infinity, dy: NaN, rotate: -Infinity })).toEqual(art({}));
+});
+
+test('a frame of no size, or not finite, frames nothing: the piece keeps its own box', () => {
+	const own = layoutTubes('HI', 'sans', { art: [{ d: 'M0 0 L100 100' }] });
+	for (const frame of [
+		[0, 0],
+		[NaN, 5],
+		[5, Infinity],
+		[-10, 5]
+	] as [number, number][])
+		expect(layoutTubes('HI', 'sans', { art: [{ d: 'M0 0 L100 100', frame }] })).toEqual(own);
+});
+
+test('glass bends only through finite points, from two of them; a dot is two at one place', () => {
+	const ab: [number, number][] = [
+		[0, 0],
+		[10, 0]
+	];
+	const one = (d: [number, number][][], outline = false) =>
+		layoutTubes('HI', 'sans', { outline, art: [{ d }] }).sections.filter((s) => s.art === 0);
+	// An empty polyline, a single point and an off-the-line point drop out.
+	expect(one([ab, []])).toEqual(one([ab]));
+	expect(one([ab, [[5, 5]]])).toEqual(one([ab]));
+	expect(
+		one([
+			[
+				[0, 0],
+				[NaN, 3],
+				[10, 0]
+			],
+			ab
+		])
+	).toEqual(one([ab, ab]));
+	expect(
+		one([
+			[
+				[NaN, 0],
+				[1, 1]
+			]
+		])
+	).toEqual([]);
+	// A custom face's degenerate glyph is a glyph with no glass, wherever it falls.
+	const font: NeonFont = {
+		capHeight: 10,
+		ascent: 10,
+		descent: 2,
+		glyphs: {
+			a: { adv: 5, strokes: [[[1, 1]]] },
+			b: {
+				adv: 5,
+				strokes: [
+					[
+						[0, 0],
+						[NaN, -10]
+					]
+				]
+			},
+			c: {
+				adv: 5,
+				strokes: [
+					[
+						[0, 0],
+						[0, -10]
+					],
+					[
+						[3, 0],
+						[3, -10]
+					]
+				]
+			}
+		}
+	};
+	for (const outline of [false, true])
+		for (const tubes of ['word', 'glyph'] as const) {
+			expect(layoutTubes('ac', font, { outline, tubes }).sections).toHaveLength(1);
+			expect(layoutTubes('abba', font, { outline, tubes }).sections).toHaveLength(0);
+		}
+	// The round-cap dot (`l0 0`) stays a dot; outlined, its square slab gets a ring.
+	const dot = one([
+		[
+			[5, 5],
+			[5, 5]
+		]
+	]);
+	expect(dot).toHaveLength(1);
+	expect(dot[0].strokes[0]).toHaveLength(2);
+	const ring = one(
+		[
+			[
+				[5, 5],
+				[5, 5]
+			]
+		],
+		true
+	)[0];
+	const [cx, cy] = ring.skeleton![0][0];
+	for (const [x, y] of ring.strokes[0]) {
+		const d = Math.max(Math.abs(x - cx), Math.abs(y - cy));
+		expect(d).toBeGreaterThan(2.5);
+		expect(d).toBeLessThanOrEqual(3.1 + 1e-9);
+	}
+});
+
+// The electrode search as it routes every opening of the first group, for reference.
+function everyOpening(groups: [number, number][][][]) {
+	const dist = (a: [number, number], b: [number, number]) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+	let best: { first: [number, number][]; last: [number, number][] } | null = null;
+	let bestCost = Infinity;
+	for (let start = 0; start < groups[0].length; start++)
+		for (const flip of [false, true]) {
+			let at: [number, number] | null = null;
+			let first: [number, number][] | null = null;
+			let last: [number, number][] | null = null;
+			let cost = 0;
+			for (const group of groups) {
+				const left = group.slice();
+				let pick: number = at ? -1 : start;
+				let pickFlip: boolean = at ? false : flip;
+				while (left.length) {
+					if (pick < 0) {
+						let near = Infinity;
+						for (let i = 0; i < left.length; i++) {
+							const dh = dist(at!, left[i][0]);
+							const dl = dist(at!, left[i][left[i].length - 1]);
+							if (Math.min(dh, dl) < near) {
+								near = Math.min(dh, dl);
+								pick = i;
+								pickFlip = dl < dh;
+							}
+						}
+					}
+					const s = left.splice(pick, 1)[0];
+					const run: [number, number][] = pickFlip ? [...s].reverse() : s;
+					if (at) cost += dist(at, run[0]);
+					first ??= run;
+					last = run;
+					at = run[run.length - 1];
+					pick = -1;
+				}
+			}
+			if (cost < bestCost) {
+				bestCost = cost;
+				best = { first: first!, last: last! };
+			}
+		}
+	return best!;
+}
+
+test('circuit ends: every opening tried up to 32 strokes; hundreds of subpaths stay fast', () => {
+	let seed = 3;
+	const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+	const stroke = (): [number, number][] =>
+		Array.from({ length: 2 + Math.floor(rnd() * 3) }, () => [rnd() * 100, rnd() * 100]);
+	for (let i = 0; i < 200; i++) {
+		const groups = Array.from({ length: 1 + (i % 3) }, (_, g) =>
+			Array.from({ length: g ? 1 + Math.floor(rnd() * 6) : 1 + (i % 32) }, stroke)
+		);
+		expect(circuitEnds(groups)).toEqual(everyOpening(groups));
+	}
+	// One piece of 400 subpaths: one opening per subpath would route it 800 times.
+	const d: string[] = [];
+	for (let i = 0; i < 400; i++) d.push(`M${(i * 7) % 100} ${Math.floor(i / 10) * 3} l 2 1`);
+	const t0 = performance.now();
+	const l = layoutTubes('A', 'sans', { art: [{ d: d.join(' ') }] });
+	expect(performance.now() - t0).toBeLessThan(1000);
+	expect(l.sections.find((s) => s.art === 0)!.ends).toHaveLength(2);
+	// At the float range's edge every route's cost overflows, and the circuit's own first
+	// and last strokes stand in.
+	const huge: [number, number][][] = [
+		[
+			[0, 0],
+			[1e308, 0]
+		],
+		[
+			[-1e308, 0],
+			[1e308, 1e308]
+		]
+	];
+	const ends = circuitEnds([huge]);
+	expect(ends.first).toBeDefined();
+	expect(ends.last).toBeDefined();
 });

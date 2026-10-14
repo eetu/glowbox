@@ -8,7 +8,7 @@
 // shrunk by its depth stands pixels short.
 import { glyphPath } from './nixie';
 import { flattenPath } from './path-parse';
-import type { PixelLayout, PixelPart, PixelRect } from './pixel';
+import { type PixelLayout, type PixelPart, type PixelRect, wholePx } from './pixel';
 import { maskRects, strokeRects } from './pixel-stroke';
 import { type Wear, wearLevels } from './wear';
 
@@ -40,12 +40,13 @@ export interface NixiePixelPart extends PixelPart {
 }
 
 export interface NixiePixelOptions {
-	/** Wire width, px. Default the canvas tube's 4.2 of 100, rounded down: 1 px to 47 px. */
+	/** Wire width, px, rounded to whole pixels. Default the canvas tube's 4.2 of 100, rounded
+	 *  down: 1 px to 47 px. */
 	wire?: number;
 }
 
 export interface NixiePixelTextOptions extends NixiePixelOptions {
-	/** Tube height, px. */
+	/** Tube height, px, rounded to whole pixels. */
 	height: number;
 	/** Pixels between tubes. Default 2. */
 	gap?: number;
@@ -355,6 +356,7 @@ const separator = (ch: string, height: number, wire: number) => {
  * tube: its ten cathodes front to back, the symbol's lit and the rest ghosts (all of them for
  * a blank). `:` `.` `-` are separator tubes, one lit part as wide as its ink. Rects are from
  * the tube's top-left. It reads as a nixie from 16 px; 11 px is a hand-drawn fallback.
+ * `height` and `wire` round to whole pixels; under 1 px or not finite is a RangeError.
  */
 export function nixiePixels(
 	symbol: string | number | null,
@@ -362,7 +364,11 @@ export function nixiePixels(
 	options: NixiePixelOptions = {}
 ): PixelLayout<NixiePixelPart> {
 	const ch = [...String(symbol ?? '')][0] ?? '';
-	const wire = options.wire ?? Math.max(1, Math.floor(height * 0.042));
+	height = wholePx(height, 'nixiePixels height');
+	const wire =
+		options.wire == null
+			? Math.max(1, Math.floor(height * 0.042))
+			: wholePx(options.wire, 'nixiePixels wire');
 	if (isSeparator(ch)) {
 		const { width, rects } = separator(ch, height, wire);
 		return { width, height, parts: [{ index: 0, symbol: ch, depth: 0, on: true, rects }] };
@@ -402,7 +408,9 @@ export function nixiePixelText(
 	text: string,
 	options: NixiePixelTextOptions
 ): PixelLayout<NixiePixelPart> {
-	const { height, gap = 2, colon = true } = options;
+	const height = wholePx(options.height, 'nixiePixelText height');
+	const gap = wholePx(options.gap ?? 2, 'nixiePixelText gap', 0);
+	const { colon = true } = options;
 	const parts: NixiePixelPart[] = [];
 	let x = 0;
 	[...text].forEach((ch, index) => {

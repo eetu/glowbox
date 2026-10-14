@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 
 import { createFlipDots } from '../flip-dot';
 
@@ -271,5 +271,55 @@ test('a sub-5px canvas degrades instead of throwing (the 1.3.1 lesson)', () => {
 		board.resize();
 		board.dispose();
 	}).not.toThrow();
+	canvas.remove();
+});
+
+/** How many timeouts and animation frames `calls` asks for. */
+const scheduled = (calls: () => void) => {
+	const timeout = vi.spyOn(window, 'setTimeout');
+	const frame = vi.spyOn(window, 'requestAnimationFrame');
+	try {
+		calls();
+		return { timeouts: timeout.mock.calls.length, frames: frame.mock.calls.length };
+	} finally {
+		timeout.mockRestore();
+		frame.mockRestore();
+	}
+};
+
+test('dispose is final: later calls schedule, paint and label nothing', async () => {
+	const canvas = makeCanvas();
+	const board = createFlipDots(canvas, { cols: 14, rows: 7 });
+	if (!board) return;
+	board.dispose();
+	board.dispose();
+	const before = canvas.toDataURL();
+	const counts = scheduled(() => {
+		board.fill();
+		board.set(1, 1, false);
+		board.setFrame((x) => x % 2);
+		board.clear();
+		board.setOptions({ label: 'board', onColor: '#f00', pixelRatio: 1 });
+		board.resize();
+		board.snapshot();
+	});
+	expect(counts).toEqual({ timeouts: 0, frames: 0 });
+	expect(canvas.getAttribute('role')).toBeNull();
+	expect(canvas.getAttribute('aria-label')).toBeNull();
+	await sleep(300);
+	expect(canvas.toDataURL()).toBe(before);
+	canvas.remove();
+});
+
+test('clear and fill work detached from the board', () => {
+	const canvas = makeCanvas();
+	const board = createFlipDots(canvas, { cols: 4, rows: 4, flipMs: 0 });
+	if (!board) return;
+	const { fill, clear } = board;
+	fill();
+	expect(board.get(2, 2)).toBe(true);
+	clear();
+	expect(board.get(2, 2)).toBe(false);
+	board.dispose();
 	canvas.remove();
 });

@@ -120,3 +120,21 @@ test('the decimal-point glyph exists and lights', () => {
 	expect(litPixels(canvases(el)[0])).toBeGreaterThan(0);
 	row.dispose();
 });
+
+test('dispose is final: later calls build, label and size nothing', () => {
+	const el = makeContainer();
+	const row = createNixieRow(el, { value: '' });
+	if (!row) return;
+	expect(el.getAttribute('aria-hidden')).toBe('true'); // an empty row is decoration
+	row.dispose();
+	row.dispose();
+	expect(el.getAttribute('aria-hidden')).toBeNull();
+	row.setValue('12:34');
+	row.setOptions({ value: '56', label: 'clock', glow: 0.5 });
+	row.resize();
+	expect(canvases(el)).toHaveLength(0);
+	expect(row.tubes).toHaveLength(0);
+	expect(el.getAttribute('role')).toBeNull();
+	expect(el.getAttribute('aria-label')).toBeNull();
+	el.remove();
+});

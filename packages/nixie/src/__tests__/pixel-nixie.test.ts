@@ -135,6 +135,23 @@ test('nixiePixelText: a clock row, tubes gap apart, the colon blinkable', () => 
 	expect(nixiePixelText('1 2', { height: 16, gap: 3 }).width).toBe(3 * digit + 2 * 3);
 });
 
+test('nixiePixels: sizes round to whole pixels; one not finite or under a pixel throws', () => {
+	expect(nixiePixels('8', 16.4)).toEqual(nixiePixels('8', 16));
+	expect(nixiePixels('8', 16.5)).toEqual(nixiePixels('8', 17));
+	expect(nixiePixels('8', 20, { wire: 1.6 })).toEqual(nixiePixels('8', 20, { wire: 2 }));
+	expect(nixiePixelText('12:34', { height: 15.6 })).toEqual(
+		nixiePixelText('12:34', { height: 16 })
+	);
+	for (const bad of [NaN, Infinity, -Infinity, 0, -5]) {
+		expect(() => nixiePixels('8', bad)).toThrow(RangeError);
+		expect(() => nixiePixels('8', 20, { wire: bad })).toThrow(RangeError);
+		expect(() => nixiePixelText('12', { height: bad })).toThrow(RangeError);
+		expect(() => nixiePixelText('', { height: bad })).toThrow(RangeError);
+	}
+	expect(() => nixiePixelText('12', { height: 16, gap: NaN })).toThrow(RangeError);
+	expect(() => nixiePixels(':', NaN)).toThrow(/nixiePixels height/);
+});
+
 test('nixieLevels: ghosts at 0, the lit cathodes at their wear', () => {
 	const row = nixiePixelText('10', { height: 16 });
 	const fresh = nixieLevels(row, { age: 0, seed: 1, t: 0 });

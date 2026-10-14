@@ -17,6 +17,7 @@
 // Give it a canvas; drive it with set/setFrame/setOptions. Import-safe under
 // node/SSR (no browser globals at module scope).
 import { type Color, parseColor, type RGB } from './color';
+import { fitCanvas, measureCanvas } from './fit';
 import { createMechSound, type MechSound } from './sound';
 import { resolveTheme, type Theme, themeOwner, watchTheme } from './theme';
 
@@ -210,6 +211,7 @@ export function createFlipDots(
 
 	let raf = 0;
 	let lastT = 0;
+	let disposed = false; // dispose() is final: every later handle call is a no-op
 	let snd: MechSound | null = null;
 	const sound = (): MechSound | null => {
 		if (volume > 0 && !snd) snd = createMechSound({ volume });
@@ -764,21 +766,14 @@ export function createFlipDots(
 	}
 
 	function resize() {
-		const cap = pixelRatio > 0 ? pixelRatio : 1;
-		const nextDpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, cap);
-		const r = canvas.getBoundingClientRect();
-		const nextW = Math.max(1, r.width || canvas.clientWidth || 1);
-		const nextH = Math.max(1, r.height || canvas.clientHeight || 1);
+		const box = measureCanvas(canvas, pixelRatio);
 		// A ResizeObserver fires for observations that changed nothing, and re-baking
 		// throws away the board layer, both face sprites and the whole squash atlas —
 		// and, by assigning canvas.width, the frame on screen. Same box, same ratio:
 		// there is nothing to re-fit.
-		if (nextW === w && nextH === h && nextDpr === dpr) return;
-		dpr = nextDpr;
-		w = nextW;
-		h = nextH;
-		canvas.width = Math.max(1, Math.round(w * dpr));
-		canvas.height = Math.max(1, Math.round(h * dpr));
+		if (box.w === w && box.h === h && box.dpr === dpr) return;
+		({ w, h, dpr } = box);
+		fitCanvas(canvas, box);
 		bake();
 		draw();
 	}
@@ -807,7 +802,7 @@ export function createFlipDots(
 	ro?.observe(canvas);
 	resize();
 
-	return {
+	const handle: FlipDotBoard = {
 		get cols() {
 			return cols;
 		},
@@ -815,6 +810,7 @@ export function createFlipDots(
 			return rows;
 		},
 		set(x, y, on) {
+			if (disposed) return;
 			x = Math.floor(x);
 			y = Math.floor(y);
 			if (x < 0 || x >= cols || y < 0 || y >= rows) return;
@@ -827,6 +823,7 @@ export function createFlipDots(
 			return target[y * cols + x] === 1;
 		},
 		setFrame(frame) {
+			if (disposed) return;
 			const at =
 				typeof frame === 'function'
 					? (x: number, y: number) => !!frame(x, y)
@@ -837,10 +834,10 @@ export function createFlipDots(
 			if (changed) animate();
 		},
 		clear() {
-			this.setFrame(() => false);
+			handle.setFrame(() => false);
 		},
 		fill() {
-			this.setFrame(() => true);
+			handle.setFrame(() => true);
 		},
 		dotAt(clientX, clientY) {
 			const r = canvas.getBoundingClientRect();
@@ -869,6 +866,7 @@ export function createFlipDots(
 			};
 		},
 		setOptions(patch) {
+			if (disposed) return;
 			let rebake = false;
 			let regrid = false;
 			// A colour named in this patch becomes the consumer's for good, so mark it
@@ -950,12 +948,16 @@ export function createFlipDots(
 			}
 			animate();
 		},
-		resize,
+		resize() {
+			if (!disposed) resize();
+		},
 		snapshot() {
-			draw();
+			if (!disposed) draw();
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			if (disposed) return;
+			disposed = true;
 			stopTheme();
 			ro?.disconnect();
 			if (raf) cancelAnimationFrame(raf);
@@ -966,4 +968,5 @@ export function createFlipDots(
 			canvas.removeAttribute('aria-hidden');
 		}
 	};
+	return handle;
 }

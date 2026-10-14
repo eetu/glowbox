@@ -118,11 +118,6 @@
 		};
 	});
 
-	// Live-update the shown text.
-	$effect(() => {
-		if (text != null) lcd?.setText(text);
-	});
-
 	// Live-update appearance when any option changes.
 	$effect(() => {
 		lcd?.setOptions({
@@ -144,6 +139,15 @@
 			theme,
 			label
 		});
+	});
+
+	// Live-update the shown text. Declared after the options effect so it runs after
+	// setOptions, and re-run on a cols/rows change: a regrid clips the text to the
+	// new grid, so a wider one needs it again.
+	$effect(() => {
+		void cols;
+		void rows;
+		if (text != null) lcd?.setText(text);
 	});
 </script>
 

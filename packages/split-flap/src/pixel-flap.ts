@@ -7,7 +7,7 @@
 import { DEFAULT_CHARSET, flapIndex, flapsOf, padCells, stepsBetween } from './drum';
 import { compile5x7, FONT_5X7, glyph5x7 } from './font5x7';
 import { LATIN_5X7 } from './latin5x7';
-import type { PixelLayout, PixelPart, PixelRect } from './pixel';
+import { finitePx, type PixelLayout, type PixelPart, type PixelRect } from './pixel';
 import { maskRects } from './pixel-stroke';
 import type { DrumZone } from './split-flap';
 
@@ -20,6 +20,15 @@ const cut = (h: number) => {
 	const half = Math.max(1, Math.floor((Math.max(3, h) - 1) / 2));
 	return { half, hinge: Math.max(3, h) - 2 * half };
 };
+
+/** Columns or rows: whole, at least one, and a RangeError when not finite. */
+const countOf = (n: number, name: string) => Math.max(1, Math.floor(finitePx(n, name)));
+
+/** A card's whole-pixel width (at least 1) and height (at least 3). */
+const cardOf = (card: FlapCard, name: string) => ({
+	w: Math.max(1, Math.floor(finitePx(card[0], `${name} card width`))),
+	h: Math.max(3, Math.floor(finitePx(card[1], `${name} card height`)))
+});
 
 export interface FlapPixelOptions {
 	/** Modules per row. */
@@ -53,11 +62,12 @@ export interface FlapLayout extends PixelLayout<FlapPart> {
  * flap as parts, in that order, module by module. Rects are from the board's top-left.
  */
 export function flapPixels({ cols, rows = 1, card, gap = 1 }: FlapPixelOptions): FlapLayout {
-	cols = Math.max(1, Math.floor(cols));
-	rows = Math.max(1, Math.floor(rows));
-	const w = Math.max(1, Math.floor(card[0]));
-	const h = Math.max(3, Math.floor(card[1]));
-	const [gx, gy] = typeof gap === 'number' ? [gap, gap] : gap;
+	cols = countOf(cols, 'flapPixels cols');
+	rows = countOf(rows, 'flapPixels rows');
+	const { w, h } = cardOf(card, 'flapPixels');
+	const [gx, gy] = (typeof gap === 'number' ? [gap, gap] : gap).map((g) =>
+		Math.round(finitePx(g, 'flapPixels gap'))
+	);
 	const { half, hinge } = cut(h);
 	const parts: FlapPart[] = [];
 	const cards: PixelRect[] = [];
@@ -114,8 +124,7 @@ const ABOVE = 4;
  * prints as its hollow missing-glyph box; a blank prints nothing.
  */
 export function flapGlyph(char: string, card: FlapCard, options: FlapGlyphOptions = {}): FlapGlyph {
-	const w = Math.max(1, Math.floor(card[0]));
-	const h = Math.max(3, Math.floor(card[1]));
+	const { w, h } = cardOf(card, 'flapGlyph');
 	const { half, hinge } = cut(h);
 	const { width: fw, height: fh } = FONT_5X7;
 	const fits = Math.min(Math.floor(w / fw), Math.floor(half / ABOVE));
@@ -170,12 +179,9 @@ export const FLAP_FLIGHT = 0x200;
  * Shading the falling card's rows is what makes a 5-row fold read as a card: its front lit
  * as it swings up toward the light, its back dim, both by `sin θ`.
  */
-export function flapRows(
-	fall: number,
-	card: FlapCard,
-	out: Int16Array = new Int16Array(Math.max(3, Math.floor(card[1])))
-): Int16Array {
-	const h = Math.max(3, Math.floor(card[1]));
+export function flapRows(fall: number, card: FlapCard, out?: Int16Array): Int16Array {
+	const { h } = cardOf(card, 'flapRows');
+	out ??= new Int16Array(h);
 	const { half, hinge } = cut(h);
 	for (let y = 0; y < h; y++) out[y] = y;
 	if (!(fall >= 0)) return out;
@@ -244,11 +250,11 @@ function plan(
 ): Plan {
 	const a = typeof from === 'string' ? from.split('\n') : from;
 	const b = typeof to === 'string' ? to.split('\n') : to;
-	const nc = Math.max(
-		1,
-		Math.floor(cols ?? Math.max(0, ...[...a, ...b].map((l) => flapsOf(l).length)))
+	const nc = countOf(
+		cols ?? Math.max(0, ...[...a, ...b].map((l) => flapsOf(l).length)),
+		'flap state cols'
 	);
-	const nr = Math.max(1, Math.floor(rows ?? Math.max(a.length, b.length)));
+	const nr = countOf(rows ?? Math.max(a.length, b.length), 'flap state rows');
 	const cache = new Map<string, string[]>();
 	const drum = (cs: string) => {
 		let f = cache.get(cs);

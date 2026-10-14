@@ -2,8 +2,8 @@
 // into its own low-resolution raster (the way @glowbox/lcd hands out its 5×7 font). One
 // digit's rects are `pixelSegments` (shared/pixel-segments.ts). The caller paints them;
 // `on: false` segments are the unlit ghosts a real display shows.
-import type { PixelLayout, PixelPart } from './pixel';
-import { type PixelDigitOptions, pixelSegments } from './pixel-segments';
+import { type PixelLayout, type PixelPart, wholePx } from './pixel';
+import { digitSize, type PixelDigitOptions, pixelSegments } from './pixel-segments';
 import { litSegments, type SegmentName } from './seven';
 import { type Wear, wearLevels } from './wear';
 
@@ -31,11 +31,13 @@ export interface PixelSegment extends PixelPart {
  * gives all seven segments, lit or not; `:` is a colon, its two dots one part in a slot a
  * stroke wide; `.` lights the decimal point of the digit before it; a space, or anything
  * `litSegments` doesn't know, is a digit with nothing lit. Rects are from the row's
- * top-left.
+ * top-left. Sizes round to whole pixels; one not finite, a negative gap or a digit too
+ * small for its segments (height 3 strokes + 2, width 2 strokes + 1) is a RangeError.
  */
 export function pixelText(text: string, options: PixelTextOptions): PixelLayout<PixelSegment> {
-	const { height, stroke = 1, gap = 2 * stroke, colon = true } = options;
-	const width = options.width ?? Math.round(height / 2);
+	const { height, stroke, width } = digitSize('pixelText', options.height, options);
+	const gap = wholePx(options.gap ?? 2 * stroke, 'pixelText gap', 0);
+	const { colon = true } = options;
 	const digit = pixelSegments(height, { stroke, width });
 	const mid = Math.floor((height - stroke) / 2);
 	const parts: PixelSegment[] = [];

@@ -105,19 +105,22 @@ export const FlipDots = defineComponent({
 			props.oncreate?.(dots);
 		});
 
-		// Live-update the shown frame.
-		watch(
-			() => props.frame,
-			(f) => {
-				if (f) dots?.setFrame(f);
-			}
-		);
-
 		// Live-update appearance when any option changes.
 		watch(
 			() => options(),
 			() => dots?.setOptions(options()),
 			{ deep: true }
+		);
+
+		// Live-update the shown frame, and re-push it on a cols/rows change: a re-tiled
+		// board powers up dark. `flush: 'post'` runs it after the options watch above
+		// whatever order the props updated in (pre watchers run in trigger order).
+		watch(
+			[() => props.frame, () => props.cols, () => props.rows],
+			([f]) => {
+				if (f) dots?.setFrame(f);
+			},
+			{ flush: 'post' }
 		);
 
 		onUnmounted(() => {

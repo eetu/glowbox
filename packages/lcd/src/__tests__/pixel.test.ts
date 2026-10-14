@@ -51,6 +51,12 @@ describe('lcdPixels', () => {
 		expect(second({ dot: 1, pitch: 2 })).toEqual({ x: 2, y: 0, w: 1, h: 1 });
 		expect(lcdPixels({ dot: 1, pitch: 2 }).width).toBe(189);
 	});
+
+	it('a size that is not a finite number throws instead of laying out NaN or forever', () => {
+		for (const bad of [NaN, Infinity])
+			for (const key of ['cols', 'rows', 'dot', 'pitch'])
+				expect(() => lcdPixels({ [key]: bad })).toThrow(new RegExp(`lcdPixels ${key}`));
+	});
 });
 
 describe('lcdTargets', () => {

@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 
 import { createSevenSegment } from '../seven';
 
@@ -148,5 +148,39 @@ test('theme light deepens the module shadow so it sits on a pale page', () => {
 	d.setOptions({ theme: 'dark' });
 	expect(marginAlpha()).toBeLessThan(light);
 	d.dispose();
+	canvas.remove();
+});
+
+/** How many timeouts and animation frames `calls` asks for. */
+const scheduled = (calls: () => void) => {
+	const timeout = vi.spyOn(window, 'setTimeout');
+	const frame = vi.spyOn(window, 'requestAnimationFrame');
+	try {
+		calls();
+		return { timeouts: timeout.mock.calls.length, frames: frame.mock.calls.length };
+	} finally {
+		timeout.mockRestore();
+		frame.mockRestore();
+	}
+};
+
+test('dispose is final: later calls schedule, paint and label nothing', async () => {
+	const canvas = makeCanvas();
+	const d = createSevenSegment(canvas, { value: 8 });
+	if (!d) return;
+	d.dispose();
+	d.dispose();
+	const before = canvas.toDataURL();
+	const counts = scheduled(() => {
+		d.setValue(3);
+		d.setOptions({ age: 0.9, value: 5, dp: true, label: 'clock' });
+		d.resize();
+		d.snapshot();
+	});
+	expect(counts).toEqual({ timeouts: 0, frames: 0 });
+	expect(canvas.getAttribute('role')).toBeNull();
+	expect(canvas.getAttribute('aria-label')).toBeNull();
+	await new Promise((r) => setTimeout(r, 300));
+	expect(canvas.toDataURL()).toBe(before);
 	canvas.remove();
 });

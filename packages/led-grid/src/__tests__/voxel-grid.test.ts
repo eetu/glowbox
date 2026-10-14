@@ -67,6 +67,65 @@ describe('voxel-grid', () => {
 			expect(adjacent(ordered[i - 1], ordered[i])).toBe(true);
 	});
 
+	test('a line partly off the grid lights the voxels the full walk does, in the same order', () => {
+		// The full Bresenham walk, every step, for reference.
+		const walked = (a: Vec3, b: Vec3, n: number): number[] => {
+			let [x, y, z] = a;
+			const d = [0, 1, 2].map((i) => Math.abs(b[i] - a[i]));
+			const s = [0, 1, 2].map((i) => (a[i] < b[i] ? 1 : -1));
+			const dm = Math.max(...d);
+			const e = [dm / 2, dm / 2, dm / 2];
+			const cells: number[] = [];
+			for (let i = 0; i <= dm; i++) {
+				if (x >= 0 && x < n && y >= 0 && y < n && z >= 0 && z < n) cells.push(x + n * (y + n * z));
+				const p = [x, y, z];
+				for (let k = 0; k < 3; k++) {
+					e[k] -= d[k];
+					if (e[k] < 0) {
+						e[k] += dm;
+						p[k] += s[k];
+					}
+				}
+				[x, y, z] = p;
+			}
+			return cells;
+		};
+		let seed = 7;
+		const rand = (lo: number, hi: number) => {
+			seed = (seed * 16807) % 2147483647;
+			return lo + (seed % (hi - lo + 1));
+		};
+		for (let i = 0; i < 400; i++) {
+			const reach = i < 200 ? 30 : 5000;
+			const a: Vec3 = [rand(-reach, reach), rand(-reach, reach), rand(-reach, reach)];
+			const b: Vec3 = [rand(-reach, reach), rand(-reach, reach), rand(-reach, reach)];
+			const g = createVoxelGrid(8, 8, 8);
+			g.line(a, b, [1, 1, 1]);
+			const order = Array.from(g.active.list.subarray(0, g.active.count));
+			expect(order, `${a} → ${b}`).toEqual(walked(a, b, 8));
+		}
+	});
+
+	test('a line from far off the grid costs only its visible part; non-finite ends draw nothing', () => {
+		const g = createVoxelGrid(8, 8, 8);
+		const t0 = performance.now();
+		g.line([0, 0, 0], [2e9, 5, 5], [1, 1, 1]);
+		expect(litVoxels(g)).toEqual([0, 1, 2, 3, 4, 5, 6, 7].map((x) => [x, 0, 0]));
+		g.clear();
+		// Crossing the grid halfway along a 4e9-step walk (past 2^53 in the closed form)
+		// lights what the same line scaled down to a 40-step walk does.
+		g.line([-2e9, -1e9, 3], [2e9, 1e9, 4], [1, 1, 1]);
+		expect(performance.now() - t0).toBeLessThan(100);
+		const small = createVoxelGrid(8, 8, 8);
+		small.line([-20, -10, 3], [20, 10, 4], [1, 1, 1]);
+		expect(litVoxels(g)).toEqual(litVoxels(small));
+		expect(litVoxels(g)).toHaveLength(8);
+		g.clear();
+		g.line([0, 0, 0], [NaN, 5, 5], [1, 1, 1]);
+		g.line([Infinity, 0, 0], [1, 1, 1], [1, 1, 1]);
+		expect(litVoxels(g)).toHaveLength(0);
+	});
+
 	test('box wireframe lights edges only; filled lights the volume', () => {
 		const wire = createVoxelGrid(3, 3, 3);
 		wire.box([0, 0, 0], [2, 2, 2], [1, 1, 1]);

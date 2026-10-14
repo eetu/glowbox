@@ -109,11 +109,6 @@
 		};
 	});
 
-	// Live-update the shown text.
-	$effect(() => {
-		if (text != null) flaps?.setText(text);
-	});
-
 	// Live-update appearance when any option changes.
 	$effect(() => {
 		flaps?.setOptions({
@@ -134,6 +129,14 @@
 			theme,
 			label
 		});
+	});
+
+	// Live-update the shown text. Declared after the options effect so it runs after
+	// setOptions, and re-run on a cols/rows change: a re-tiled board powers up blank.
+	$effect(() => {
+		void cols;
+		void rows;
+		if (text != null) flaps?.setText(text);
 	});
 </script>
 

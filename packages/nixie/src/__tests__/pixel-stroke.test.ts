@@ -66,3 +66,16 @@ test('strokeRects: a 2 px brush and a closed loop', () => {
 	);
 	expect(loop).toHaveLength(12);
 });
+
+test('strokeRects: a point off the number line covers nothing', () => {
+	for (const bad of [NaN, Infinity, -Infinity]) {
+		expect(
+			strokeRects([
+				[0, 0],
+				[bad, 3]
+			])
+		).toEqual([]);
+		expect(strokeRects([[bad, 0]])).toEqual([]);
+	}
+	expect(strokeRects([[0, 0]], { width: NaN })).toEqual([]);
+});

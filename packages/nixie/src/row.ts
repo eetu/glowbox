@@ -74,6 +74,7 @@ export function createNixieRow(
 
 	const tubes: NixieTube[] = [];
 	const slots: HTMLCanvasElement[] = [];
+	let disposed = false; // dispose() is final: every later handle call is a no-op
 
 	function applyAria() {
 		container.setAttribute('role', 'img');
@@ -141,10 +142,12 @@ export function createNixieRow(
 
 	return {
 		setValue(v) {
+			if (disposed) return;
 			value = norm(v);
 			sync();
 		},
 		setOptions(patch) {
+			if (disposed) return;
 			if (patch.gap != null) gap = patch.gap;
 			if (patch.digitAspect != null) digitAspect = patch.digitAspect;
 			if (patch.separatorScale != null) separatorScale = patch.separatorScale;
@@ -158,6 +161,7 @@ export function createNixieRow(
 			sync();
 		},
 		resize() {
+			if (disposed) return;
 			layout();
 			for (const t of tubes) t.resize();
 		},
@@ -165,6 +169,8 @@ export function createNixieRow(
 			return tubes;
 		},
 		dispose() {
+			if (disposed) return;
+			disposed = true;
 			ro?.disconnect();
 			for (const t of tubes) t.dispose();
 			tubes.length = 0;
@@ -172,6 +178,7 @@ export function createNixieRow(
 			wrap.remove();
 			container.removeAttribute('role');
 			container.removeAttribute('aria-label');
+			container.removeAttribute('aria-hidden');
 		}
 	};
 }

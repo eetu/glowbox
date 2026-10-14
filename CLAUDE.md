@@ -43,7 +43,7 @@ examples/
                                  cutout) — pixel sizes spill a phone-width board.
                                  /vfd is two panels sharing one envelope option set + one scene clock: faceplate (segment field + annunciators + dial + tape/disc transport + dot ticker) and the analyser strip, which is ONE window with three jobs picked by source (20-band spectrum, EQ curve laid over it, and a 4:3 GIF `dots` area on the `gif` source = the DISPLAY button). Both panels read the same clock or they'd disagree about the scene.
 shared/                        — the ONE copy of each file more than one package needs
-                                 (color.ts, theme.ts, sound.ts, font5x7.ts, latin5x7.ts, path-parse.ts, and the
+                                 (color.ts, theme.ts, fit.ts, sound.ts, font5x7.ts, latin5x7.ts, path-parse.ts, and the
                                  pixel set: pixel.ts, pixel-stroke.ts, pixel-segments.ts,
                                  wear.ts), SYMLINKED
                                  into each package's src/. See Conventions → Shared sources.
@@ -75,7 +75,7 @@ Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
   one is genuinely zero-dep. Cores set `role="img"` + `aria-label` (the `label` option).
 - **Shared sources = `shared/` + symlinks.** The files more than one package needs live once
   in `shared/` and are **symlinked** into each package's `src/` (`color.ts` ×9, `theme.ts`
-  ×8, `sound.ts` ×3, `font5x7.ts` ×4, `latin5x7.ts` ×2, `path-parse.ts` ×3; for the pixel
+  ×8, `fit.ts` ×8 (not crt: its canvas is its own and CSS-sized), `sound.ts` ×3, `font5x7.ts` ×4, `latin5x7.ts` ×2, `path-parse.ts` ×3; for the pixel
   exports `pixel.ts` ×7, `pixel-stroke.ts` ×5, `pixel-segments.ts` ×2, `wear.ts` ×6). Editing `shared/x.ts` edits it for all of them.
   Nothing depends on it at runtime — each bundler inlines the file, so the dists and the
   zero-dep claim are unchanged; this replaced hand-copied duplicates that were identical only

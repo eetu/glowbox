@@ -29,6 +29,7 @@
 // Give it a canvas, a frame and a layout; drive it with set/light/bars. Import-safe
 // under node/SSR (no browser globals at module scope; Path2D built lazily).
 import { type Color, parseColor, type RGB } from './color';
+import { fitCanvas, measureCanvas } from './fit';
 import {
 	compilePanel,
 	driveElement,
@@ -300,6 +301,7 @@ export function createVfdPanel(
 	let raf = 0;
 	let lastT = 0;
 	let flickerTimer: ReturnType<typeof setTimeout> | null = null;
+	let disposed = false; // dispose() is final: every later handle call is a no-op
 
 	// `precompiled` lets a caller compile first and commit after, so a layout that throws
 	// (a frame with no area) leaves the panel exactly as it was — see `setLayout`.
@@ -877,17 +879,9 @@ export function createVfdPanel(
 	}
 
 	function resize() {
-		const cap = pixelRatio > 0 ? pixelRatio : 1;
-		dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, cap);
-		const r = canvas.getBoundingClientRect();
-		w = Math.max(1, r.width || canvas.clientWidth || 1);
-		h = Math.max(1, r.height || canvas.clientHeight || 1);
-		if (Math.abs(w - canvas.width) < 1 && Math.abs(h - canvas.height) < 1) {
-			canvas.style.width = `${w}px`;
-			canvas.style.height = `${h}px`;
-		}
-		canvas.width = Math.max(1, Math.round(w * dpr));
-		canvas.height = Math.max(1, Math.round(h * dpr));
+		const box = measureCanvas(canvas, pixelRatio);
+		({ w, h, dpr } = box);
+		fitCanvas(canvas, box);
 		draw();
 	}
 
@@ -917,6 +911,7 @@ export function createVfdPanel(
 
 	return {
 		set(name, value) {
+			if (disposed) return;
 			const e = elementIndex(name);
 			if (e == null || !expectKind(e, name, 'set')) return;
 			if (panel.elements[e].kind === 'scale') states[e].pos = clamp01(Number(value));
@@ -926,6 +921,7 @@ export function createVfdPanel(
 			else animate();
 		},
 		light(name, lit) {
+			if (disposed) return;
 			const e = elementIndex(name);
 			if (e == null || !expectKind(e, name, 'light')) return;
 			states[e].on = lit;
@@ -934,6 +930,7 @@ export function createVfdPanel(
 			else animate();
 		},
 		setBars(name, levels) {
+			if (disposed) return;
 			const e = elementIndex(name);
 			if (e == null || !expectKind(e, name, 'setBars')) return;
 			const el = panel.elements[e];
@@ -951,6 +948,7 @@ export function createVfdPanel(
 			else animate();
 		},
 		setDots(name, bitmap) {
+			if (disposed) return;
 			const e = elementIndex(name);
 			if (e == null || !expectKind(e, name, 'setDots')) return;
 			if (typeof bitmap === 'function') {
@@ -966,6 +964,7 @@ export function createVfdPanel(
 			else animate();
 		},
 		clear(name) {
+			if (disposed) return;
 			if (name == null) {
 				// The whole panel: every drivable element stops. Silkscreen is ink and stays.
 				for (let e = 0; e < panel.elements.length; e++) {
@@ -988,6 +987,7 @@ export function createVfdPanel(
 			else animate();
 		},
 		setLayout(next, nextFrame) {
+			if (disposed) return;
 			const wantFrame = nextFrame ?? frame;
 			const changed =
 				next !== currentLayout || wantFrame[0] !== frame[0] || wantFrame[1] !== frame[1];
@@ -1002,9 +1002,11 @@ export function createVfdPanel(
 			if (reduced || persistence <= 0) settle();
 			else animate();
 		},
-		selfTest: runSelfTest,
+		selfTest() {
+			if (!disposed) runSelfTest();
+		},
 		power(next) {
-			if (next === on) return;
+			if (disposed || next === on) return;
 			on = next;
 			applyAria();
 			if (on && selfTestOnPower) runSelfTest();
@@ -1041,6 +1043,7 @@ export function createVfdPanel(
 			};
 		},
 		setOptions(patch) {
+			if (disposed) return;
 			// A colour named in this patch is the consumer's for good, so mark it before
 			// the theme gets a chance to move it.
 			themed.mark(patch);
@@ -1086,12 +1089,16 @@ export function createVfdPanel(
 			if (reduced || persistence <= 0) settle();
 			else animate();
 		},
-		resize,
+		resize() {
+			if (!disposed) resize();
+		},
 		snapshot() {
-			draw();
+			if (!disposed) draw();
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			if (disposed) return;
+			disposed = true;
 			stopTheme();
 			ro?.disconnect();
 			if (raf) cancelAnimationFrame(raf);

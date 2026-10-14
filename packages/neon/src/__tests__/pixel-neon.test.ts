@@ -109,6 +109,17 @@ test('neonPixels: a flat rule is a line under the word, not a sign millions of p
 	expect(new Set(rule.rects.map((r) => r.y)).size).toBe(1); // one row of glass
 });
 
+test('neonPixels: capHeight rounds to whole pixels; not finite or under a pixel throws', () => {
+	expect(neonPixels('Hi', { capHeight: 13.6 })).toEqual(neonPixels('Hi', { capHeight: 14 }));
+	for (const bad of [NaN, Infinity, 0, -3])
+		expect(() => neonPixels('Hi', { capHeight: bad })).toThrow(RangeError);
+	expect(() => neonPixels('Hi', { capHeight: 14, stroke: NaN })).toThrow(/stroke/);
+	// A frame of no size is no frame, not a sign 1e6 times the piece.
+	const art = (frame?: [number, number]) =>
+		neonPixels('A', { capHeight: 14, font: 'sans', art: [{ d: 'M0 0 L100 100', frame }] });
+	expect(art([0, 0])).toEqual(art());
+});
+
 test('neonLevels: lit by default, unlit glass when off, the same at the same moment', () => {
 	const sign = neonPixels('HOTEL', { capHeight: 9, font: 'sans', tubes: 'glyph' });
 	expect([...neonLevels(sign, 3)]).toEqual([1, 1, 1, 1, 1]);

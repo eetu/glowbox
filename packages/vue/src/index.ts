@@ -26,7 +26,29 @@ export type {
 	PanelName,
 	PanelSpec
 } from '@glowbox/lcd';
-export type * from '@glowbox/led-grid';
+// Listed rather than `export type *`: the declaration bundler turns a star re-export into
+// a value re-export, advertising led-grid's functions, which this package doesn't ship.
+export type {
+	Axis,
+	CameraOptions,
+	Color,
+	ColorOptions,
+	DisplayStats,
+	InteractionOptions,
+	LedDisplay,
+	LedDisplayOptions,
+	LedDisplayPatch,
+	LedOptions,
+	LedShape,
+	LedStyle,
+	Projection,
+	QualityOptions,
+	RGB,
+	RgbLayout,
+	Theme,
+	Vec3,
+	VoxelGrid
+} from '@glowbox/led-grid';
 export type {
 	GasName,
 	NeonFont,

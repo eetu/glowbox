@@ -126,11 +126,6 @@ export const SplitFlap = forwardRef<SplitFlapBoard | null, SplitFlapProps>(
 
 		useImperativeHandle<SplitFlapBoard | null, SplitFlapBoard | null>(ref, () => flaps, [flaps]);
 
-		// Live-update the shown text.
-		useEffect(() => {
-			if (text != null) flaps?.setText(text);
-		}, [flaps, text]);
-
 		// Live-update appearance when any option changes.
 		useEffect(() => {
 			flaps?.setOptions({
@@ -170,6 +165,12 @@ export const SplitFlap = forwardRef<SplitFlapBoard | null, SplitFlapProps>(
 			theme,
 			label
 		]);
+
+		// Live-update the shown text. Declared after the options effect so it runs after
+		// setOptions, and re-run on a cols/rows change: a re-tiled board powers up blank.
+		useEffect(() => {
+			if (text != null) flaps?.setText(text);
+		}, [flaps, text, cols, rows]);
 
 		return <canvas ref={canvasRef} className={className} style={{ ...baseStyle, ...style }} />;
 	}

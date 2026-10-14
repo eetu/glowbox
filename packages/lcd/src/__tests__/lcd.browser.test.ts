@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 
 import { LATIN_5X7 } from '../latin5x7';
 import { createLcdModule } from '../lcd';
@@ -282,6 +282,73 @@ test('snapshot returns a PNG and survives absurdly small canvases', () => {
 	const canvas = makeCanvas(8, 4);
 	const lcd = createLcdModule(canvas, { ...quiet, text: 'HI' })!;
 	expect(lcd.snapshot().startsWith('data:image/png')).toBe(true);
+	lcd.dispose();
+	canvas.remove();
+});
+
+/** How many timeouts and animation frames `calls` asks for. */
+const scheduled = (calls: () => void) => {
+	const timeout = vi.spyOn(window, 'setTimeout');
+	const frame = vi.spyOn(window, 'requestAnimationFrame');
+	try {
+		calls();
+		return { timeouts: timeout.mock.calls.length, frames: frame.mock.calls.length };
+	} finally {
+		timeout.mockRestore();
+		frame.mockRestore();
+	}
+};
+
+test('dispose is final: later calls schedule, paint and label nothing', async () => {
+	const canvas = makeCanvas();
+	const lcd = createLcdModule(canvas, { text: 'HELLO' });
+	if (!lcd) return;
+	lcd.dispose();
+	lcd.dispose();
+	const before = canvas.toDataURL();
+	const counts = scheduled(() => {
+		lcd.setText('WORLD');
+		lcd.setLine(1, 'AGAIN');
+		lcd.setGlyph(0, [31, 31, 31, 31, 31, 31, 31, 31]);
+		lcd.setCursor(2, 1);
+		lcd.power(false);
+		lcd.power(true);
+		lcd.setOptions({ age: 0.9, cursor: 'block', text: 'X', on: true, label: 'lcd' });
+		lcd.resize();
+		lcd.snapshot();
+	});
+	expect(counts).toEqual({ timeouts: 0, frames: 0 });
+	expect(canvas.getAttribute('role')).toBeNull();
+	expect(canvas.getAttribute('aria-label')).toBeNull();
+	await sleep(300);
+	expect(canvas.toDataURL()).toBe(before);
+	canvas.remove();
+});
+
+test('a dispose landing mid-dip leaves no flicker behind', () => {
+	// Math.random 0 pins the schedule: the dip starts 400 ms in and recovers 60 ms later.
+	vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+	const random = vi.spyOn(Math, 'random').mockReturnValue(0);
+	try {
+		const canvas = makeCanvas();
+		const lcd = createLcdModule(canvas, { ...quiet, cursor: 'none', age: 0.9, text: 'HELLO' })!;
+		vi.advanceTimersByTime(400);
+		lcd.dispose();
+		expect(vi.getTimerCount()).toBe(0);
+		canvas.remove();
+	} finally {
+		random.mockRestore();
+		vi.useRealTimers();
+	}
+});
+
+test('setOptions works detached from the module (text and on route through the handle)', () => {
+	const canvas = makeCanvas();
+	const lcd = createLcdModule(canvas, { ...quiet, text: 'HELLO' });
+	if (!lcd) return;
+	const { setOptions } = lcd;
+	expect(() => setOptions({ text: 'BYE', on: true })).not.toThrow();
+	expect(canvas.getAttribute('aria-label')).toBe('lcd display: BYE');
 	lcd.dispose();
 	canvas.remove();
 });
