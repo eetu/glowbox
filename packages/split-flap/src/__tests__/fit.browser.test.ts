@@ -2,7 +2,7 @@ import { afterEach, expect, test } from 'vitest';
 
 import { createSplitFlap } from '../split-flap';
 
-const mount = (canvas: HTMLCanvasElement) => createSplitFlap(canvas, { cols: 4, text: 'GLOW' })!;
+const mount = (canvas: HTMLCanvasElement) => createSplitFlap(canvas, { cols: 4 })!;
 
 const frames = (n: number) =>
 	new Promise<void>((done) => {
