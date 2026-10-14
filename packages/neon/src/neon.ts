@@ -792,6 +792,7 @@ export function createNeonSign(
 	// dropouts); a resting sign — lit or dark — costs nothing.
 	let raf = 0;
 	let lastT = 0;
+	let disposed = false; // dispose() is final: every later handle call is a no-op
 
 	function snapAll() {
 		for (let i = 0; i < n; i++) {
@@ -1049,8 +1050,9 @@ export function createNeonSign(
 	pushHum();
 	syncAll();
 
-	return {
+	const handle: NeonSign = {
 		setText(t) {
+			if (disposed) return;
 			const next = String(t ?? '');
 			if (next === text) return;
 			text = next;
@@ -1065,7 +1067,7 @@ export function createNeonSign(
 			// what an unstable tube looks like (dip depth, eased recovery, the
 			// re-strike through its ignition pops, the hum ducking with it) exactly
 			// as the `flicker` scheduler does — the consumer owns when it happens.
-			if (n === 0) return;
+			if (disposed || n === 0) return;
 			const hit = section == null ? -1 : Math.floor(section);
 			const targets = hit >= 0 && hit < n ? [hit] : Array.from({ length: n }, (_, i) => i);
 			let struck = false;
@@ -1142,7 +1144,7 @@ export function createNeonSign(
 			};
 		},
 		power(v) {
-			if (v === on) return;
+			if (disposed || v === on) return;
 			on = v;
 			if (on) beginStrikes();
 			else {
@@ -1155,6 +1157,7 @@ export function createNeonSign(
 			syncAll();
 		},
 		setOptions(patch) {
+			if (disposed) return;
 			let rebuild = false;
 			let redraw = false;
 			// Anything named in this patch becomes the consumer's for good, so mark it
@@ -1169,7 +1172,7 @@ export function createNeonSign(
 				redraw = true;
 			}
 			if (patch.text !== undefined && patch.text !== text) {
-				this.setText(patch.text);
+				handle.setText(patch.text);
 			}
 			if (patch.font !== undefined && patch.font !== font) {
 				font = patch.font;
@@ -1314,7 +1317,7 @@ export function createNeonSign(
 				label = patch.label;
 				applyAria();
 			}
-			if (patch.on != null && patch.on !== on) this.power(patch.on);
+			if (patch.on != null && patch.on !== on) handle.power(patch.on);
 			if (patch.pixelRatio != null) {
 				pixelRatio = patch.pixelRatio;
 				resize();
@@ -1325,12 +1328,16 @@ export function createNeonSign(
 			syncAll();
 			animate();
 		},
-		resize,
+		resize() {
+			if (!disposed) resize();
+		},
 		snapshot() {
-			draw();
+			if (!disposed) draw();
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			if (disposed) return;
+			disposed = true;
 			stopTheme();
 			ro?.disconnect();
 			if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVis);
@@ -1346,4 +1353,5 @@ export function createNeonSign(
 			canvas.removeAttribute('aria-hidden');
 		}
 	};
+	return handle;
 }

@@ -1,7 +1,7 @@
 // The render path on a real canvas (headless chromium): lit pixels, the unlit
 // glass floor, strike timing, the wear arc, per-line colours, the transparent
 // wall, aria, and the flash cam. Assertions read pixels back off the 2D canvas.
-import { afterEach, expect, test } from 'vitest';
+import { afterEach, expect, test, vi } from 'vitest';
 
 import { createNeonSign, type NeonSignOptions } from '../index';
 
@@ -528,4 +528,54 @@ test('the flash cam cycles the sign without exact-timing assumptions', async () 
 	const max = Math.max(...samples);
 	expect(max).toBeGreaterThan(0);
 	expect(min).toBeLessThan(max * 0.5); // it went dark and came back
+});
+
+/** How many timeouts and animation frames `calls` asks for. */
+const scheduled = (calls: () => void) => {
+	const timeout = vi.spyOn(window, 'setTimeout');
+	const frame = vi.spyOn(window, 'requestAnimationFrame');
+	try {
+		calls();
+		return { timeouts: timeout.mock.calls.length, frames: frame.mock.calls.length };
+	} finally {
+		timeout.mockRestore();
+		frame.mockRestore();
+	}
+};
+
+test('dispose is final: later calls schedule, paint and label nothing', async () => {
+	const { canvas, sign } = mount({ text: 'OPEN' });
+	sign.dispose();
+	sign.dispose();
+	const before = canvas.toDataURL();
+	const counts = scheduled(() => {
+		sign.setText('CLOSED');
+		sign.power(false);
+		sign.power(true);
+		sign.jolt();
+		sign.setOptions({
+			text: 'BAR',
+			on: false,
+			age: 0.9,
+			flicker: 0.5,
+			tired: true,
+			program: 'flash',
+			label: 'sign',
+			pixelRatio: 1
+		});
+		sign.resize();
+		sign.snapshot();
+	});
+	expect(counts).toEqual({ timeouts: 0, frames: 0 });
+	expect(canvas.getAttribute('role')).toBeNull();
+	expect(canvas.getAttribute('aria-label')).toBeNull();
+	await wait(300);
+	expect(canvas.toDataURL()).toBe(before);
+});
+
+test('setOptions works detached from the sign (text and on route through the handle)', () => {
+	const { canvas, sign } = mount({ text: 'OPEN', strikeMs: 0 });
+	const { setOptions } = sign;
+	expect(() => setOptions({ text: 'SHUT', on: false })).not.toThrow();
+	expect(canvas.getAttribute('aria-label')).toBe('neon sign: SHUT');
 });

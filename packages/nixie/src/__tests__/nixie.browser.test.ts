@@ -159,3 +159,20 @@ test('theme light sits the dark tube on a pale page: heavier shadow, brighter ri
 	tube.dispose();
 	canvas.remove();
 });
+
+test('dispose is final: later calls paint and label nothing', () => {
+	const canvas = makeCanvas();
+	const tube = createNixieTube(canvas, { value: 8 });
+	if (!tube) return;
+	tube.dispose();
+	tube.dispose();
+	const before = canvas.toDataURL();
+	tube.setValue(3);
+	tube.setOptions({ value: 5, label: 'clock', pixelRatio: 1 });
+	tube.resize();
+	tube.snapshot();
+	expect(canvas.getAttribute('role')).toBeNull();
+	expect(canvas.getAttribute('aria-label')).toBeNull();
+	expect(canvas.toDataURL()).toBe(before);
+	canvas.remove();
+});

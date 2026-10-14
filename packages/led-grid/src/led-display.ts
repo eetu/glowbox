@@ -267,6 +267,9 @@ export function createLedDisplay(
 	let pixelRatio = q.pixelRatio ?? 2;
 	let paused = q.paused ?? false;
 	let fpsCap = q.fps ?? 0; // 0 = uncapped (render every animation frame)
+	// dispose() is final: every later handle call is a no-op, except the voxel writes,
+	// which land in the buffer and touch neither GL nor the DOM.
+	let disposed = false;
 
 	let label = opts.label || 'LED grid';
 	// A WebGL canvas is a black box to assistive tech — name it.
@@ -392,7 +395,8 @@ export function createLedDisplay(
 	canvas.addEventListener('webglcontextrestored', onContextRestored);
 
 	function render() {
-		if (contextLost) return; // nothing to draw into until the context is restored
+		// Nothing to draw into: a lost context until it is restored, or a disposed display.
+		if (contextLost || disposed) return;
 		renderer.render({ yaw, pitch, dist: distance, fov, gain, projection }, grid.active);
 	}
 	// When frozen, repaint on demand (interaction / resize); otherwise the loop covers it.
@@ -449,7 +453,7 @@ export function createLedDisplay(
 		}
 	}
 	function setPaused(b: boolean) {
-		if (b === paused) return;
+		if (disposed || b === paused) return;
 		paused = b;
 		if (paused) {
 			stop();
@@ -476,6 +480,7 @@ export function createLedDisplay(
 	}
 
 	function setOptions(patch: LedDisplayPatch) {
+		if (disposed) return;
 		// A colour or style named in this patch is the consumer's for good, so mark it
 		// before the theme gets a chance to move it.
 		if (patch.color?.background !== undefined) themed.mark({ background: patch.color.background });
@@ -585,7 +590,7 @@ export function createLedDisplay(
 			grid.cylinder(base, radius, height, c, filled, axis),
 		stats,
 		onFrame(cb) {
-			frameCbs.add(cb);
+			if (!disposed) frameCbs.add(cb);
 			requestRender();
 			return () => {
 				frameCbs.delete(cb);
@@ -593,23 +598,29 @@ export function createLedDisplay(
 		},
 		render,
 		setGain(g) {
+			if (disposed) return;
 			gain = g;
 			requestRender();
 		},
 		setPaused,
 		setOptions,
 		setCamera(c) {
+			if (disposed) return;
 			if (c.yaw != null) yaw = c.yaw;
 			if (c.pitch != null) pitch = clamp(c.pitch, pitchLimits[0], pitchLimits[1]);
 			if (c.distance != null) distance = clamp(c.distance, zoomLimits[0], zoomLimits[1]);
 			requestRender();
 		},
-		resize,
+		resize(size) {
+			if (!disposed) resize(size);
+		},
 		snapshot() {
 			render();
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			if (disposed) return;
+			disposed = true;
 			stopTheme();
 			stop();
 			ro?.disconnect();

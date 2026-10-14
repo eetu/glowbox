@@ -319,6 +319,7 @@ export function createLcdModule(
 	// --- the crystals ---------------------------------------------------------------
 	let raf = 0;
 	let lastT = 0;
+	let disposed = false; // dispose() is final: every later handle call is a no-op
 	function step(now: number) {
 		raf = 0;
 		const dt = Math.min(0.05, (now - lastT) / 1000);
@@ -357,21 +358,21 @@ export function createLcdModule(
 		}, BLINK_MS);
 	}
 
+	// One slot for both phases: the wait for a dip, then the dip's recovery — so a
+	// resync or dispose mid-dip cancels whichever is pending.
 	let flickerTimer: ReturnType<typeof setTimeout> | undefined;
 	function syncFlicker() {
 		clearTimeout(flickerTimer);
 		flickerTimer = undefined;
-		if (reduced || age < FLICKER_AT) {
-			flickerDim = 0;
-			return;
-		}
+		flickerDim = 0;
+		if (reduced || age < FLICKER_AT) return;
 		flickerTimer = setTimeout(
 			() => {
 				// Past DIE_AT the most-worn driver is gone for good — the runner-up
 				// inherits the instability.
 				flickerDim = 0.3 + Math.random() * 0.5;
 				draw();
-				setTimeout(
+				flickerTimer = setTimeout(
 					() => {
 						flickerDim = 0;
 						draw();
@@ -537,7 +538,7 @@ export function createLcdModule(
 	if (on) beginBoot();
 	else retarget();
 
-	return {
+	const handle: LcdModule = {
 		get cols() {
 			return cols;
 		},
@@ -545,11 +546,13 @@ export function createLcdModule(
 			return rows;
 		},
 		setText(text) {
+			if (disposed) return;
 			lines = layLines(text, cols, rows);
 			applyAria();
 			if (!booting) retarget();
 		},
 		setLine(row, text) {
+			if (disposed) return;
 			row = Math.floor(row);
 			if (!(row >= 0 && row < rows)) return;
 			lines[row] = layLines(text, cols, 1)[0];
@@ -557,6 +560,7 @@ export function createLcdModule(
 			if (!booting) retarget();
 		},
 		setGlyph(slot, glyphRows) {
+			if (disposed) return;
 			slot = Math.floor(slot);
 			if (!(slot >= 0 && slot < 8)) {
 				if (!warnedGlyph) {
@@ -570,12 +574,13 @@ export function createLcdModule(
 			if (!booting) retarget();
 		},
 		setCursor(col, row) {
+			if (disposed) return;
 			cursorX = Math.max(0, Math.min(cols - 1, Math.floor(col) || 0));
 			cursorY = Math.max(0, Math.min(rows - 1, Math.floor(row) || 0));
 			if (!booting) retarget();
 		},
 		power(v) {
-			if (v === on) return;
+			if (disposed || v === on) return;
 			on = v;
 			applyAria();
 			if (on) beginBoot();
@@ -611,6 +616,7 @@ export function createLcdModule(
 			};
 		},
 		setOptions(patch) {
+			if (disposed) return;
 			let doRegrid = false;
 			// A colour named in this patch is the consumer's for good, so mark it before
 			// the theme gets a chance to move it.
@@ -666,16 +672,20 @@ export function createLcdModule(
 				extra = compileGlyphs(patch.glyphs);
 				if (!booting) retarget();
 			}
-			if (patch.text !== undefined) this.setText(patch.text ?? '');
-			if (patch.on != null) this.power(patch.on);
+			if (patch.text !== undefined) handle.setText(patch.text ?? '');
+			if (patch.on != null) handle.power(patch.on);
 			draw();
 		},
-		resize,
+		resize() {
+			if (!disposed) resize();
+		},
 		snapshot() {
-			draw();
+			if (!disposed) draw();
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			if (disposed) return;
+			disposed = true;
 			stopTheme();
 			ro?.disconnect();
 			if (raf) cancelAnimationFrame(raf);
@@ -687,4 +697,5 @@ export function createLcdModule(
 			canvas.removeAttribute('aria-hidden');
 		}
 	};
+	return handle;
 }

@@ -331,6 +331,7 @@ export function createSplitFlap(
 
 	let raf = 0;
 	let lastT = 0;
+	let disposed = false; // dispose() is final: every later handle call is a no-op
 	let snd: MechSound | null = null;
 	const sound = (): MechSound | null => {
 		if (volume > 0 && !snd) snd = createMechSound({ volume });
@@ -949,7 +950,7 @@ export function createSplitFlap(
 	ro?.observe(canvas);
 	resize();
 
-	return {
+	const handle: SplitFlapBoard = {
 		get cols() {
 			return cols;
 		},
@@ -957,6 +958,7 @@ export function createSplitFlap(
 			return rows;
 		},
 		setText(text) {
+			if (disposed) return;
 			const lines = Array.isArray(text) ? text : text.split('\n');
 			for (let y = 0; y < rows; y++) {
 				const line = padCells(lines[y] ?? '', cols);
@@ -966,6 +968,7 @@ export function createSplitFlap(
 			animate();
 		},
 		setLine(row, text) {
+			if (disposed) return;
 			// Inverted guards so a non-finite coordinate fails them too: NaN slips
 			// through `row < 0 || row >= rows` and lands in the per-module drum
 			// lookup as drum[NaN] — undefined, not a silent no-op.
@@ -977,6 +980,7 @@ export function createSplitFlap(
 			animate();
 		},
 		setChar(x, y, ch) {
+			if (disposed) return;
 			x = Math.floor(x);
 			y = Math.floor(y);
 			if (!(x >= 0 && x < cols) || !(y >= 0 && y < rows)) return;
@@ -992,7 +996,7 @@ export function createSplitFlap(
 		},
 		getText: getLines,
 		clear() {
-			this.setText([]);
+			handle.setText([]);
 		},
 		cellAt(clientX, clientY) {
 			const r = canvas.getBoundingClientRect();
@@ -1019,6 +1023,7 @@ export function createSplitFlap(
 			};
 		},
 		setOptions(patch) {
+			if (disposed) return;
 			let rebake = false;
 			let regrid = false;
 			// A colour named in this patch becomes the consumer's for good, so mark it
@@ -1130,12 +1135,16 @@ export function createSplitFlap(
 			}
 			animate();
 		},
-		resize,
+		resize() {
+			if (!disposed) resize();
+		},
 		snapshot() {
-			draw();
+			if (!disposed) draw();
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			if (disposed) return;
+			disposed = true;
 			ro?.disconnect();
 			stopTheme();
 			if (raf) cancelAnimationFrame(raf);
@@ -1146,4 +1155,5 @@ export function createSplitFlap(
 			canvas.removeAttribute('aria-hidden');
 		}
 	};
+	return handle;
 }

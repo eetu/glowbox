@@ -211,6 +211,7 @@ export function createFlipDots(
 
 	let raf = 0;
 	let lastT = 0;
+	let disposed = false; // dispose() is final: every later handle call is a no-op
 	let snd: MechSound | null = null;
 	const sound = (): MechSound | null => {
 		if (volume > 0 && !snd) snd = createMechSound({ volume });
@@ -801,7 +802,7 @@ export function createFlipDots(
 	ro?.observe(canvas);
 	resize();
 
-	return {
+	const handle: FlipDotBoard = {
 		get cols() {
 			return cols;
 		},
@@ -809,6 +810,7 @@ export function createFlipDots(
 			return rows;
 		},
 		set(x, y, on) {
+			if (disposed) return;
 			x = Math.floor(x);
 			y = Math.floor(y);
 			if (x < 0 || x >= cols || y < 0 || y >= rows) return;
@@ -821,6 +823,7 @@ export function createFlipDots(
 			return target[y * cols + x] === 1;
 		},
 		setFrame(frame) {
+			if (disposed) return;
 			const at =
 				typeof frame === 'function'
 					? (x: number, y: number) => !!frame(x, y)
@@ -831,10 +834,10 @@ export function createFlipDots(
 			if (changed) animate();
 		},
 		clear() {
-			this.setFrame(() => false);
+			handle.setFrame(() => false);
 		},
 		fill() {
-			this.setFrame(() => true);
+			handle.setFrame(() => true);
 		},
 		dotAt(clientX, clientY) {
 			const r = canvas.getBoundingClientRect();
@@ -863,6 +866,7 @@ export function createFlipDots(
 			};
 		},
 		setOptions(patch) {
+			if (disposed) return;
 			let rebake = false;
 			let regrid = false;
 			// A colour named in this patch becomes the consumer's for good, so mark it
@@ -944,12 +948,16 @@ export function createFlipDots(
 			}
 			animate();
 		},
-		resize,
+		resize() {
+			if (!disposed) resize();
+		},
 		snapshot() {
-			draw();
+			if (!disposed) draw();
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			if (disposed) return;
+			disposed = true;
 			stopTheme();
 			ro?.disconnect();
 			if (raf) cancelAnimationFrame(raf);
@@ -960,4 +968,5 @@ export function createFlipDots(
 			canvas.removeAttribute('aria-hidden');
 		}
 	};
+	return handle;
 }

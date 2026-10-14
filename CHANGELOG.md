@@ -20,6 +20,10 @@ version and are released together.
 - **Wrappers: a regrid keeps the content** — changing `cols`/`rows` on `<SplitFlap>`,
   `<FlipDots>` or `<LcdModule>` (svelte/react/vue) re-applies `text`/`frame` to the new
   grid, alone or together with the content change.
+- **Every core: `dispose()` is final** — handle calls after it are no-ops (no timers, frames,
+  canvas or aria writes); lcd's flicker no longer outlives a dispose that lands mid-dip.
+- **Detached handle methods** — `board.clear`, `board.fill` and `setOptions({ text, on })`
+  work when passed as callbacks.
 
 ## [1.13.1] — 2026-10-13
 

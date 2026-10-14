@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 
 import { createLedDisplay, type LedDisplayOptions } from '../led-display';
 import { createRenderer } from '../renderer';
@@ -402,4 +402,44 @@ test('theme light swaps the additive glow for the comic look on a pale ground', 
 	d.render();
 	expect(corner()).toBe(named);
 	d.dispose();
+});
+
+/** How many timeouts and animation frames `calls` asks for. */
+const scheduled = (calls: () => void) => {
+	const timeout = vi.spyOn(window, 'setTimeout');
+	const frame = vi.spyOn(window, 'requestAnimationFrame');
+	try {
+		calls();
+		return { timeouts: timeout.mock.calls.length, frames: frame.mock.calls.length };
+	} finally {
+		timeout.mockRestore();
+		frame.mockRestore();
+	}
+};
+
+test('dispose is final: a disposed display never touches the next one on its canvas', () => {
+	const canvas = makeCanvas();
+	const d1 = display(canvas);
+	if (!d1) return;
+	d1.dispose();
+	d1.dispose();
+	const d2 = display(canvas, { label: 'second' })!;
+	d2.clear();
+	d2.sphere([2, 2, 2], 2, '#00ff88', true);
+	d2.render();
+	const lit = litPixels(canvas);
+	const counts = scheduled(() => {
+		d1.setPaused(false);
+		d1.onFrame(() => undefined);
+		d1.setGain(2);
+		d1.setCamera({ yaw: 1 });
+		d1.setOptions({ label: 'first', color: { background: '#fff' }, quality: { paused: false } });
+		d1.resize([4, 4, 4]);
+		d1.render();
+		d1.snapshot();
+	});
+	expect(counts).toEqual({ timeouts: 0, frames: 0 });
+	expect(canvas.getAttribute('aria-label')).toBe('second');
+	expect(litPixels(canvas)).toBe(lit);
+	d2.dispose();
 });

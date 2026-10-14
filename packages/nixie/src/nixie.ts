@@ -255,6 +255,7 @@ export function createNixieTube(
 	let w = 0;
 	let h = 0;
 	let dpr = 1;
+	let disposed = false; // dispose() is final: every later handle call is a no-op
 
 	const rgb = (c: number[]) => `rgb(${c255(c[0])},${c255(c[1])},${c255(c[2])})`;
 	const rgba = (c: number[], a: number) => `rgba(${c255(c[0])},${c255(c[1])},${c255(c[2])},${a})`;
@@ -512,11 +513,13 @@ export function createNixieTube(
 
 	return {
 		setValue(v) {
+			if (disposed) return;
 			value = norm(v);
 			applyAria();
 			draw();
 		},
 		setOptions(patch) {
+			if (disposed) return;
 			// The theme only tunes the housing, so nothing here needs a re-layout.
 			if (patch.theme !== undefined && patch.theme !== theme) {
 				theme = patch.theme;
@@ -545,12 +548,16 @@ export function createNixieTube(
 			}
 			draw();
 		},
-		resize,
+		resize() {
+			if (!disposed) resize();
+		},
 		snapshot() {
-			draw();
+			if (!disposed) draw();
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			if (disposed) return;
+			disposed = true;
 			stopTheme();
 			ro?.disconnect();
 			// Hand the consumer's canvas back without our ARIA (it may be reused).

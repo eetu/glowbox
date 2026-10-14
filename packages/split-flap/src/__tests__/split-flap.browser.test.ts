@@ -1,7 +1,7 @@
 // Real-browser coverage for the render path: a canvas in the DOM, real 2D
 // readback — the parts node can't see. (The shared sound engine's gesture
 // ladder is covered in @glowbox/flip-dot, where the file is vendored from.)
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 
 import { DRUM_DIGITS } from '../drum';
 import { createSplitFlap } from '../split-flap';
@@ -322,5 +322,54 @@ test('dispose hands the canvas back clean', () => {
 	board.dispose();
 	expect(canvas.getAttribute('role')).toBeNull();
 	expect(canvas.getAttribute('aria-label')).toBeNull();
+	canvas.remove();
+});
+
+/** How many timeouts and animation frames `calls` asks for. */
+const scheduled = (calls: () => void) => {
+	const timeout = vi.spyOn(window, 'setTimeout');
+	const frame = vi.spyOn(window, 'requestAnimationFrame');
+	try {
+		calls();
+		return { timeouts: timeout.mock.calls.length, frames: frame.mock.calls.length };
+	} finally {
+		timeout.mockRestore();
+		frame.mockRestore();
+	}
+};
+
+test('dispose is final: later calls schedule, paint and label nothing', async () => {
+	const canvas = mount();
+	const board = createSplitFlap(canvas, { cols: 6, rows: 1 });
+	if (!board) return;
+	board.dispose();
+	board.dispose();
+	const before = canvas.toDataURL();
+	const counts = scheduled(() => {
+		board.setText('HELLO');
+		board.setLine(0, 'WORLD');
+		board.setChar(0, 0, 'X');
+		board.clear();
+		board.setOptions({ label: 'board', card: '#f00', pixelRatio: 1 });
+		board.resize();
+		board.snapshot();
+	});
+	expect(counts).toEqual({ timeouts: 0, frames: 0 });
+	expect(canvas.getAttribute('role')).toBeNull();
+	expect(canvas.getAttribute('aria-label')).toBeNull();
+	await sleep(300);
+	expect(canvas.toDataURL()).toBe(before);
+	canvas.remove();
+});
+
+test('clear works detached from the board', () => {
+	const canvas = mount();
+	const board = createSplitFlap(canvas, { cols: 4, rows: 1, flipMs: 0 });
+	if (!board) return;
+	board.setText('AB');
+	const { clear } = board;
+	clear();
+	expect(board.getText()).toEqual(['']);
+	board.dispose();
 	canvas.remove();
 });

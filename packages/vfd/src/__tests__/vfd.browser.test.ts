@@ -2,7 +2,7 @@
 // Everything the package claims that a font or a CSS filter cannot do is asserted here
 // by reading pixels back: the persistence tail, the panel dimmer, the self-test, the
 // filter glass, and the dim-grid-column failure.
-import { afterEach, expect, test } from 'vitest';
+import { afterEach, expect, test, vi } from 'vitest';
 
 import { createVfdPanel, type VfdElement, type VfdPanelOptions } from '../index';
 
@@ -694,4 +694,49 @@ test('theme light puts a brushed-silver plate round the same dark glass', () => 
 	const named = plate();
 	panel.setOptions({ theme: 'dark' });
 	expect(plate()).toBe(named);
+});
+
+/** How many timeouts and animation frames `calls` asks for. */
+const scheduled = (calls: () => void) => {
+	const timeout = vi.spyOn(window, 'setTimeout');
+	const frame = vi.spyOn(window, 'requestAnimationFrame');
+	try {
+		calls();
+		return { timeouts: timeout.mock.calls.length, frames: frame.mock.calls.length };
+	} finally {
+		timeout.mockRestore();
+		frame.mockRestore();
+	}
+};
+
+test('dispose is final: later calls schedule, paint and label nothing', async () => {
+	const { canvas, panel } = mount({
+		layout: [
+			...DIGITS,
+			{ kind: 'legend', name: 'st', text: 'ST', x: 200, y: 10, w: 30, h: 12 },
+			{ kind: 'bars', name: 'spec', bands: 4, rows: 4, x: 240, y: 10, w: 60, h: 40 },
+			{ kind: 'dots', name: 'screen', cols: 8, rows: 4, x: 160, y: 30, w: 70, h: 30 }
+		]
+	});
+	panel.dispose();
+	panel.dispose();
+	const before = canvas.toDataURL();
+	const counts = scheduled(() => {
+		panel.set('main', '8888');
+		panel.light('st', true);
+		panel.setBars('spec', [1, 1, 1, 1]);
+		panel.setDots('screen', () => 1);
+		panel.clear();
+		panel.setLayout(DIGITS);
+		panel.selfTest();
+		panel.power(false);
+		panel.setOptions({ age: 0.9, on: true, label: 'deck', pixelRatio: 1 });
+		panel.resize();
+		panel.snapshot();
+	});
+	expect(counts).toEqual({ timeouts: 0, frames: 0 });
+	expect(canvas.getAttribute('role')).toBeNull();
+	expect(canvas.getAttribute('aria-label')).toBeNull();
+	await wait(300);
+	expect(canvas.toDataURL()).toBe(before);
 });

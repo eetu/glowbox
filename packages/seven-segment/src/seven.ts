@@ -268,6 +268,7 @@ export function createSevenSegment(
 	let raf = 0;
 	let lastT = 0;
 	let flickerTimer: ReturnType<typeof setTimeout> | null = null;
+	let disposed = false; // dispose() is final: every later handle call is a no-op
 
 	const styleOf = () => {
 		if (style === 'vfd')
@@ -583,11 +584,13 @@ export function createSevenSegment(
 
 	return {
 		setValue(v) {
+			if (disposed) return;
 			value = norm(v);
 			applyAria();
 			animate();
 		},
 		setOptions(patch) {
+			if (disposed) return;
 			// The theme only tunes the housing, so nothing here needs a re-layout.
 			if (patch.theme !== undefined && patch.theme !== theme) {
 				theme = patch.theme;
@@ -617,12 +620,16 @@ export function createSevenSegment(
 			}
 			animate();
 		},
-		resize,
+		resize() {
+			if (!disposed) resize();
+		},
 		snapshot() {
-			draw();
+			if (!disposed) draw();
 			return canvas.toDataURL('image/png');
 		},
 		dispose() {
+			if (disposed) return;
+			disposed = true;
 			stopTheme();
 			ro?.disconnect();
 			if (raf) cancelAnimationFrame(raf);
