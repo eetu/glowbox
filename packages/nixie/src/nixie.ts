@@ -10,6 +10,7 @@
 // NUDGE: in a real tube the cathodes sit at slightly different positions/depths, so the
 // glowing number shifts a hair off dead-centre and jitters as the value changes.
 import { type Color, parseColor, type RGB } from './color';
+import { fitCanvas, measureCanvas } from './fit';
 import { resolveTheme, type Theme, watchTheme } from './theme';
 
 const TAU = Math.PI * 2;
@@ -476,29 +477,9 @@ export function createNixieTube(
 	}
 
 	function resize() {
-		// pixelRatio caps the device ratio; guard a non-positive value (fall back to 1×) so a
-		// stray 0 can't zero the backing store below.
-		const cap = pixelRatio > 0 ? pixelRatio : 1;
-		dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, cap);
-		const r = canvas.getBoundingClientRect();
-		// CSS (layout) size — never derive it from canvas.width (that's the *device*
-		// backing size; on retina it's dpr× the display size and reusing it here would
-		// inflate the tube every frame).
-		w = Math.max(1, r.width || canvas.clientWidth || 1);
-		h = Math.max(1, r.height || canvas.clientHeight || 1);
-		// If the element has no CSS size of its own, its layout box is driven by the
-		// width/height *attributes* — so writing a HiDPI backing store below would enlarge
-		// the box and re-fire the ResizeObserver, an unbounded loop on retina. Pin the
-		// display size in CSS px once so the backing-store write can't feed back into
-		// layout. A CSS-sized canvas (width:100%, fixed px, …) reports a box that differs
-		// from the attribute, so it's left alone and stays responsive.
-		if (Math.abs(w - canvas.width) < 1 && Math.abs(h - canvas.height) < 1) {
-			canvas.style.width = `${w}px`;
-			canvas.style.height = `${h}px`;
-		}
-		// Floor at 1px: a sub-1 dpr on a tiny element must not round to a 0-size (blank) canvas.
-		canvas.width = Math.max(1, Math.round(w * dpr));
-		canvas.height = Math.max(1, Math.round(h * dpr));
+		const box = measureCanvas(canvas, pixelRatio);
+		({ w, h, dpr } = box);
+		fitCanvas(canvas, box);
 		draw();
 	}
 

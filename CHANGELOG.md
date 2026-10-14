@@ -13,6 +13,10 @@ version and are released together.
   package ships.
 - **Licences** — every package ships its MIT `LICENSE`; `@glowbox/extras` adds the notice
   for the gifuct-js it bundles.
+- **Canvas sizing** — every 2D core and led-grid fit their canvas the same way: a
+  responsive canvas keeps following its container at 1× (nixie, seven-segment, neon and vfd
+  froze it at its first size), and an unstyled canvas no longer grows without bound on a
+  HiDPI screen (flip-dot, split-flap, lcd and led-grid).
 
 ## [1.13.1] — 2026-10-13
 

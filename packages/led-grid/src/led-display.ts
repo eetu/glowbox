@@ -11,6 +11,7 @@
 // [r,g,b] triple 0..1 (values >1 bloom) or a CSS string. Appearance, camera and
 // interaction are grouped options, all live-updatable via setOptions().
 import { parseColor, parseColor01 } from './color';
+import { fitCanvas, measureCanvas } from './fit';
 import {
 	createRenderer,
 	type LedShape,
@@ -360,13 +361,7 @@ export function createLedDisplay(
 				for (const cb of frameCbs) cb(display, 0); // repaint content at the new size
 			}
 		}
-		const dpr = Math.min(
-			typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
-			pixelRatio
-		);
-		const r = canvas.getBoundingClientRect();
-		canvas.width = Math.max(1, Math.round(r.width * dpr));
-		canvas.height = Math.max(1, Math.round(r.height * dpr));
+		fitCanvas(canvas, measureCanvas(canvas, pixelRatio));
 		if (paused) render();
 	}
 	const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => resize()) : null;

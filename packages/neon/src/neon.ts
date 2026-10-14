@@ -33,6 +33,7 @@
 // Give it a canvas + text; drive it with setText/power/setOptions. Import-safe
 // under node/SSR (no browser globals at module scope; Path2D built lazily).
 import { type Color, parseColor, type RGB } from './color';
+import { fitCanvas, measureCanvas } from './fit';
 import { type NeonFont } from './font';
 import { GASES, type GasName, type GasSpec, pigment } from './gas';
 import {
@@ -1024,19 +1025,9 @@ export function createNeonSign(
 	}
 
 	function resize() {
-		const cap = pixelRatio > 0 ? pixelRatio : 1;
-		dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, cap);
-		const r = canvas.getBoundingClientRect();
-		w = Math.max(1, r.width || canvas.clientWidth || 1);
-		h = Math.max(1, r.height || canvas.clientHeight || 1);
-		// Pin the CSS box if the attributes drive layout — a HiDPI backing-store
-		// write must not feed back into the ResizeObserver (nixie's retina loop).
-		if (Math.abs(w - canvas.width) < 1 && Math.abs(h - canvas.height) < 1) {
-			canvas.style.width = `${w}px`;
-			canvas.style.height = `${h}px`;
-		}
-		canvas.width = Math.max(1, Math.round(w * dpr));
-		canvas.height = Math.max(1, Math.round(h * dpr));
+		const box = measureCanvas(canvas, pixelRatio);
+		({ w, h, dpr } = box);
+		fitCanvas(canvas, box);
 		draw();
 	}
 

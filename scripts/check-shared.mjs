@@ -33,6 +33,7 @@ const EXPECTED = {
 		'split-flap',
 		'vfd'
 	],
+	'fit.ts': ['flip-dot', 'lcd', 'led-grid', 'neon', 'nixie', 'seven-segment', 'split-flap', 'vfd'],
 	'sound.ts': ['flip-dot', 'neon', 'split-flap'],
 	'font5x7.ts': ['extras', 'lcd', 'split-flap', 'vfd'],
 	'latin5x7.ts': ['lcd', 'split-flap'],

@@ -28,6 +28,7 @@
 // Give it a canvas + text; drive it with setText/setLine/setGlyph/setCursor/power.
 // Import-safe under node/SSR (no browser globals at module scope).
 import { type Color, parseColor, type RGB } from './color';
+import { fitCanvas, measureCanvas } from './fit';
 import { compile5x7, FONT_5X7, glyph5x7 } from './font5x7';
 import { type PanelName, PANELS, type PanelSpec } from './panels';
 import {
@@ -481,12 +482,9 @@ export function createLcdModule(
 
 	// --- layout -----------------------------------------------------------------------------
 	function resize() {
-		const r = canvas.getBoundingClientRect();
-		dpr = Math.min(pixelRatio > 0 ? pixelRatio : 1, globalThis.devicePixelRatio || 1);
-		w = Math.max(1, r.width || canvas.clientWidth || 1);
-		h = Math.max(1, r.height || canvas.clientHeight || 1);
-		canvas.width = Math.max(1, Math.round(w * dpr));
-		canvas.height = Math.max(1, Math.round(h * dpr));
+		const box = measureCanvas(canvas, pixelRatio);
+		({ w, h, dpr } = box);
+		fitCanvas(canvas, box);
 		// The character field in dot pitches (the last cell drops its trailing gap).
 		// Glass margin and frame are both part of the fit, so the module keeps its
 		// proportions in any canvas; a frameless module spends nothing on plastic.

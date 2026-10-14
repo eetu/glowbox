@@ -17,6 +17,7 @@
 // Give it a canvas; drive it with set/setFrame/setOptions. Import-safe under
 // node/SSR (no browser globals at module scope).
 import { type Color, parseColor, type RGB } from './color';
+import { fitCanvas, measureCanvas } from './fit';
 import { createMechSound, type MechSound } from './sound';
 import { resolveTheme, type Theme, themeOwner, watchTheme } from './theme';
 
@@ -764,21 +765,14 @@ export function createFlipDots(
 	}
 
 	function resize() {
-		const cap = pixelRatio > 0 ? pixelRatio : 1;
-		const nextDpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, cap);
-		const r = canvas.getBoundingClientRect();
-		const nextW = Math.max(1, r.width || canvas.clientWidth || 1);
-		const nextH = Math.max(1, r.height || canvas.clientHeight || 1);
+		const box = measureCanvas(canvas, pixelRatio);
 		// A ResizeObserver fires for observations that changed nothing, and re-baking
 		// throws away the board layer, both face sprites and the whole squash atlas —
 		// and, by assigning canvas.width, the frame on screen. Same box, same ratio:
 		// there is nothing to re-fit.
-		if (nextW === w && nextH === h && nextDpr === dpr) return;
-		dpr = nextDpr;
-		w = nextW;
-		h = nextH;
-		canvas.width = Math.max(1, Math.round(w * dpr));
-		canvas.height = Math.max(1, Math.round(h * dpr));
+		if (box.w === w && box.h === h && box.dpr === dpr) return;
+		({ w, h, dpr } = box);
+		fitCanvas(canvas, box);
 		bake();
 		draw();
 	}
