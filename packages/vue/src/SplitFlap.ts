@@ -96,19 +96,22 @@ export const SplitFlap = defineComponent({
 			props.oncreate?.(flaps);
 		});
 
-		// Live-update the shown text.
-		watch(
-			() => props.text,
-			(t) => {
-				if (t != null) flaps?.setText(t);
-			}
-		);
-
 		// Live-update appearance when any option changes.
 		watch(
 			() => options(),
 			() => flaps?.setOptions(options()),
 			{ deep: true }
+		);
+
+		// Live-update the shown text, and re-push it on a cols/rows change: a re-tiled
+		// board powers up blank. `flush: 'post'` runs it after the options watch above
+		// whatever order the props updated in (pre watchers run in trigger order).
+		watch(
+			[() => props.text, () => props.cols, () => props.rows],
+			([t]) => {
+				if (t != null) flaps?.setText(t);
+			},
+			{ flush: 'post' }
 		);
 
 		onUnmounted(() => {

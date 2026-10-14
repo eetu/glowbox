@@ -17,6 +17,9 @@ version and are released together.
   responsive canvas keeps following its container at 1× (nixie, seven-segment, neon and vfd
   froze it at its first size), and an unstyled canvas no longer grows without bound on a
   HiDPI screen (flip-dot, split-flap, lcd and led-grid).
+- **Wrappers: a regrid keeps the content** — changing `cols`/`rows` on `<SplitFlap>`,
+  `<FlipDots>` or `<LcdModule>` (svelte/react/vue) re-applies `text`/`frame` to the new
+  grid, alone or together with the content change.
 
 ## [1.13.1] — 2026-10-13
 

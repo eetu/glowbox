@@ -141,11 +141,6 @@ export const LcdModule = forwardRef<LcdModuleHandle | null, LcdModuleProps>(
 
 		useImperativeHandle<LcdModuleHandle | null, LcdModuleHandle | null>(ref, () => lcd, [lcd]);
 
-		// Live-update the shown text.
-		useEffect(() => {
-			if (text != null) lcd?.setText(text);
-		}, [lcd, text]);
-
 		// Live-update appearance when any option changes.
 		useEffect(() => {
 			lcd?.setOptions({
@@ -187,6 +182,13 @@ export const LcdModule = forwardRef<LcdModuleHandle | null, LcdModuleProps>(
 			theme,
 			label
 		]);
+
+		// Live-update the shown text. Declared after the options effect so it runs after
+		// setOptions, and re-run on a cols/rows change: a regrid clips the text to the
+		// new grid, so a wider one needs it again.
+		useEffect(() => {
+			if (text != null) lcd?.setText(text);
+		}, [lcd, text, cols, rows]);
 
 		return <canvas ref={canvasRef} className={className} style={{ ...baseStyle, ...style }} />;
 	}

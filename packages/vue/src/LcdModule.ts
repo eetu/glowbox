@@ -117,19 +117,23 @@ export const LcdModule = defineComponent({
 			props.oncreate?.(lcd);
 		});
 
-		// Live-update the shown text.
-		watch(
-			() => props.text,
-			(t) => {
-				if (t != null) lcd?.setText(t);
-			}
-		);
-
 		// Live-update appearance when any option changes.
 		watch(
 			() => options(),
 			() => lcd?.setOptions(options()),
 			{ deep: true }
+		);
+
+		// Live-update the shown text, and re-push it on a cols/rows change: a regrid
+		// clips the text to the new grid, so a wider one needs it again. `flush: 'post'`
+		// runs it after the options watch above whatever order the props updated in
+		// (pre watchers run in trigger order).
+		watch(
+			[() => props.text, () => props.cols, () => props.rows],
+			([t]) => {
+				if (t != null) lcd?.setText(t);
+			},
+			{ flush: 'post' }
 		);
 
 		onUnmounted(() => {

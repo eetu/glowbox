@@ -112,11 +112,6 @@
 		};
 	});
 
-	// Live-update the shown frame.
-	$effect(() => {
-		if (frame) dots?.setFrame(frame);
-	});
-
 	// Live-update appearance when any option changes.
 	$effect(() => {
 		dots?.setOptions({
@@ -137,6 +132,14 @@
 			theme,
 			label
 		});
+	});
+
+	// Live-update the shown frame. Declared after the options effect so it runs after
+	// setOptions, and re-run on a cols/rows change: a re-tiled board powers up dark.
+	$effect(() => {
+		void cols;
+		void rows;
+		if (frame) dots?.setFrame(frame);
 	});
 </script>
 

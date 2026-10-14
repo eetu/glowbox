@@ -130,11 +130,6 @@ export const FlipDots = forwardRef<FlipDotBoard | null, FlipDotsProps>(
 
 		useImperativeHandle<FlipDotBoard | null, FlipDotBoard | null>(ref, () => dots, [dots]);
 
-		// Live-update the shown frame.
-		useEffect(() => {
-			if (frame) dots?.setFrame(frame);
-		}, [dots, frame]);
-
 		// Live-update appearance when any option changes.
 		useEffect(() => {
 			dots?.setOptions({
@@ -174,6 +169,12 @@ export const FlipDots = forwardRef<FlipDotBoard | null, FlipDotsProps>(
 			theme,
 			label
 		]);
+
+		// Live-update the shown frame. Declared after the options effect so it runs after
+		// setOptions, and re-run on a cols/rows change: a re-tiled board powers up dark.
+		useEffect(() => {
+			if (frame) dots?.setFrame(frame);
+		}, [dots, frame, cols, rows]);
 
 		return <canvas ref={canvasRef} className={className} style={{ ...baseStyle, ...style }} />;
 	}
