@@ -124,5 +124,6 @@ jobs:
               echo "$name@$VERSION already published — skipping"
               continue
             fi
-            npm publish "tarballs/$pkg.tgz" --provenance --access public --tag "$DIST_TAG"
+            # Absolute: npm reads a bare `dir/file.tgz` as a GitHub `user/repo` spec.
+            npm publish "$GITHUB_WORKSPACE/tarballs/$pkg.tgz" --provenance --access public --tag "$DIST_TAG"
           done
