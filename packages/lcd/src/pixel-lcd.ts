@@ -6,7 +6,7 @@
 // negative blue glass it is the backlight let through, so the backlit pane is the only light.
 import { compile5x7, FONT_5X7, glyph5x7 } from './font5x7';
 import { type PanelName, PANELS, type PanelSpec } from './panels';
-import type { PixelLayout, PixelPart } from './pixel';
+import { finitePx, type PixelLayout, type PixelPart } from './pixel';
 import { type Wear, wearLevels } from './wear';
 
 // One character cell is 5×8 dots (the 5×7 face + the cursor/descender row); the advance
@@ -182,10 +182,11 @@ export interface LcdDot extends PixelPart {
  * is 95 × 18 px.
  */
 export const lcdPixels = (options: LcdPixelOptions = {}): PixelLayout<LcdDot> => {
-	const cols = Math.max(1, Math.floor(options.cols ?? 16));
-	const rows = Math.max(1, Math.floor(options.rows ?? 2));
-	const dot = Math.max(1, Math.floor(options.dot ?? 1));
-	const pitch = Math.max(dot, Math.floor(options.pitch ?? Math.round(dot / DOT_FILL)));
+	const whole = (v: number, name: string) => Math.floor(finitePx(v, `lcdPixels ${name}`));
+	const cols = Math.max(1, whole(options.cols ?? 16, 'cols'));
+	const rows = Math.max(1, whole(options.rows ?? 2, 'rows'));
+	const dot = Math.max(1, whole(options.dot ?? 1, 'dot'));
+	const pitch = Math.max(dot, whole(options.pitch ?? Math.round(dot / DOT_FILL), 'pitch'));
 	const parts: LcdDot[] = [];
 	for (let row = 0; row < rows * CELL_H; row++) {
 		for (let col = 0; col < cols * CELL_W; col++) {

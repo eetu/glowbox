@@ -510,6 +510,16 @@ test('art pieces flank the text and carry their own colours', () => {
 	expect(R.b).toBeGreaterThan(R.r * 1.5); // the right one blue
 });
 
+test('art that will not bend throws once; the sign keeps its last glass and stays usable', () => {
+	const { sign } = mount({ text: 'OK', strikeMs: 0, art: [{ d: 'M0 0L40 0', place: 'below' }] });
+	const rule = sign.sectionRect(1);
+	expect(rule).not.toBeNull();
+	expect(() => sign.setOptions({ tilt: 8, art: [{ d: 'M0 0 Q' }] })).toThrow(/SVG path/);
+	expect(sign.sectionRect(1)).toEqual(rule);
+	expect(() => sign.setText('OK!')).not.toThrow();
+	expect(() => sign.setOptions({ tilt: 8, letterSpacing: NaN })).not.toThrow();
+});
+
 test('the flash cam cycles the sign without exact-timing assumptions', async () => {
 	const { canvas } = mount({
 		text: 'FLASH',

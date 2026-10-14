@@ -19,12 +19,16 @@ export type Vec3 = [number, number, number];
 export type Color = RGB | string;
 
 // Parsed strings are memoised — draw callbacks may pass the same literal thousands
-// of times per frame, so this must be O(1) after the first sighting.
+// of times per frame, so this must be O(1) after the first sighting. Past CACHE_MAX the
+// oldest go first, so a program minting a fresh string every frame (a hue sweep) holds
+// a bounded cache, not a growing one.
+const CACHE_MAX = 2048;
 const cache = new Map<string, RGB>();
 
-// A throwaway 2D context normalises any CSS colour the browser understands. Created
-// lazily and only when a non-hex string is seen; `null` when there's no DOM (SSR /
-// pure-node), in which case non-hex strings fall back to black.
+// A 1×1 2D context normalises any CSS colour the browser understands, and paints the
+// ones it serialises in their own space to read them back as sRGB. Created lazily and
+// only when a non-hex string is seen; `null` when there's no DOM (SSR / pure-node), in
+// which case non-hex strings fall back to black.
 let ctx: CanvasRenderingContext2D | null | undefined;
 
 const clamp01 = (n: number) => (n < 0 ? 0 : n > 1 ? 1 : n);
@@ -56,7 +60,9 @@ function parseHex(s: string): RGB | null {
 function parseViaCanvas(s: string): RGB | null {
 	if (ctx === undefined) {
 		const canvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
-		ctx = canvas ? canvas.getContext('2d') : null;
+		if (canvas) canvas.width = canvas.height = 1;
+		ctx = canvas?.getContext('2d', { willReadFrequently: true }) ?? null;
+		if (ctx) ctx.globalCompositeOperation = 'copy';
 	}
 	if (!ctx) return null;
 
@@ -70,13 +76,23 @@ function parseViaCanvas(s: string): RGB | null {
 
 	const hex = parseHex(a);
 	if (hex) return hex;
-	// Non-hex normal form is 'rgba(r, g, b, a)' (or 'rgb(r, g, b)').
-	const m = /rgba?\(([^)]+)\)/i.exec(a);
+	// The legacy normal form is 'rgba(r, g, b, a)' (or 'rgb(r, g, b)').
+	const m = /^rgba?\(([^)]+)\)$/i.exec(a);
 	if (m) {
 		const parts = m[1].split(',').map((p) => parseFloat(p));
 		return [(parts[0] || 0) / 255, (parts[1] || 0) / 255, (parts[2] || 0) / 255];
 	}
-	return null;
+	// A colour serialised in a space of its own (oklch(), lab(), color(display-p3 …),
+	// color-mix()) is painted and read back. getImageData un-premultiplies, so a
+	// translucent one reads as its own RGB, alpha ignored as above; a fully transparent
+	// one has none left and reads black.
+	try {
+		ctx.fillRect(0, 0, 1, 1);
+		const [r, g, bl] = ctx.getImageData(0, 0, 1, 1).data;
+		return [r / 255, g / 255, bl / 255];
+	} catch {
+		return null;
+	}
 }
 
 function parseString(s: string): RGB {
@@ -84,6 +100,7 @@ function parseString(s: string): RGB {
 	const hit = cache.get(key);
 	if (hit) return hit;
 	const rgb = parseHex(key) ?? parseViaCanvas(key) ?? [0, 0, 0];
+	if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value!);
 	cache.set(key, rgb);
 	return rgb;
 }

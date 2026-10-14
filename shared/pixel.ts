@@ -28,3 +28,18 @@ export interface PixelLayout<P extends PixelPart = PixelPart> {
 	height: number;
 	parts: P[];
 }
+
+/** `value`, or a RangeError naming `name` when it is NaN or infinite: no layout has that size. */
+export function finitePx(value: number, name: string): number {
+	if (!Number.isFinite(value))
+		throw new RangeError(`glowbox: ${name} must be a finite number (got ${value}).`);
+	return value;
+}
+
+/** `value` rounded to whole pixels, or a RangeError naming `name` when it is not finite or
+ *  rounds below `min`. */
+export function wholePx(value: number, name: string, min = 1): number {
+	const px = Math.round(finitePx(value, name));
+	if (px < min) throw new RangeError(`glowbox: ${name} must be at least ${min} px (got ${value}).`);
+	return px;
+}

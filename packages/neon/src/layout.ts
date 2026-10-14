@@ -242,23 +242,53 @@ function cutStroke(
 
 const dist = (a: [number, number], b: [number, number]) => Math.hypot(b[0] - a[0], b[1] - a[1]);
 
+// Each opening routes the whole circuit, so a piece of hundreds of subpaths can't try them
+// all. A group up to EVERY_OPENING strokes (an outlined glyph of the built-in faces runs to
+// 15) tries each; a larger one tries the OPENINGS strokes reaching furthest toward its
+// edges, where a bender starts.
+const EVERY_OPENING = 32;
+const OPENINGS = 8;
+
+/** The first glyph's strokes worth opening with, in their own order: all of them, or the
+ *  `OPENINGS` whose ends lie furthest out from the group's centre, the box scaled square. */
+function openings(group: [number, number][][]): number[] {
+	const all = group.map((_, i) => i);
+	if (group.length <= EVERY_OPENING) return all;
+	let [x0, x1, y0, y1] = [Infinity, -Infinity, Infinity, -Infinity];
+	for (const s of group)
+		for (const [x, y] of [s[0], s[s.length - 1]]) {
+			x0 = Math.min(x0, x);
+			x1 = Math.max(x1, x);
+			y0 = Math.min(y0, y);
+			y1 = Math.max(y1, y);
+		}
+	const reach = (p: [number, number]) =>
+		((2 * p[0] - x0 - x1) / (x1 - x0 || 1)) ** 2 + ((2 * p[1] - y0 - y1) / (y1 - y0 || 1)) ** 2;
+	const score = group.map((s) => Math.max(reach(s[0]), reach(s[s.length - 1])));
+	return all
+		.sort((a, b) => score[b] - score[a] || a - b)
+		.slice(0, OPENINGS)
+		.sort((a, b) => a - b);
+}
+
 /** Where the bender's tube starts and finishes. Strokes are routed greedily —
  *  finish one glyph before the next (`groups` arrive in reading order), inside a
  *  glyph take the nearest stroke entered by its nearer end — and every opening
- *  move is tried, so a letterform already bent as one continuous run (the N: up
- *  the stem, down the diagonal, up the other stem) routes with no returns at
- *  all. The circuit's two free ends are what the electrodes sit on; nothing
- *  about the drawn glass changes. */
+ *  move is tried (a large group's likeliest, see `openings`), so a letterform
+ *  already bent as one continuous run (the N: up the stem, down the diagonal, up
+ *  the other stem) routes with no returns at all. The circuit's two free ends are
+ *  what the electrodes sit on; nothing about the drawn glass changes. Groups are
+ *  non-empty. */
 export function circuitEnds(groups: [number, number][][][]): {
 	first: [number, number][];
 	last: [number, number][];
 } {
-	let bestFirst: [number, number][] | null = null;
-	let bestLast: [number, number][] | null = null;
+	const flat = groups.flat();
+	let best = { first: flat[0], last: flat[flat.length - 1] };
 	let bestCost = Infinity;
-	// Openings are per whole circuit: the first glyph's every stroke, both ways
-	// round; later glyphs follow greedily from wherever the tube is.
-	for (let start = 0; start < groups[0].length; start++) {
+	// Openings are per whole circuit: the first glyph's strokes, both ways round;
+	// later glyphs follow greedily from wherever the tube is.
+	for (const start of openings(groups[0])) {
 		for (const flip of [false, true]) {
 			let at: [number, number] | null = null;
 			let first: [number, number][] | null = null;
@@ -272,6 +302,8 @@ export function circuitEnds(groups: [number, number][][][]): {
 					if (pick < 0) {
 						// The nearest remaining stroke, entered by its nearer end.
 						let near = Infinity;
+						pick = 0;
+						pickFlip = false;
 						for (let i = 0; i < left.length; i++) {
 							const dh = dist(at!, left[i][0]);
 							const dl = dist(at!, left[i][left[i].length - 1]);
@@ -291,14 +323,15 @@ export function circuitEnds(groups: [number, number][][][]): {
 					pick = -1;
 				}
 			}
+			// A cost that overflows (coordinates at the float range's edge) never wins;
+			// when every route's does, the circuit's own first and last strokes stand in.
 			if (cost < bestCost) {
 				bestCost = cost;
-				bestFirst = first;
-				bestLast = last;
+				best = { first: first!, last: last! };
 			}
 		}
 	}
-	return { first: bestFirst!, last: bestLast! };
+	return best;
 }
 
 // --- outline (the tube bent around the painted letter) -------------------------------
@@ -331,6 +364,20 @@ const distToStroke = (px: number, py: number, s: [number, number][]): number => 
 // caps at open ends. The skeleton's corners are already filleted, so per-sample
 // normals rotate smoothly and a plain perpendicular offset stays a clean curve.
 function contourOf(stroke: [number, number][], R: number): [number, number][][] {
+	const [x, y] = stroke[0];
+	if (stroke.every((p) => p[0] === x && p[1] === y)) {
+		// A dot (the zero-length round-cap idiom) paints a square slab under the square
+		// cap, and its border is that square, bent at the corners like any terminal.
+		const sq: [number, number][] = [
+			[x, y - R],
+			[x + R, y - R],
+			[x + R, y + R],
+			[x - R, y + R],
+			[x - R, y - R],
+			[x, y - R]
+		];
+		return [roundCorners(sq, R * 0.45)];
+	}
 	// Densify so the offset follows the fillets.
 	const dense: [number, number][] = [stroke[0]];
 	for (let i = 1; i < stroke.length; i++) {
@@ -445,10 +492,25 @@ function endOf(stroke: [number, number][], last: boolean): TubeSection['ends'][n
 	return { x: p[0], y: p[1], dx, dy };
 }
 
+/** A numeric option, or its default when it isn't a finite number. */
+const num = (v: number | undefined, fallback: number): number =>
+	Number.isFinite(v) ? (v as number) : fallback;
+
+const finitePoint = (p: readonly number[]) => Number.isFinite(p[0]) && Number.isFinite(p[1]);
+
+/** Polylines as glass can bend them: points off the number line dropped (a canvas skips
+ *  them the same way) and what is left of a stroke kept from two points — two at one place
+ *  is the round-cap dot. */
+const glassOf = (strokes: [number, number][][]): [number, number][][] =>
+	strokes
+		.map((s) => (s.every(finitePoint) ? s : s.filter(finitePoint)))
+		.filter((s) => s.length >= 2);
+
 /** Lay `text` out as tube sections in sign units. `\n` splits lines; glyphs the
  *  face doesn't carry are skipped (one dev warning). Also the "extrude it
  *  yourself" seam: the same sections a 3D consumer would bend into real tube
- *  geometry — pair with the face metrics (cap height 21 for the built-ins). */
+ *  geometry — pair with the face metrics (cap height 21 for the built-ins).
+ *  Numeric options that aren't finite numbers take their defaults. */
 export function layoutTubes(
 	text: string,
 	font: 'script' | 'sans' | NeonFont = 'script',
@@ -467,8 +529,8 @@ export function layoutTubes(
 	// naming `tubes` yourself always wins.
 	const group = grouping === 'auto' ? (f.grouping ?? 'word') : grouping;
 	const align = opts.align ?? 'center';
-	const spacing = Math.max(0.5, opts.lineSpacing ?? 1.1);
-	const track = (opts.letterSpacing ?? 0) * f.capHeight;
+	const spacing = Math.max(0.5, num(opts.lineSpacing, 1.1));
+	const track = num(opts.letterSpacing, 0) * f.capHeight;
 	// The bend radius: generous enough to read as glass at any size, small enough
 	// to keep counters open — scaled to the face so custom fonts bend in proportion.
 	const bendR = f.capHeight * 0.12;
@@ -479,7 +541,7 @@ export function layoutTubes(
 	// it. The tube stays its regular width (glass is glass whatever the letter),
 	// so a scaled line simply carries more letter per tube.
 	const scaleOf = (li: number): number => {
-		const s = opts.lineScale?.[li % Math.max(1, opts.lineScale?.length ?? 1)] ?? 1;
+		const s = num(opts.lineScale?.[li % Math.max(1, opts.lineScale?.length ?? 1)], 1);
 		return s > 0 ? s : 1;
 	};
 	// Baselines advance by what actually sits between them: the upper line's
@@ -492,13 +554,14 @@ export function layoutTubes(
 	// it — so its electrode pair ALWAYS sits on the routed run's two free ends
 	// (stroke data arrives in font/author order, which is no place to hang
 	// hardware), and every joint in between is glass the invisible painted-out
-	// return hides, not a place to put a stub.
+	// return hides, not a place to put a stub. Glass that comes to nothing (a
+	// glyph of degenerate strokes, an outline cut away) is no section.
 	const section = (
 		groups: [number, number][][][],
 		line: number,
 		word?: number,
 		art?: number
-	): TubeSection => {
+	): TubeSection[] => {
 		// Outlined glass: the tube is bent around each glyph's slab, and the
 		// letterform's own centrelines move to the skeleton for the face paint.
 		// The slab is typography, so it scales with its line.
@@ -508,7 +571,9 @@ export function layoutTubes(
 			skeleton = groups.flat();
 			groups = groups.map((g) => outlineGlyph(g, SLAB_R * s));
 		}
+		groups = groups.filter((g) => g.length);
 		const flat = groups.flat();
+		if (!flat.length) return [];
 		let ends: TubeSection['ends'];
 		if (flat.length > 1) {
 			const { first, last } = circuitEnds(groups);
@@ -521,7 +586,7 @@ export function layoutTubes(
 		if (s !== 1) sec.scale = s;
 		if (word != null) sec.word = word;
 		if (art != null) sec.art = art;
-		return sec;
+		return [sec];
 	};
 
 	// Measure first (alignment needs the widest line), then place.
@@ -564,7 +629,7 @@ export function layoutTubes(
 				open = null;
 				return;
 			}
-			sections.push(section(open, li, openWord));
+			sections.push(...section(open, li, openWord));
 			open = null;
 		};
 		for (const ch of lines[li]) {
@@ -583,15 +648,14 @@ export function layoutTubes(
 				if (group === 'word') close();
 				endWord();
 			} else {
-				const placed = g.strokes.map((st) =>
-					roundCorners(
-						st.map(([gx, gy]) => [gx * s + x, gy * s + baseY] as [number, number]),
-						bendR * s
+				const placed = glassOf(
+					g.strokes.map((st) =>
+						st.map(([gx, gy]) => [gx * s + x, gy * s + baseY] as [number, number])
 					)
-				);
+				).map((st) => roundCorners(st, bendR * s));
 				if (!inWord) inWord = true;
 				if (group === 'glyph') {
-					sections.push(section([placed], li, wordIdx));
+					sections.push(...section([placed], li, wordIdx));
 				} else {
 					if (!open) openWord = wordIdx;
 					(open ??= []).push(placed);
@@ -611,7 +675,7 @@ export function layoutTubes(
 	let botAll = blockTop + blockH;
 
 	// --- the block tilt: the whole word rides a rising diagonal ---------------------
-	const tilt = ((opts.tilt ?? 0) * Math.PI) / 180;
+	const tilt = (num(opts.tilt, 0) * Math.PI) / 180;
 	if (tilt) {
 		const cos = Math.cos(tilt);
 		const sin = Math.sin(tilt);
@@ -656,10 +720,11 @@ export function layoutTubes(
 	const faces: { ai: number; face: [number, number][][] }[] = []; // opaque pieces' closed loops
 	for (let ai = 0; ai < (opts.art?.length ?? 0); ai++) {
 		const a = opts.art![ai];
-		const raw =
+		const raw = glassOf(
 			typeof a.d === 'string' || typeof a.d[0] === 'string'
 				? pathToStrokes(a.d as string | string[])
-				: (a.d as [number, number][][]);
+				: (a.d as [number, number][][])
+		);
 		if (!raw.length) continue;
 		let lo = Infinity;
 		let hi = -Infinity;
@@ -672,17 +737,21 @@ export function layoutTubes(
 				lov = Math.min(lov, y);
 				hiv = Math.max(hiv, y);
 			}
-		if (a.frame) {
+		const fr = a.frame;
+		if (fr && fr[0] >= 0 && fr[1] >= 0 && fr[0] + fr[1] > 0 && Number.isFinite(fr[0] + fr[1])) {
 			// A shared design frame overrides the piece's own bbox, so sibling
-			// pieces cut from one drawing keep their registration.
+			// pieces cut from one drawing keep their registration. It needs a size:
+			// [w, 0] frames a flat piece, and a frame of no size frames nothing.
 			lo = 0;
 			lov = 0;
-			hi = Math.max(1e-6, a.frame[0]);
-			hiv = Math.max(1e-6, a.frame[1]);
+			hi = Math.max(1e-6, fr[0]);
+			hiv = Math.max(1e-6, fr[1]);
 		}
 		const place = a.place ?? 'behind';
-		const size =
-			a.size ?? (place === 'behind' ? 1.5 : place === 'left' || place === 'right' ? 1 : 0.7);
+		const size = num(
+			a.size,
+			place === 'behind' ? 1.5 : place === 'left' || place === 'right' ? 1 : 0.7
+		);
 		const bw = Math.max(1e-6, hi - lo);
 		const bh = Math.max(1e-6, hiv - lov);
 		// A flat piece (a rule: a thousand times wider than tall) has no height to size
@@ -695,9 +764,9 @@ export function layoutTubes(
 		else if (place === 'right') cx = width + gap + (bw * k) / 2;
 		else if (place === 'above') cy = blockTop - gap - (bh * k) / 2;
 		else if (place === 'below') cy = blockTop + blockH + gap + (bh * k) / 2;
-		cx += (a.dx ?? 0) * blockH;
-		cy += (a.dy ?? 0) * blockH;
-		const rot = ((a.rotate ?? 0) * Math.PI) / 180;
+		cx += num(a.dx, 0) * blockH;
+		cy += num(a.dy, 0) * blockH;
+		const rot = (num(a.rotate, 0) * Math.PI) / 180;
 		const cos = Math.cos(rot);
 		const sin = Math.sin(rot);
 		const scx = (lo + hi) / 2;
@@ -716,8 +785,8 @@ export function layoutTubes(
 				topAll = Math.min(topAll, y);
 				botAll = Math.max(botAll, y);
 			}
-		const mk = (strokes: [number, number][][]): TubeSection => section([strokes], 0, undefined, ai);
-		const secs = a.tubes === 'path' ? placed.map((s) => mk([s])) : [mk(placed)];
+		const mk = (strokes: [number, number][][]) => section([strokes], 0, undefined, ai);
+		const secs = a.tubes === 'path' ? placed.flatMap((s) => mk([s])) : mk(placed);
 		// Z-order = section order = 'reveal' strike order: backdrop pieces first
 		// (the border ring lights, then the word), side pieces after the text.
 		if (place === 'behind') behind.push(...secs);

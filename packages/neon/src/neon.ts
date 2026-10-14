@@ -1055,8 +1055,16 @@ export function createNeonSign(
 			if (disposed) return;
 			const next = String(t ?? '');
 			if (next === text) return;
+			const was = text;
 			text = next;
-			relayout();
+			try {
+				relayout();
+			} catch (err) {
+				// A custom face that can't bend this text keeps the sign on the last that bent.
+				text = was;
+				relayout();
+				throw err;
+			}
 			applyAria();
 			if (on) beginStrikes();
 			else snapAll();
@@ -1160,6 +1168,17 @@ export function createNeonSign(
 			if (disposed) return;
 			let rebuild = false;
 			let redraw = false;
+			const glass = {
+				font,
+				tubes,
+				align,
+				lineSpacing,
+				letterSpacing,
+				tilt,
+				outline,
+				lineScale,
+				art
+			};
 			// Anything named in this patch becomes the consumer's for good, so mark it
 			// before the theme gets a chance to move it.
 			themed.mark(patch);
@@ -1219,8 +1238,17 @@ export function createNeonSign(
 			}
 			if (rebuild) {
 				// A re-bend is new glass, but option twiddling shouldn't strike — the
-				// new tubes land at the sign's current state instantly.
-				relayout();
+				// new tubes land at the sign's current state instantly. Glass that can't
+				// be bent (art path data that won't parse) leaves the sign as it was, so
+				// the next setText doesn't trip over it again.
+				try {
+					relayout();
+				} catch (err) {
+					({ font, tubes, align, lineSpacing, letterSpacing, tilt, outline, lineScale, art } =
+						glass);
+					relayout();
+					throw err;
+				}
 				snapAll();
 			}
 			if (patch.color !== undefined) {

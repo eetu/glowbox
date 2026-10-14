@@ -6,7 +6,7 @@
 // is paint, so the faces' colours are the game's. `flipLandings` says when discs hit their
 // stops, which is when the board clicks.
 import type { FlipDotShape, FlipDotStagger } from './flip-dot';
-import type { PixelLayout, PixelPart, PixelRect } from './pixel';
+import { finitePx, type PixelLayout, type PixelPart, type PixelRect } from './pixel';
 import { maskRects } from './pixel-stroke';
 // The same dot on the same board always draws the same jitter.
 import { unit } from './wear';
@@ -103,7 +103,9 @@ const maskOf = (dot: number, test: (x: number, y: number) => boolean): Mask => {
 	return m;
 };
 
-const sizeOf = (dot: number) => Math.max(1, Math.round(dot));
+const sizeOf = (dot: number, name: string) => Math.max(1, Math.round(finitePx(dot, name)));
+/** Columns or rows: whole, at least one, and a RangeError when not finite. */
+const countOf = (n: number, name: string) => Math.max(1, Math.floor(finitePx(n, name)));
 
 /** The dot at rest, from its box's top-left. */
 const restRects = (dot: number, shape: FlipDotShape) =>
@@ -117,10 +119,10 @@ const restRects = (dot: number, shape: FlipDotShape) =>
  */
 export function flipDotPixels(options: FlipPixelOptions): PixelLayout<FlipDotPart> {
 	const { shape = 'disc' } = options;
-	const cols = Math.max(1, Math.floor(options.cols));
-	const rows = Math.max(1, Math.floor(options.rows));
-	const dot = sizeOf(options.dot);
-	const gap = Math.max(0, Math.round(options.gap ?? 1));
+	const cols = countOf(options.cols, 'flipDotPixels cols');
+	const rows = countOf(options.rows, 'flipDotPixels rows');
+	const dot = sizeOf(options.dot, 'flipDotPixels dot');
+	const gap = Math.max(0, Math.round(finitePx(options.gap ?? 1, 'flipDotPixels gap')));
 	const face = restRects(dot, shape);
 	const pitch = dot + gap;
 	const parts: FlipDotPart[] = [];
@@ -144,7 +146,7 @@ export function flipFrames(
 	dot: number,
 	{ shape = 'disc', axis = 135 }: FlipFrameOptions = {}
 ): FlipFrame[] {
-	dot = sizeOf(dot);
+	dot = sizeOf(dot, 'flipFrames dot');
 	const n = dot * dot;
 	const inside = insideOf(dot, shape);
 	const rest = maskOf(dot, inside);
@@ -224,8 +226,8 @@ const lastAt = (changes: readonly FlipChange[], t: number) => {
 
 const timingOf = (o: FlipTiming) => {
 	const { seed = 0, scanMs = 150, flipMs = 70 } = o;
-	const cols = Math.max(1, Math.floor(o.cols));
-	const rows = Math.max(1, Math.floor(o.rows));
+	const cols = countOf(o.cols, 'flip timing cols');
+	const rows = countOf(o.rows, 'flip timing rows');
 	// An instant board has no sweep either, as on the canvas.
 	const stagger: FlipDotStagger = flipMs > 0 ? (o.stagger ?? 'scan') : 'none';
 	return {
@@ -324,11 +326,10 @@ export function flipPhases(
 	changes: readonly FlipChange[],
 	t: number,
 	timing: FlipTiming,
-	out: Float32Array = new Float32Array(
-		Math.max(1, Math.floor(timing.cols)) * Math.max(1, Math.floor(timing.rows))
-	)
+	out?: Float32Array
 ): Float32Array {
 	const tm = timingOf(timing);
+	out ??= new Float32Array(tm.n);
 	const m = lastAt(changes, t);
 	for (let i = 0; i < tm.n; i++) out[i] = phaseOf(changes, m, i, t, tm);
 	return out;

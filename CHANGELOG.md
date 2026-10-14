@@ -24,6 +24,17 @@ version and are released together.
   canvas or aria writes); lcd's flicker no longer outlives a dispose that lands mid-dip.
 - **Detached handle methods** — `board.clear`, `board.fill` and `setOptions({ text, on })`
   work when passed as callbacks.
+- **Modern CSS colours** — `oklch()`, `oklab()`, `lab()`, `lch()`, `color()` and `color-mix()`
+  read as their sRGB instead of black; the parsed-colour memo holds at most 2048 strings.
+- **Pixel exports reject sizes they can't lay out** — a NaN or infinite size throws a
+  `RangeError` instead of hanging; heights round to whole pixels and too-small ones throw.
+  Budgets: flip-dot 7 → 7.2 kB, split-flap 9.8 → 10 kB.
+- **`@glowbox/led-grid`: `line()` clips to the grid** — a line from far off the grid costs
+  its visible part; non-finite ends draw nothing.
+- **`@glowbox/neon`: degenerate input** — non-finite options take their defaults, a frame of
+  no size is ignored, a stroke needs two finite points, an outlined dot gets a square ring,
+  and art that won't parse throws once and leaves the sign as it was. A piece of 800
+  subpaths lays out in 0.2 s, not 19. Budget 16.5 → 17 kB.
 
 ## [1.13.1] — 2026-10-13
 

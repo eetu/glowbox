@@ -41,13 +41,15 @@ export function maskRects(mask: ArrayLike<number>, w: number, h: number): PixelR
 /**
  * The cells of a line `width` px wide (a square brush) through `points`, in pixel units
  * with cell (x, y) covering [x, x+1) × [y, y+1), each cell once, as rects. Segments are
- * Bresenham between the points' cells; `closed` joins the last point to the first.
+ * Bresenham between the points' cells; `closed` joins the last point to the first. A
+ * point off the number line (NaN, ±Infinity) has no cell, so such a line covers none.
  */
 export function strokeRects(
 	points: readonly Point[],
 	{ width = 1, closed = false }: { width?: number; closed?: boolean } = {}
 ): PixelRect[] {
-	if (!points.length) return [];
+	if (!points.length || !Number.isFinite(width)) return [];
+	for (const [x, y] of points) if (!Number.isFinite(x) || !Number.isFinite(y)) return [];
 	const cells = new Set<number>();
 	const at = (p: Point) => [Math.floor(p[0]), Math.floor(p[1])] as const;
 	let [minX, minY] = at(points[0]);

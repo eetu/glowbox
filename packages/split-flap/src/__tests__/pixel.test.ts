@@ -57,6 +57,22 @@ test('flapPixels: each card a top flap, a hinge and a bottom flap, whole and apa
 	const even = flapPixels({ cols: 1, card: [8, 12] });
 	expect(even.half).toBe(5);
 	expect(even.parts[1].rects[0]).toEqual({ x: 0, y: 5, w: 8, h: 2 });
+	// Gaps are whole pixels too.
+	expect(flapPixels({ cols: 3, card: [7, 11], gap: 1.4 })).toEqual(
+		flapPixels({ cols: 3, card: [7, 11], gap: 1 })
+	);
+});
+
+test('a size that is not a finite number throws instead of laying out NaN or forever', () => {
+	for (const bad of [NaN, Infinity]) {
+		expect(() => flapPixels({ cols: bad, card: [7, 11] })).toThrow(RangeError);
+		expect(() => flapPixels({ cols: 2, rows: bad, card: [7, 11] })).toThrow(RangeError);
+		expect(() => flapPixels({ cols: 2, card: [bad, 11] })).toThrow(/card width/);
+		expect(() => flapPixels({ cols: 2, card: [7, 11], gap: [1, bad] })).toThrow(RangeError);
+		expect(() => flapGlyph('A', [7, bad])).toThrow(/card height/);
+		expect(() => flapRows(0.5, [7, bad])).toThrow(RangeError);
+		expect(() => flapState('A', 'B', 0, { cols: bad })).toThrow(RangeError);
+	}
 });
 
 test('flapGlyph: the 5×7 face centred and cut under its middle row, four rows over three', () => {
