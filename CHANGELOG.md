@@ -6,6 +6,14 @@ version and are released together.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`@glowbox/react`, `@glowbox/vue`: led-grid's types only** — 1.13.1's declarations also
+  typed `createLedDisplay`, `createVoxelGrid` and `parseColor` as exports, which neither
+  package ships.
+- **Licences** — every package ships its MIT `LICENSE`; `@glowbox/extras` adds the notice
+  for the gifuct-js it bundles.
+
 ## [1.13.1] — 2026-10-13
 
 ### Fixed
