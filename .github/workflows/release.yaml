@@ -81,8 +81,9 @@ jobs:
       - name: Pack
         run: |
           mkdir -p tarballs
+          # Absolute: `yarn workspace` resolves a relative --out from the package's directory.
           for pkg in $PACKAGES; do
-            node .yarn/releases/yarn-*.cjs workspace "@glowbox/$pkg" pack --out "tarballs/$pkg.tgz"
+            node .yarn/releases/yarn-*.cjs workspace "@glowbox/$pkg" pack --out "$GITHUB_WORKSPACE/tarballs/$pkg.tgz"
           done
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
