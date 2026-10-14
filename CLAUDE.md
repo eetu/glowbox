@@ -138,9 +138,10 @@ Root is the workspace: shared `tsconfig.base.json`, `.prettierrc`, vendored yarn
 ## Publishing
 
 Tag `vX.Y.Z` on main → `release.yaml` publishes all thirteen to npm via **trusted publishing
-(NOTE: its two `for pkg in …` lists are ENUMERATION, not discovery — a new package must be
-added to both by hand; vfd was missed for 1.9.0 and had to ship manually)
-(OIDC) + provenance** (no `NPM_TOKEN`). Gates: tag-on-main, tag matches **every**
+(OIDC) + provenance** (no `NPM_TOKEN`). Its `PACKAGES` list is ENUMERATION, not discovery —
+a new package must be added by hand (vfd was missed for 1.9.0 and had to ship manually).
+Two jobs: `verify` runs the gates and packs with no publish rights; only `publish` holds the
+id-token, and it runs nothing but npm. Gates: tag-on-main, tag matches **every**
 package's version, the full validate suite, and the publish smoke. Versions are bumped
 in lockstep across all `packages/*` `package.json`s via `node scripts/bump-version.mjs <version>`,
 plus a CHANGELOG entry (root `CHANGELOG.md`, Keep-a-Changelog). Publishes are idempotent
