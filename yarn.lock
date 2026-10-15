@@ -489,7 +489,7 @@ __metadata:
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/nixie": "workspace:^"
     "@glowbox/svelte": "workspace:^"
-    "@lucide/svelte": "npm:^1.49"
+    "@lucide/svelte": "npm:^1.52"
     "@playwright/test": "npm:^1.63"
     "@sveltejs/adapter-static": "npm:^3.0.10"
     "@sveltejs/kit": "npm:^2.70"
@@ -704,12 +704,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lucide/svelte@npm:^1.49":
-  version: 1.49.0
-  resolution: "@lucide/svelte@npm:1.49.0"
+"@lucide/svelte@npm:^1.52":
+  version: 1.52.0
+  resolution: "@lucide/svelte@npm:1.52.0"
   peerDependencies:
     svelte: ^5
-  checksum: 10/67f2fe63c4b5ea069671fb4af47199620830eb92ab31cee5b21ffccb06f4a57de212a04769d8b11703bb31fbf3397a2efee18cd6435dda22490ff7c4695109a7
+  checksum: 10/23bac1156aff4d0990024942c9c2e75925f8a1bf4eeaeb3370904af536e01c6ff8da3cede8e067eacc3e830ac73f48316df5226a72f063c91452a502a866f3ae
   languageName: node
   linkType: hard
 
@@ -1205,11 +1205,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:^26":
-  version: 26.6.4
-  resolution: "@types/node@npm:26.6.4"
+  version: 26.6.5
+  resolution: "@types/node@npm:26.6.5"
   dependencies:
     undici-types: "npm:~8.9.0"
-  checksum: 10/649173a03497020b8d3624a5149e0286bd175baf6d1df070c538637ccb256ce5554a76c5b63b454bda2cdb1821fa457e074477a75c3c78fc8f562d5c4a31cba8
+  checksum: 10/03780cc68280b566af47c0f673318e665258dbdcc953737a83c11593424d55aecb8b2642a573da33f76cb4dd5457379548388b78ab284cb3b762030e5d58b252
   languageName: node
   linkType: hard
 
@@ -2293,8 +2293,8 @@ __metadata:
   linkType: hard
 
 "eslint@npm:^10":
-  version: 10.11.0
-  resolution: "eslint@npm:10.11.0"
+  version: 10.12.0
+  resolution: "eslint@npm:10.12.0"
   dependencies:
     "@eslint-community/eslint-utils": "npm:^4.8.0"
     "@eslint-community/regexpp": "npm:^4.12.2"
@@ -2333,7 +2333,7 @@ __metadata:
       optional: true
   bin:
     eslint: bin/eslint.js
-  checksum: 10/b4de8711cae009d6978e3760d400d5b2cba4117625764d9b1b77969c61f4db7dfa7bfb2754c0a22b3d9f35960a3e4f03bd579104d2c25894490bf3cf7b448cac
+  checksum: 10/1cff87e4db79d4c9b6bd0af4c2aa483d88936a16f70e73af192a2aeee5ec597ad1de5d42ba1242336c27b25be6f0e503e4ea41ca036ab134eb5f4b4c24af15b9
   languageName: node
   linkType: hard
 
