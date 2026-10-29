@@ -77,7 +77,7 @@
 	"devDependencies": {
 		"@anarkisti/eslint-config": "^1",
 		"@size-limit/file": "^14",
-		"@sveltejs/package": "^2.5",
+		"@sveltejs/package": "^3.0",
 		"@sveltejs/vite-plugin-svelte": "^7",
 		"@vitest/browser": "^5",
 		"@vitest/browser-playwright": "^5",
