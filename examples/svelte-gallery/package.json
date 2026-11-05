@@ -24,8 +24,8 @@
 	"devDependencies": {
 		"@anarkisti/eslint-config": "^1",
 		"@playwright/test": "^1.64",
-		"@sveltejs/adapter-static": "^3.0.10",
-		"@sveltejs/kit": "^2.70",
+		"@sveltejs/adapter-static": "^4.0.0",
+		"@sveltejs/kit": "^3.1",
 		"@sveltejs/vite-plugin-svelte": "^7",
 		"@types/node": "^26",
 		"@types/three": "^0.186.0",
