@@ -297,7 +297,7 @@ __metadata:
   resolution: "@glowbox/crt@workspace:packages/crt"
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
-    "@microsoft/api-extractor": "npm:^7.59"
+    "@microsoft/api-extractor": "npm:^7.60"
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
@@ -315,7 +315,7 @@ __metadata:
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
     "@glowbox/led-grid": "workspace:^"
-    "@microsoft/api-extractor": "npm:^7.59"
+    "@microsoft/api-extractor": "npm:^7.60"
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
@@ -333,7 +333,7 @@ __metadata:
   resolution: "@glowbox/flip-dot@workspace:packages/flip-dot"
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
-    "@microsoft/api-extractor": "npm:^7.59"
+    "@microsoft/api-extractor": "npm:^7.60"
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
@@ -350,7 +350,7 @@ __metadata:
   resolution: "@glowbox/lcd@workspace:packages/lcd"
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
-    "@microsoft/api-extractor": "npm:^7.59"
+    "@microsoft/api-extractor": "npm:^7.60"
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
@@ -367,7 +367,7 @@ __metadata:
   resolution: "@glowbox/led-grid@workspace:packages/led-grid"
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
-    "@microsoft/api-extractor": "npm:^7.59"
+    "@microsoft/api-extractor": "npm:^7.60"
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
@@ -384,7 +384,7 @@ __metadata:
   resolution: "@glowbox/neon@workspace:packages/neon"
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
-    "@microsoft/api-extractor": "npm:^7.59"
+    "@microsoft/api-extractor": "npm:^7.60"
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
@@ -401,7 +401,7 @@ __metadata:
   resolution: "@glowbox/nixie@workspace:packages/nixie"
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
-    "@microsoft/api-extractor": "npm:^7.59"
+    "@microsoft/api-extractor": "npm:^7.60"
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
@@ -426,7 +426,7 @@ __metadata:
     "@glowbox/seven-segment": "workspace:^"
     "@glowbox/split-flap": "workspace:^"
     "@glowbox/vfd": "workspace:^"
-    "@microsoft/api-extractor": "npm:^7.59"
+    "@microsoft/api-extractor": "npm:^7.60"
     "@types/react": "npm:^19"
     "@types/react-dom": "npm:^19"
     "@vitejs/plugin-react": "npm:^6"
@@ -451,7 +451,7 @@ __metadata:
   resolution: "@glowbox/seven-segment@workspace:packages/seven-segment"
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
-    "@microsoft/api-extractor": "npm:^7.59"
+    "@microsoft/api-extractor": "npm:^7.60"
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
@@ -468,7 +468,7 @@ __metadata:
   resolution: "@glowbox/split-flap@workspace:packages/split-flap"
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
-    "@microsoft/api-extractor": "npm:^7.59"
+    "@microsoft/api-extractor": "npm:^7.60"
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
@@ -489,7 +489,7 @@ __metadata:
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/nixie": "workspace:^"
     "@glowbox/svelte": "workspace:^"
-    "@lucide/svelte": "npm:^1.61"
+    "@lucide/svelte": "npm:^1.63"
     "@playwright/test": "npm:^1.64"
     "@sveltejs/adapter-static": "npm:^3.0.10"
     "@sveltejs/kit": "npm:^2.70"
@@ -542,7 +542,7 @@ __metadata:
   resolution: "@glowbox/vfd@workspace:packages/vfd"
   dependencies:
     "@anarkisti/eslint-config": "npm:^1"
-    "@microsoft/api-extractor": "npm:^7.59"
+    "@microsoft/api-extractor": "npm:^7.60"
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
@@ -567,7 +567,7 @@ __metadata:
     "@glowbox/seven-segment": "workspace:^"
     "@glowbox/split-flap": "workspace:^"
     "@glowbox/vfd": "workspace:^"
-    "@microsoft/api-extractor": "npm:^7.59"
+    "@microsoft/api-extractor": "npm:^7.60"
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     "@vue/compiler-dom": "npm:^3.5"
@@ -704,12 +704,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lucide/svelte@npm:^1.61":
-  version: 1.61.0
-  resolution: "@lucide/svelte@npm:1.61.0"
+"@lucide/svelte@npm:^1.63":
+  version: 1.63.0
+  resolution: "@lucide/svelte@npm:1.63.0"
   peerDependencies:
     svelte: ^5
-  checksum: 10/c5f626df3162c41001f670042511accf1be0f4a57fdb54fee57d1bae6d30c84cce8c071449396dd2e7b7264fe41556e88b02ce1970ebf44a044f1d2bad2edda8
+  checksum: 10/40dc833e1954456e1eeb570d68b34f97588e01eb049531c688b5efec740d973cc5a7c06013161294ac4a799ec7a65e3cdfa093897e9fec285dc7c8a30459725c
   languageName: node
   linkType: hard
 
@@ -724,9 +724,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@microsoft/api-extractor@npm:^7.59":
-  version: 7.59.4
-  resolution: "@microsoft/api-extractor@npm:7.59.4"
+"@microsoft/api-extractor@npm:^7.60":
+  version: 7.60.0
+  resolution: "@microsoft/api-extractor@npm:7.60.0"
   dependencies:
     "@microsoft/api-extractor-model": "npm:7.33.15"
     "@microsoft/tsdoc": "npm:~0.17.0"
@@ -740,10 +740,10 @@ __metadata:
     resolve: "npm:~1.22.1"
     semver: "npm:~7.7.4"
     source-map: "npm:~0.6.1"
-    typescript: "npm:5.9.3"
+    typescript: "npm:6.0.3"
   bin:
     api-extractor: bin/api-extractor
-  checksum: 10/d840e070d02548bc068fa10c4b99cc2352070797689631eb182ab27f1df478590b2e9443bddd6d777887e012742a697d20b823cfce48b83dc38f52ac2744f2c7
+  checksum: 10/34a39bc19eaeb7c791c5e5eeee53cf69f16d5ad7c53d5e3ee18a5b875358bc3313100611b6492cfb379f68f75bd44c33cb92f0403c07aaf6f97d7042b45cc407
   languageName: node
   linkType: hard
 
@@ -1317,11 +1317,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:^26":
-  version: 26.6.5
-  resolution: "@types/node@npm:26.6.5"
+  version: 26.6.6
+  resolution: "@types/node@npm:26.6.6"
   dependencies:
     undici-types: "npm:~8.9.0"
-  checksum: 10/03780cc68280b566af47c0f673318e665258dbdcc953737a83c11593424d55aecb8b2642a573da33f76cb4dd5457379548388b78ab284cb3b762030e5d58b252
+  checksum: 10/07c6c6fc1f5cc89c700ac9ebcebd42b000fef234bf0b80e9461a8f077105f15faf16df95b83745e0c0e37338d1fbc28cb402ef27b5787fd7a57b492c926ff7ae
   languageName: node
   linkType: hard
 
@@ -4140,17 +4140,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:5.9.3":
-  version: 5.9.3
-  resolution: "typescript@npm:5.9.3"
-  bin:
-    tsc: bin/tsc
-    tsserver: bin/tsserver
-  checksum: 10/c089d9d3da2729fd4ac517f9b0e0485914c4b3c26f80dc0cffcb5de1719a17951e92425d55db59515c1a7ddab65808466debb864d0d56dcf43f27007d0709594
-  languageName: node
-  linkType: hard
-
-"typescript@npm:^6, typescript@npm:^6.0.2":
+"typescript@npm:6.0.3, typescript@npm:^6, typescript@npm:^6.0.2":
   version: 6.0.3
   resolution: "typescript@npm:6.0.3"
   bin:
@@ -4160,17 +4150,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A5.9.3#optional!builtin<compat/typescript>":
-  version: 5.9.3
-  resolution: "typescript@patch:typescript@npm%3A5.9.3#optional!builtin<compat/typescript>::version=5.9.3&hash=5786d5"
-  bin:
-    tsc: bin/tsc
-    tsserver: bin/tsserver
-  checksum: 10/696e1b017bc2635f4e0c94eb4435357701008e2f272f553d06e35b494b8ddc60aa221145e286c28ace0c89ee32827a28c2040e3a69bdc108b1a5dc8fb40b72e3
-  languageName: node
-  linkType: hard
-
-"typescript@patch:typescript@npm%3A^6#optional!builtin<compat/typescript>, typescript@patch:typescript@npm%3A^6.0.2#optional!builtin<compat/typescript>":
+"typescript@patch:typescript@npm%3A6.0.3#optional!builtin<compat/typescript>, typescript@patch:typescript@npm%3A^6#optional!builtin<compat/typescript>, typescript@patch:typescript@npm%3A^6.0.2#optional!builtin<compat/typescript>":
   version: 6.0.3
   resolution: "typescript@patch:typescript@npm%3A6.0.3#optional!builtin<compat/typescript>::version=6.0.3&hash=5786d5"
   bin:

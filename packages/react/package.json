@@ -87,7 +87,7 @@
 	},
 	"devDependencies": {
 		"@anarkisti/eslint-config": "^1",
-		"@microsoft/api-extractor": "^7.59",
+		"@microsoft/api-extractor": "^7.60",
 		"@types/react": "^19",
 		"@types/react-dom": "^19",
 		"@vitejs/plugin-react": "^6",
