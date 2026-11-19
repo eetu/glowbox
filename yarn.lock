@@ -517,7 +517,7 @@ __metadata:
     "@glowbox/led-grid": "workspace:^"
     "@glowbox/nixie": "workspace:^"
     "@glowbox/svelte": "workspace:^"
-    "@lucide/svelte": "npm:^1.68"
+    "@lucide/svelte": "npm:^1.72"
     "@playwright/test": "npm:^1.65"
     "@sveltejs/adapter-static": "npm:^3.0.10"
     "@sveltejs/kit": "npm:^2.70"
@@ -732,12 +732,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lucide/svelte@npm:^1.68":
-  version: 1.68.0
-  resolution: "@lucide/svelte@npm:1.68.0"
+"@lucide/svelte@npm:^1.72":
+  version: 1.72.0
+  resolution: "@lucide/svelte@npm:1.72.0"
   peerDependencies:
     svelte: ^5
-  checksum: 10/cd7d35f244d5671e517a69c6b6e422289f41c40964b9618c37a66ad4bc6add8c82724f925fa1d6e3cf88bf897311f7dc57d590ffea78a7b253483b5a4466d1e9
+  checksum: 10/40e85cbb51f68594de9f0a0e2c60ab2c2ae92128dd84192ea3f77403d72cd44dd615d75f98d0985ff444d1b77b5daa8214b497a14d58ee02ff891d08c5249e56
   languageName: node
   linkType: hard
 
@@ -2797,7 +2797,7 @@ __metadata:
   resolution: "glowbox@workspace:."
   dependencies:
     "@size-limit/preset-small-lib": "npm:^14"
-    prettier: "npm:^3.9.10"
+    prettier: "npm:^3.10.0"
     prettier-plugin-svelte: "npm:^4.0.1"
     size-limit: "npm:^14"
     svelte: "npm:^5.57"
@@ -3635,12 +3635,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.9.10":
-  version: 3.9.10
-  resolution: "prettier@npm:3.9.10"
+"prettier@npm:^3.10.0":
+  version: 3.10.0
+  resolution: "prettier@npm:3.10.0"
   bin:
     prettier: bin/prettier.cjs
-  checksum: 10/5d0118add4b44eb9d50c114f5c525451cc92be9da300ad0552787472535a3f23884baed3223d9b577bb7d1152eb58aeccfcc2b4541c0cf2274c0b4d328e36834
+  checksum: 10/c87442be0b480bc968cbd44d5984fd2ccf1d0b2a94aa3f35ffccc8751cf25751360adce3884d08b0f52c403fa75bfdf64bacdd2802d9fc1e0efee7456cf4ef36
   languageName: node
   linkType: hard
 
