@@ -301,7 +301,7 @@ __metadata:
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
-    playwright: "npm:^1.64"
+    playwright: "npm:^1.65"
     typescript: "npm:^6"
     vite: "npm:^8.3"
     vite-plugin-dts: "npm:^5"
@@ -320,7 +320,7 @@ __metadata:
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
     gifuct-js: "npm:^2"
-    playwright: "npm:^1.64"
+    playwright: "npm:^1.65"
     typescript: "npm:^6"
     vite: "npm:^8.3"
     vite-plugin-dts: "npm:^5"
@@ -337,7 +337,7 @@ __metadata:
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
-    playwright: "npm:^1.64"
+    playwright: "npm:^1.65"
     typescript: "npm:^6"
     vite: "npm:^8.3"
     vite-plugin-dts: "npm:^5"
@@ -354,7 +354,7 @@ __metadata:
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
-    playwright: "npm:^1.64"
+    playwright: "npm:^1.65"
     typescript: "npm:^6"
     vite: "npm:^8.3"
     vite-plugin-dts: "npm:^5"
@@ -371,7 +371,7 @@ __metadata:
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
-    playwright: "npm:^1.64"
+    playwright: "npm:^1.65"
     typescript: "npm:^6"
     vite: "npm:^8.3"
     vite-plugin-dts: "npm:^5"
@@ -388,7 +388,7 @@ __metadata:
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
-    playwright: "npm:^1.64"
+    playwright: "npm:^1.65"
     typescript: "npm:^6"
     vite: "npm:^8.3"
     vite-plugin-dts: "npm:^5"
@@ -405,7 +405,7 @@ __metadata:
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
-    playwright: "npm:^1.64"
+    playwright: "npm:^1.65"
     typescript: "npm:^6"
     vite: "npm:^8.3"
     vite-plugin-dts: "npm:^5"
@@ -433,7 +433,7 @@ __metadata:
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
-    playwright: "npm:^1.64"
+    playwright: "npm:^1.65"
     react: "npm:^19"
     react-dom: "npm:^19"
     typescript: "npm:^6"
@@ -455,7 +455,7 @@ __metadata:
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
-    playwright: "npm:^1.64"
+    playwright: "npm:^1.65"
     typescript: "npm:^6"
     vite: "npm:^8.3"
     vite-plugin-dts: "npm:^5"
@@ -472,7 +472,7 @@ __metadata:
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
-    playwright: "npm:^1.64"
+    playwright: "npm:^1.65"
     typescript: "npm:^6"
     vite: "npm:^8.3"
     vite-plugin-dts: "npm:^5"
@@ -490,7 +490,7 @@ __metadata:
     "@glowbox/nixie": "workspace:^"
     "@glowbox/svelte": "workspace:^"
     "@lucide/svelte": "npm:^1.68"
-    "@playwright/test": "npm:^1.64"
+    "@playwright/test": "npm:^1.65"
     "@sveltejs/adapter-static": "npm:^3.0.10"
     "@sveltejs/kit": "npm:^2.70"
     "@sveltejs/vite-plugin-svelte": "npm:^7"
@@ -524,7 +524,7 @@ __metadata:
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
-    playwright: "npm:^1.64"
+    playwright: "npm:^1.65"
     size-limit: "npm:^14"
     svelte: "npm:^5.57"
     svelte-check: "npm:^4.7"
@@ -546,7 +546,7 @@ __metadata:
     "@vitest/browser": "npm:^5"
     "@vitest/browser-playwright": "npm:^5"
     eslint: "npm:^10"
-    playwright: "npm:^1.64"
+    playwright: "npm:^1.65"
     typescript: "npm:^6"
     vite: "npm:^8.3"
     vite-plugin-dts: "npm:^5"
@@ -573,7 +573,7 @@ __metadata:
     "@vue/compiler-dom": "npm:^3.5"
     "@vue/test-utils": "npm:^2.5"
     eslint: "npm:^10"
-    playwright: "npm:^1.64"
+    playwright: "npm:^1.65"
     typescript: "npm:^6"
     vite: "npm:^8.3"
     vite-plugin-dts: "npm:^5"
@@ -787,14 +787,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@playwright/test@npm:^1.64":
-  version: 1.64.1
-  resolution: "@playwright/test@npm:1.64.1"
+"@playwright/test@npm:^1.65":
+  version: 1.65.0
+  resolution: "@playwright/test@npm:1.65.0"
   dependencies:
-    playwright: "npm:1.64.1"
+    playwright: "npm:1.65.0"
   bin:
     playwright: cli.js
-  checksum: 10/589855c5fbc9ebbfb072e77e4b24a646f302ca9823d56ac3ff08a8e4ecf7ee13a390fe19236f4f9737e9a736194324f244f90c409a10edeb480c5f99ce77d10e
+  checksum: 10/12837b3c866d27b5aeed0f8f581fccba805377f581e97bcfe0cb2fe1d77236c6e7d52dd23c7607235e8e346d1b97821c38959b5c0dd0eab576596a13e1efe2cc
   languageName: node
   linkType: hard
 
@@ -3463,23 +3463,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"playwright-core@npm:1.64.1":
-  version: 1.64.1
-  resolution: "playwright-core@npm:1.64.1"
+"playwright-core@npm:1.65.0":
+  version: 1.65.0
+  resolution: "playwright-core@npm:1.65.0"
   bin:
     playwright-core: cli.js
-  checksum: 10/4a173590bc784d8d5bfe2cace53ccc31316dac11475660b59cea24a2e833875d87183d41a957a20355301ac2b339a17940faaf0b42217156fa9c0c3cfdd4633c
+  checksum: 10/77c76725d9c60a8fc67439e9fcb1ef075268aaf81dd5edc5321da777eb0f2103e8569f9efa55dd0adbd9c8c41ef97c956dd7263dc91c4233f29388cfa451dee3
   languageName: node
   linkType: hard
 
-"playwright@npm:1.64.1, playwright@npm:^1.64":
-  version: 1.64.1
-  resolution: "playwright@npm:1.64.1"
+"playwright@npm:1.65.0, playwright@npm:^1.65":
+  version: 1.65.0
+  resolution: "playwright@npm:1.65.0"
   dependencies:
-    playwright-core: "npm:1.64.1"
+    playwright-core: "npm:1.65.0"
   bin:
     playwright: cli.js
-  checksum: 10/1096fa91e433f84c8677433a26052aa4f269bf0811aa793fe667d7053feb1c2852e9f10f9f0cced77fa2678f8580ed47192f29adbc9c027efa5ba87b38e23e50
+  checksum: 10/bda489bad0809f61a874407244f0de7c38cefb8864148c6094f0f9dc2f808bbcbf4a8074cf7366d90890ff7e88786fc93965614dd63de3ab4594e5a6b0a39abd
   languageName: node
   linkType: hard
 
