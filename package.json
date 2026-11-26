@@ -22,8 +22,8 @@
 	},
 	"devDependencies": {
 		"@size-limit/preset-small-lib": "^14",
-		"prettier": "^3.10.0",
-		"prettier-plugin-svelte": "^4.0.1",
+		"prettier": "^3.10.1",
+		"prettier-plugin-svelte": "^4.2.0",
 		"size-limit": "^14",
 		"svelte": "^5.57",
 		"typescript": "^6.0.2"
