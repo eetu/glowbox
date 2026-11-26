@@ -89,7 +89,7 @@
 		"@vitest/browser": "^5",
 		"@vitest/browser-playwright": "^5",
 		"@vue/compiler-dom": "^3.5",
-		"@vue/test-utils": "^2.5",
+		"@vue/test-utils": "^2.6",
 		"eslint": "^10",
 		"playwright": "^1.65",
 		"typescript": "^6",
