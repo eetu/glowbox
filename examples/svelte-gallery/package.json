@@ -24,13 +24,13 @@
 	"devDependencies": {
 		"@anarkisti/eslint-config": "^1",
 		"@playwright/test": "^1.65",
-		"@sveltejs/adapter-static": "^3.0.10",
-		"@sveltejs/kit": "^2.70",
+		"@sveltejs/adapter-static": "^4.0.1",
+		"@sveltejs/kit": "^3.2",
 		"@sveltejs/vite-plugin-svelte": "^7",
 		"@types/node": "^26",
 		"@types/three": "^0.187.0",
 		"eslint": "^10",
-		"svelte": "^5.57",
+		"svelte": "^5.58",
 		"svelte-check": "^4.7",
 		"typescript": "^6",
 		"vite": "^8.3"
